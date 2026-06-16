@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gastos del hogar</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Cierre semanal compartido</p>
+          <h1>Gastos del hogar</h1>
+          <p class="subtitle">
+            Registren lo que paga cada persona y vean al instante cómo queda el
+            reparto para que ambos aporten lo mismo.
+          </p>
+        </div>
+        <div class="week-card" aria-label="Semana seleccionada">
+          <label for="weekStart">Semana desde</label>
+          <input id="weekStart" type="date" />
+          <button id="currentWeekButton" type="button">Semana actual</button>
+        </div>
+      </section>
+
+      <nav class="main-tabs" aria-label="Secciones principales">
+        <button id="dailyViewButton" class="is-active" type="button">Carga semanal</button>
+        <button id="settingsViewButton" type="button">Configuración</button>
+      </nav>
+
+      <section id="dailyView" class="main-view">
+      <section class="summary-grid" aria-label="Resumen semanal">
+        <article class="summary-card">
+          <span>Total semanal</span>
+          <strong id="totalAmount">$0</strong>
+        </article>
+        <article class="summary-card">
+          <span id="personANameSummary">Persona 1 pagó</span>
+          <strong id="personATotal">$0</strong>
+        </article>
+        <article class="summary-card">
+          <span id="personBNameSummary">Persona 2 pagó</span>
+          <strong id="personBTotal">$0</strong>
+        </article>
+        <article class="summary-card highlight">
+          <span>Para emparejar</span>
+          <strong id="settlementText">Sin gastos esta semana</strong>
+        </article>
+      </section>
+
+      <section class="detail-grid" aria-label="Detalle de cierre">
+        <article class="panel settlement-detail">
+          <div class="panel-heading">
+            <div>
+              <h2>Detalle del cierre</h2>
+              <p id="settlementDetailIntro"></p>
+            </div>
+          </div>
+          <div id="settlementBreakdown" class="breakdown-grid"></div>
+        </article>
+
+        <article class="panel monthly-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Vista mensual</h2>
+              <p id="monthRangeLabel"></p>
+            </div>
+          </div>
+          <div id="monthlySummary" class="monthly-summary"></div>
+        </article>
+      </section>
+
+      <section class="panel chart-panel" aria-label="Gráfico de gastos por categoría">
+        <div class="panel-heading chart-heading">
+          <div>
+            <h2>Gastos por categoría</h2>
+            <p>Visualizá cómo se reparte el total semanal.</p>
+          </div>
+          <div class="chart-toggle" role="group" aria-label="Tipo de gráfico">
+            <button id="barChartButton" class="is-active" type="button">Barras</button>
+            <button id="pieChartButton" type="button">Torta</button>
+          </div>
+        </div>
+        <div class="chart-layout">
+          <canvas id="categoryChart" width="720" height="320" aria-label="Gráfico de gastos por categoría"></canvas>
+          <div id="chartLegend" class="chart-legend"></div>
+        </div>
+      </section>
+
+        <section class="workspace">
+          <section class="panel expense-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Agregar gasto</h2>
+                <p>Cargá gastos comunes para el reparto o personales para tu control.</p>
+              </div>
+            </div>
+
+            <div class="receipt-reader" aria-label="Cargar comprobante o resumen">
+              <div class="receipt-reader-text">
+                <h3>Desde archivo</h3>
+                <p>Subí un ticket, factura o resumen de tarjeta. La app detecta el tipo y te deja revisar antes de guardar.</p>
+              </div>
+              <div class="receipt-controls">
+                <label class="file-picker">
+                  Elegir archivo
+                  <input id="documentFile" type="file" accept="image/*,application/pdf,text/plain,.txt,.csv" />
+                </label>
+              </div>
+              <div id="receiptPreviewWrap" class="receipt-preview-wrap is-hidden">
+                <img id="receiptPreview" alt="Vista previa del ticket cargado" />
+              </div>
+              <p id="receiptStatus" class="receipt-status" aria-live="polite"></p>
+              <div id="statementReview" class="statement-review is-hidden"></div>
+            </div>
+
+            <div class="entry-tabs" role="tablist" aria-label="Tipo de gasto">
+              <button id="commonTabButton" class="is-active" type="button">Comunes</button>
+              <button id="personalTabButton" type="button">Personales</button>
+            </div>
+
+            <div class="voice-reader" aria-label="Cargar gasto por voz">
+              <div>
+                <h3>Desde audio</h3>
+                <p>Dictá algo como "comida 8500 pagó Persona 1 supermercado" o "personal 12000 ropa".</p>
+              </div>
+              <button id="voiceExpenseButton" class="secondary-button" type="button">Dictar gasto</button>
+              <form id="voiceTextForm" class="voice-text-form">
+                <label>
+                  Si el micrófono falla, escribí la frase
+                  <input id="voiceTextInput" type="text" placeholder="Ej: personal 12000 ropa zapatillas" />
+                </label>
+                <button type="submit">Interpretar</button>
+              </form>
+              <p id="voiceStatus" class="voice-status" aria-live="polite"></p>
+            </div>
+
+            <section id="commonExpenseSection" class="expense-mode-panel">
+              <form id="expenseForm" class="expense-form">
+                <label>
+                  Fecha
+                  <input id="expenseDate" type="date" required />
+                </label>
+                <label>
+                  Pagó
+                  <select id="expensePayer" required></select>
+                </label>
+                <label>
+                  Categoría
+                  <select id="expenseCategory" required>
+                    <option value="Comida">Comida</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Alquiler">Alquiler</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </label>
+                <label>
+                  Monto
+                  <input id="expenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                </label>
+                <label>
+                  Forma de pago
+                  <select id="expensePaymentMethod">
+                    <option value="">Sin especificar</option>
+                    <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                    <option value="Tarjeta de débito">Tarjeta de débito</option>
+                    <option value="Efectivo">Efectivo</option>
+                  </select>
+                </label>
+                <label class="wide">
+                  Descripción
+                  <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
+                </label>
+                <button type="submit">Agregar gasto</button>
+              </form>
+            </section>
+
+            <section id="personalExpenseSection" class="expense-mode-panel is-hidden">
+              <form id="personalExpenseForm" class="expense-form">
+                <label>
+                  Fecha
+                  <input id="personalExpenseDate" type="date" required />
+                </label>
+                <label>
+                  Persona
+                  <input id="personalExpenseOwner" type="text" maxlength="50" required />
+                </label>
+                <label>
+                  Categoría
+                  <select id="personalExpenseCategory" required>
+                    <option value="Comida">Comida</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Transporte">Transporte</option>
+                    <option value="Salud">Salud</option>
+                    <option value="Ropa">Ropa</option>
+                    <option value="Ocio">Ocio</option>
+                    <option value="Otro">Otro</option>
+                  </select>
+                </label>
+                <label>
+                  Monto
+                  <input id="personalExpenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                </label>
+                <label>
+                  Forma de pago
+                  <select id="personalExpensePaymentMethod">
+                    <option value="">Sin especificar</option>
+                    <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                    <option value="Tarjeta de débito">Tarjeta de débito</option>
+                    <option value="Efectivo">Efectivo</option>
+                  </select>
+                </label>
+                <label class="wide">
+                  Descripción
+                  <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
+                </label>
+                <button type="submit">Agregar personal</button>
+              </form>
+            </section>
+          </section>
+
+          <aside class="panel category-panel">
+            <h2>Por categoría</h2>
+            <p class="side-note">Resumen de los gastos comunes de esta semana.</p>
+            <div id="categoryList" class="category-list"></div>
+          </aside>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading table-heading">
+            <div>
+              <h2>Gastos de la semana</h2>
+              <p id="weekRangeLabel"></p>
+            </div>
+            <div class="table-actions">
+              <button id="exportButton" type="button">Exportar</button>
+              <button id="applyRecurringButton" type="button">Aplicar recurrentes</button>
+              <button id="settleWeekButton" type="button">Marcar saldada</button>
+              <button id="clearWeekButton" class="danger" type="button">Borrar semana</button>
+            </div>
+          </div>
+
+          <form id="filterForm" class="filter-bar">
+            <label>
+              Buscar
+              <input id="searchInput" type="search" placeholder="Descripción o texto" />
+            </label>
+            <label>
+              Persona
+              <select id="filterPayer"></select>
+            </label>
+            <label>
+              Categoría
+              <select id="filterCategory">
+                <option value="">Todas</option>
+                <option value="Comida">Comida</option>
+                <option value="Servicios">Servicios</option>
+                <option value="Limpieza">Limpieza</option>
+                <option value="Alquiler">Alquiler</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </label>
+            <label>
+              Forma de pago
+              <select id="filterPaymentMethod">
+                <option value="">Todas</option>
+                <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                <option value="Tarjeta de débito">Tarjeta de débito</option>
+                <option value="Efectivo">Efectivo</option>
+                <option value="Sin especificar">Sin especificar</option>
+              </select>
+            </label>
+            <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
+          </form>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Pagó</th>
+                  <th>Categoría</th>
+                  <th>Forma de pago</th>
+                  <th>Descripción</th>
+                  <th class="amount-cell">Monto</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="expensesTable"></tbody>
+            </table>
+            <p id="emptyState" class="empty-state">Todavía no hay gastos cargados para esta semana.</p>
+          </div>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="panel-heading table-heading">
+            <div>
+              <h2>Gastos personales de la semana</h2>
+              <p id="personalWeekLabel"></p>
+            </div>
+            <div class="personal-total">
+              <span>Total personal</span>
+              <strong id="personalWeekTotal">$0</strong>
+            </div>
+          </div>
+
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Persona</th>
+                  <th>Categoría</th>
+                  <th>Forma de pago</th>
+                  <th>Descripción</th>
+                  <th class="amount-cell">Monto</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="personalExpensesTable"></tbody>
+            </table>
+            <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales para esta semana.</p>
+          </div>
+        </section>
+
+        <section class="panel history-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Historial de cuentas saldadas</h2>
+              <p>Registro de las semanas que ya cerraron entre ustedes.</p>
+            </div>
+          </div>
+          <div id="settlementHistory" class="history-list"></div>
+        </section>
+      </section>
+
+      <section id="settingsView" class="main-view is-hidden">
+        <section class="settings-grid">
+          <article class="panel settings-panel">
+            <h2>Personas</h2>
+            <p class="side-note">Estos nombres se usan en los resúmenes, formularios y filtros.</p>
+            <form id="peopleForm" class="stacked-form">
+              <label>
+                Persona 1
+                <input id="personAInput" type="text" maxlength="30" required />
+              </label>
+              <label>
+                Persona 2
+                <input id="personBInput" type="text" maxlength="30" required />
+              </label>
+              <button type="submit">Guardar nombres</button>
+            </form>
+          </article>
+
+          <article class="panel settings-panel">
+            <h2>Presupuestos</h2>
+            <p class="side-note">Definí límites semanales por categoría para controlar desvíos.</p>
+            <form id="budgetForm" class="stacked-form">
+              <label>
+                Categoría
+                <select id="budgetCategory">
+                  <option value="Comida">Comida</option>
+                  <option value="Servicios">Servicios</option>
+                  <option value="Limpieza">Limpieza</option>
+                  <option value="Alquiler">Alquiler</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </label>
+              <label>
+                Límite semanal
+                <input id="budgetAmount" type="text" inputmode="decimal" placeholder="0,00" />
+              </label>
+              <button type="submit">Guardar presupuesto</button>
+            </form>
+            <div id="budgetList" class="budget-list"></div>
+          </article>
+
+          <article class="panel settings-panel wide-panel">
+            <div class="panel-heading">
+              <div>
+                <h2>Gastos recurrentes</h2>
+                <p>Guardá alquiler, servicios u otros gastos que se repiten.</p>
+              </div>
+            </div>
+            <form id="recurringForm" class="expense-form compact-form">
+              <label>
+                Descripción
+                <input id="recurringNote" type="text" maxlength="80" placeholder="Ej: internet" required />
+              </label>
+              <label>
+                Pagó
+                <select id="recurringPayer" required></select>
+              </label>
+              <label>
+                Categoría
+                <select id="recurringCategory" required>
+                  <option value="Comida">Comida</option>
+                  <option value="Servicios">Servicios</option>
+                  <option value="Limpieza">Limpieza</option>
+                  <option value="Alquiler">Alquiler</option>
+                  <option value="Transporte">Transporte</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </label>
+              <label>
+                Monto
+                <input id="recurringAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+              </label>
+              <label>
+                Frecuencia
+                <select id="recurringFrequency">
+                  <option value="weekly">Semanal</option>
+                  <option value="monthly">Mensual</option>
+                </select>
+              </label>
+              <button type="submit">Guardar recurrente</button>
+            </form>
+            <div id="recurringList" class="recurring-list"></div>
+          </article>
+
+          <article class="panel data-panel wide-panel" aria-label="Respaldo de datos">
+            <div class="panel-heading">
+              <div>
+                <h2>Datos y respaldo</h2>
+                <p>Guardá una copia para mover tus gastos entre computadoras o restaurarlos cuando haga falta.</p>
+              </div>
+              <div class="table-actions">
+                <button id="exportBackupButton" type="button">Exportar backup</button>
+                <label class="file-picker secondary">
+                  Importar backup
+                  <input id="importBackupInput" type="file" accept="application/json,.json" />
+                </label>
+              </div>
+            </div>
+            <p id="backupStatus" class="inline-status" aria-live="polite"></p>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script type="module">
+      import * as pdfjsLib from "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs";
+      pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+      window.pdfjsLib = pdfjsLib;
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
