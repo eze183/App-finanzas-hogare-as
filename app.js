@@ -55,6 +55,7 @@ const ignoredStatementKeywords = [
 ];
 const defaultState = {
   people: ["Persona 1", "Persona 2"],
+  deviceOwner: "Persona 1",
   expenses: [],
   personalExpenses: [],
   settlements: [],
@@ -65,8 +66,8 @@ const defaultState = {
 const elements = {
   weekStart: document.querySelector("#weekStart"),
   currentWeekButton: document.querySelector("#currentWeekButton"),
-  dailyViewButton: document.querySelector("#dailyViewButton"),
-  settingsViewButton: document.querySelector("#settingsViewButton"),
+  settingsOpenButton: document.querySelector("#settingsOpenButton"),
+  settingsCloseButton: document.querySelector("#settingsCloseButton"),
   dailyView: document.querySelector("#dailyView"),
   settingsView: document.querySelector("#settingsView"),
   exportBackupButton: document.querySelector("#exportBackupButton"),
@@ -75,6 +76,9 @@ const elements = {
   peopleForm: document.querySelector("#peopleForm"),
   personAInput: document.querySelector("#personAInput"),
   personBInput: document.querySelector("#personBInput"),
+  deviceOwnerSelect: document.querySelector("#deviceOwnerSelect"),
+  commonPayerLabel: document.querySelector("#commonPayerLabel"),
+  personalOwnerLabel: document.querySelector("#personalOwnerLabel"),
   personANameSummary: document.querySelector("#personANameSummary"),
   personBNameSummary: document.querySelector("#personBNameSummary"),
   totalAmount: document.querySelector("#totalAmount"),
@@ -150,7 +154,6 @@ const elements = {
 
 let state = loadState();
 let chartType = "bar";
-let currentMainView = "daily";
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -169,6 +172,7 @@ function loadState() {
 
     return normalizeState({
       people: Array.isArray(saved.people) && saved.people.length === 2 ? saved.people : defaultState.people,
+      deviceOwner: saved.deviceOwner || saved.people?.[0] || defaultState.deviceOwner,
       expenses: Array.isArray(saved.expenses) ? saved.expenses : [],
       personalExpenses: Array.isArray(saved.personalExpenses) ? saved.personalExpenses : [],
       settlements: Array.isArray(saved.settlements) ? saved.settlements : [],
@@ -183,6 +187,8 @@ function loadState() {
 function normalizeState(value) {
   return {
     people: Array.isArray(value.people) && value.people.length === 2 ? value.people : [...defaultState.people],
+    deviceOwner:
+      Array.isArray(value.people) && value.people.includes(value.deviceOwner) ? value.deviceOwner : value.people?.[0] || defaultState.deviceOwner,
     expenses: Array.isArray(value.expenses) ? value.expenses.map(normalizeExpense).filter(Boolean) : [],
     personalExpenses: Array.isArray(value.personalExpenses)
       ? value.personalExpenses.map(normalizePersonalExpense).filter(Boolean)
@@ -347,6 +353,10 @@ function formatMoney(amount) {
   return moneyFormatter.format(amount || 0);
 }
 
+function getDeviceOwner() {
+  return state.people.includes(state.deviceOwner) ? state.deviceOwner : state.people[0];
+}
+
 function formatUsd(amount) {
   return `USD ${Number(amount || 0).toLocaleString("es-AR", {
     minimumFractionDigits: 2,
@@ -368,18 +378,25 @@ function parseAmountInput(value) {
 
 function renderPeople() {
   const [personA, personB] = state.people;
+  const deviceOwner = getDeviceOwner();
   elements.personAInput.value = personA;
   elements.personBInput.value = personB;
+  elements.commonPayerLabel.textContent = deviceOwner;
+  elements.personalOwnerLabel.textContent = deviceOwner;
   elements.personANameSummary.textContent = `${personA} pagó`;
   elements.personBNameSummary.textContent = `${personB} pagó`;
 
-  elements.expensePayer.innerHTML = state.people
+  const peopleOptions = state.people
     .map((person) => `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`)
     .join("");
+  elements.expensePayer.innerHTML = peopleOptions;
+  elements.deviceOwnerSelect.innerHTML = peopleOptions;
+  elements.deviceOwnerSelect.value = deviceOwner;
 
   elements.recurringPayer.innerHTML = elements.expensePayer.innerHTML;
+  elements.expensePayer.value = deviceOwner;
   if (!elements.personalExpenseOwner.value) {
-    elements.personalExpenseOwner.value = personA;
+    elements.personalExpenseOwner.value = deviceOwner;
   }
   elements.filterPayer.innerHTML = [
     `<option value="">Todas</option>`,
@@ -1160,7 +1177,7 @@ function detectStatementOwner(text) {
     }
   }
 
-  return state.people[0];
+  return getDeviceOwner();
 }
 
 function titleCaseName(value) {
@@ -1238,7 +1255,7 @@ function renderStatementReview(result) {
     <p class="statement-note">Se van a cargar en la semana seleccionada: ${escapeHtml(elements.weekRangeLabel.textContent || getSelectedWeekKey())}. La fecha original queda guardada en la descripción.</p>
     <label class="statement-rate">
       Titular detectado
-      <input id="statementOwnerInput" type="text" maxlength="50" value="${escapeHtml(result.owner || state.people[0])}" />
+      <input id="statementOwnerInput" type="text" maxlength="50" value="${escapeHtml(result.owner || getDeviceOwner())}" />
     </label>
     ${
       hasUsd
@@ -1319,7 +1336,7 @@ function handleStatementReviewClick(event) {
     return;
   }
 
-  const payer = elements.expensePayer.value || state.people[0];
+  const payer = elements.expensePayer.value || getDeviceOwner();
   const owner = elements.statementReview.querySelector("#statementOwnerInput")?.value.trim() || payer;
   const now = Date.now();
   const importDate = getSelectedWeekKey();
@@ -1503,7 +1520,7 @@ function fillExpenseFromVoice(transcript) {
   if (parsed.isPersonal) {
     setEntryMode("personal");
     elements.personalExpenseDate.value = getSelectedWeekKey();
-    elements.personalExpenseOwner.value = parsed.person || elements.personalExpenseOwner.value || state.people[0];
+    elements.personalExpenseOwner.value = parsed.person || elements.personalExpenseOwner.value || getDeviceOwner();
     if (parsed.category) setSelectValueIfAvailable(elements.personalExpenseCategory, parsed.category);
     if (parsed.amount) elements.personalExpenseAmount.value = parsed.amount.toFixed(2);
     if (parsed.note) elements.personalExpenseNote.value = parsed.note;
@@ -1799,6 +1816,7 @@ function handlePeopleSubmit(event) {
   event.preventDefault();
   const personA = elements.personAInput.value.trim();
   const personB = elements.personBInput.value.trim();
+  const selectedDeviceOwner = elements.deviceOwnerSelect.value;
 
   if (!personA || !personB || personA === personB) {
     alert("Cargá dos nombres distintos.");
@@ -1806,7 +1824,10 @@ function handlePeopleSubmit(event) {
   }
 
   const previousPeople = state.people;
+  const previousDeviceOwnerIndex = previousPeople.indexOf(state.deviceOwner);
   state.people = [personA, personB];
+  state.deviceOwner =
+    selectedDeviceOwner === previousPeople[1] || previousDeviceOwnerIndex === 1 ? personB : personA;
   state.expenses = state.expenses.map((expense) => {
     if (expense.payer === previousPeople[0]) return { ...expense, payer: personA };
     if (expense.payer === previousPeople[1]) return { ...expense, payer: personB };
@@ -1824,13 +1845,17 @@ function handlePeopleSubmit(event) {
   });
 
   saveState();
+  elements.expensePayer.value = getDeviceOwner();
+  elements.personalExpenseOwner.value = getDeviceOwner();
   render();
+  closeSettings();
 }
 
 function handleExpenseSubmit(event) {
   event.preventDefault();
   const amount = parseAmountInput(elements.expenseAmount.value);
   const expenseDate = elements.expenseDate.value || toISODate(new Date());
+  const payer = elements.expensePayer.value || getDeviceOwner();
 
   if (!Number.isFinite(amount) || amount <= 0) {
     alert("El monto tiene que ser mayor que cero.");
@@ -1840,7 +1865,7 @@ function handleExpenseSubmit(event) {
   state.expenses.push({
     id: createId(),
     date: expenseDate,
-    payer: elements.expensePayer.value,
+    payer,
     category: elements.expenseCategory.value,
     paymentMethod: elements.expensePaymentMethod.value,
     amount,
@@ -1851,6 +1876,7 @@ function handleExpenseSubmit(event) {
   saveState();
   elements.expenseForm.reset();
   elements.expenseDate.value = toISODate(new Date());
+  elements.expensePayer.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
   render();
@@ -1861,7 +1887,7 @@ function handlePersonalExpenseSubmit(event) {
   event.preventDefault();
   const amount = parseAmountInput(elements.personalExpenseAmount.value);
   const expenseDate = elements.personalExpenseDate.value || getSelectedWeekKey();
-  const owner = elements.personalExpenseOwner.value.trim();
+  const owner = elements.personalExpenseOwner.value.trim() || getDeviceOwner();
 
   if (!owner) {
     alert("Indicá para quién es el gasto personal.");
@@ -1887,7 +1913,7 @@ function handlePersonalExpenseSubmit(event) {
   saveState();
   elements.personalExpenseForm.reset();
   elements.personalExpenseDate.value = getSelectedWeekKey();
-  elements.personalExpenseOwner.value = owner;
+  elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   render();
   elements.personalExpenseAmount.focus();
@@ -1901,14 +1927,24 @@ function setEntryMode(mode) {
   elements.personalExpenseSection.classList.toggle("is-hidden", !isPersonal);
 }
 
-function setMainView(view) {
-  currentMainView = view === "settings" ? "settings" : "daily";
-  const isSettings = currentMainView === "settings";
+function openSettings() {
+  elements.settingsView.classList.remove("is-hidden");
+  elements.settingsOpenButton.setAttribute("aria-expanded", "true");
+}
 
-  elements.dailyViewButton.classList.toggle("is-active", !isSettings);
-  elements.settingsViewButton.classList.toggle("is-active", isSettings);
-  elements.dailyView.classList.toggle("is-hidden", isSettings);
-  elements.settingsView.classList.toggle("is-hidden", !isSettings);
+function closeSettings() {
+  elements.settingsView.classList.add("is-hidden");
+  elements.settingsOpenButton.setAttribute("aria-expanded", "false");
+}
+
+function handleSettingsOverlayClick(event) {
+  if (event.target === elements.settingsView) closeSettings();
+}
+
+function handleGlobalKeydown(event) {
+  if (event.key === "Escape" && !elements.settingsView.classList.contains("is-hidden")) {
+    closeSettings();
+  }
 }
 
 function handleBudgetSubmit(event) {
@@ -2178,8 +2214,10 @@ function init() {
 
   elements.exportBackupButton.addEventListener("click", handleExportBackup);
   elements.importBackupInput.addEventListener("change", handleImportBackup);
-  elements.dailyViewButton.addEventListener("click", () => setMainView("daily"));
-  elements.settingsViewButton.addEventListener("click", () => setMainView("settings"));
+  elements.settingsOpenButton.addEventListener("click", openSettings);
+  elements.settingsCloseButton.addEventListener("click", closeSettings);
+  elements.settingsView.addEventListener("click", handleSettingsOverlayClick);
+  window.addEventListener("keydown", handleGlobalKeydown);
   elements.peopleForm.addEventListener("submit", handlePeopleSubmit);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
@@ -2221,7 +2259,7 @@ function init() {
   });
   window.addEventListener("resize", render);
 
-  setMainView(currentMainView);
+  closeSettings();
   setupVoiceExpenseCapture();
   render();
 }

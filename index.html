@@ -24,10 +24,11 @@
         </div>
       </section>
 
-      <nav class="main-tabs" aria-label="Secciones principales">
-        <button id="dailyViewButton" class="is-active" type="button">Carga semanal</button>
-        <button id="settingsViewButton" type="button">Configuración</button>
-      </nav>
+      <div class="top-actions" aria-label="Acciones de la aplicación">
+        <button id="settingsOpenButton" class="icon-button" type="button" aria-label="Abrir configuración" title="Configuración">
+          ⚙
+        </button>
+      </div>
 
       <section id="dailyView" class="main-view">
       <section class="summary-grid" aria-label="Resumen semanal">
@@ -138,12 +139,16 @@
 
             <section id="commonExpenseSection" class="expense-mode-panel">
               <form id="expenseForm" class="expense-form">
+                <div class="form-context wide">
+                  <span>Este gasto se carga como</span>
+                  <strong id="commonPayerLabel">Persona 1</strong>
+                </div>
                 <label>
                   Fecha
                   <input id="expenseDate" type="date" required />
                 </label>
-                <label>
-                  Pagó
+                <label class="payer-override">
+                  Cambiar pagador
                   <select id="expensePayer" required></select>
                 </label>
                 <label>
@@ -180,12 +185,16 @@
 
             <section id="personalExpenseSection" class="expense-mode-panel is-hidden">
               <form id="personalExpenseForm" class="expense-form">
+                <div class="form-context wide">
+                  <span>Este gasto personal se carga para</span>
+                  <strong id="personalOwnerLabel">Persona 1</strong>
+                </div>
                 <label>
                   Fecha
                   <input id="personalExpenseDate" type="date" required />
                 </label>
-                <label>
-                  Persona
+                <label class="payer-override">
+                  Cambiar persona
                   <input id="personalExpenseOwner" type="text" maxlength="50" required />
                 </label>
                 <label>
@@ -338,11 +347,22 @@
         </section>
       </section>
 
-      <section id="settingsView" class="main-view is-hidden">
-        <section class="settings-grid">
+      <section id="settingsView" class="settings-overlay is-hidden" aria-label="Configuración">
+        <div class="settings-sheet">
+          <div class="settings-header">
+            <div>
+              <p class="eyebrow">Ajustes</p>
+              <h2>Configuración</h2>
+            </div>
+            <button id="settingsCloseButton" class="icon-button" type="button" aria-label="Cerrar configuración" title="Cerrar">
+              ×
+            </button>
+          </div>
+
+          <section class="settings-grid">
           <article class="panel settings-panel">
-            <h2>Personas</h2>
-            <p class="side-note">Estos nombres se usan en los resúmenes, formularios y filtros.</p>
+            <h2>Hogar y dispositivo</h2>
+            <p class="side-note">Definí las personas del hogar y quién usa este celular o navegador.</p>
             <form id="peopleForm" class="stacked-form">
               <label>
                 Persona 1
@@ -352,7 +372,11 @@
                 Persona 2
                 <input id="personBInput" type="text" maxlength="30" required />
               </label>
-              <button type="submit">Guardar nombres</button>
+              <label>
+                Este dispositivo es de
+                <select id="deviceOwnerSelect"></select>
+              </label>
+              <button type="submit">Guardar configuración</button>
             </form>
           </article>
 
@@ -440,6 +464,7 @@
             <p id="backupStatus" class="inline-status" aria-live="polite"></p>
           </article>
         </section>
+        </div>
       </section>
     </main>
 

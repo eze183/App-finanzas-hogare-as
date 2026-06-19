@@ -320,28 +320,87 @@ label {
   box-shadow: var(--shadow-soft);
 }
 
-.main-tabs {
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-soft);
+.top-actions {
+  display: flex;
+  justify-content: flex-end;
   margin-bottom: 18px;
-  padding: 4px;
 }
 
-.main-tabs button {
-  min-height: 38px;
-  background: transparent;
-  color: var(--muted);
-  padding: 0 18px;
+.icon-button {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-soft);
+  color: var(--accent-strong);
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0;
 }
 
-.main-tabs button.is-active,
-.main-tabs button:hover {
+.icon-button:hover {
   background: var(--accent);
   color: #07110d;
+}
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  justify-items: end;
+  background: rgba(5, 10, 8, 0.72);
+  padding: 18px;
+}
+
+.settings-sheet {
+  width: min(760px, 100%);
+  height: 100%;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+}
+
+.settings-header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.settings-header .eyebrow {
+  margin-bottom: 4px;
+}
+
+.settings-header .icon-button {
+  flex: 0 0 auto;
+  font-size: 1.6rem;
+}
+
+.settings-header + .settings-grid {
+  grid-template-columns: 1fr;
+}
+
+.settings-panel {
+  box-shadow: none;
+}
+
+.settings-panel,
+.data-panel {
+  background: var(--surface-tint);
 }
 
 .main-view {
@@ -554,6 +613,32 @@ label {
   grid-template-columns: repeat(5, minmax(118px, 1fr));
   gap: 12px;
   align-items: end;
+}
+
+.form-context {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid #2d6957;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  padding: 10px 12px;
+}
+
+.form-context span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+.form-context strong {
+  color: var(--accent-strong);
+  font-size: 0.96rem;
+}
+
+.payer-override {
+  opacity: 0.82;
 }
 
 .receipt-reader {
@@ -1042,12 +1127,17 @@ td {
     width: 100%;
   }
 
-  .main-tabs {
-    width: 100%;
-  }
-
   .expense-form {
     grid-template-columns: 1fr;
+  }
+
+  .settings-overlay {
+    padding: 10px;
+  }
+
+  .settings-sheet {
+    border-radius: 10px;
+    padding: 14px;
   }
 
   .expense-form .wide,

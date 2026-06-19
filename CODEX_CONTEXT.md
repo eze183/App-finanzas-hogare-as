@@ -70,6 +70,8 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se agrego carga de gastos por voz con el boton "Dictar gasto". Usa reconocimiento de voz del navegador para completar gastos comunes o personales antes de confirmarlos manualmente.
 - Se ajustaron las pestañas para que "Carga semanal" contenga todo lo diario, incluyendo resumen, detalle, grafico, carga y tablas. "Configuracion" queda separada de verdad.
 - Se agrego fallback escrito para la carga por voz: si el navegador bloquea el microfono, se puede escribir la frase y tocar "Interpretar" para completar el formulario.
+- Se reemplazo la pestaña visible de configuracion por un boton de engranaje. La configuracion ahora se abre como panel superpuesto con cierre por X, toque exterior o tecla Escape, pensado para uso movil.
+- Se agrego configuracion de "este dispositivo es de". Cada celular/navegador puede quedar asociado a Eze o Tami, y los gastos comunes/personales se cargan por defecto a esa persona sin elegir pagador en cada carga. El pagador sigue pudiendo cambiarse como excepcion.
 
 ### 2026-06-14
 
