@@ -76,6 +76,9 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se corrigio la edicion de nombres en configuracion: la app ya no pisa los campos Persona 1/Persona 2 mientras se estan escribiendo, evitando que se borren al abrir el teclado o cambiar el tamaño de pantalla.
 - Se reforzo la correccion de nombres para Android: mientras la configuracion esta abierta, los campos de personas se rellenan solo al abrir el panel y no se repintan con eventos de resize/teclado.
 - Se actualizo el service worker a cache `gastos-hogar-v2` con estrategia network-first para evitar que Android use una version vieja de la PWA. Se agrego `APP_FINANZAS_VERSION` para verificar la version cargada.
+- Se subio visualmente la seccion "Agregar gasto" para que aparezca antes de resumen/detalle/grafico, facilitando la carga en celular.
+- Se mejoro el dictado de gastos: ahora entiende importes como "10mil" o "10 mil", interpreta "dulce de leche" como Comida y limpia la descripcion resultante.
+- Se agregaron pestañas de listado para alternar entre "Gastos comunes" y "Gastos personales", separando mejor los gastos individuales. La PWA quedo en version `tabs-personales-v4` y cache `gastos-hogar-v4`.
 
 ### 2026-06-14
 

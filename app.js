@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-19-nombres-v2";
+const APP_VERSION = "2026-06-20-tabs-personales-v4";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -99,8 +99,12 @@ const elements = {
   expenseNote: document.querySelector("#expenseNote"),
   commonTabButton: document.querySelector("#commonTabButton"),
   personalTabButton: document.querySelector("#personalTabButton"),
+  commonRecordsTabButton: document.querySelector("#commonRecordsTabButton"),
+  personalRecordsTabButton: document.querySelector("#personalRecordsTabButton"),
   commonExpenseSection: document.querySelector("#commonExpenseSection"),
   personalExpenseSection: document.querySelector("#personalExpenseSection"),
+  commonRecordsSection: document.querySelector("#commonRecordsSection"),
+  personalRecordsSection: document.querySelector("#personalRecordsSection"),
   personalExpenseForm: document.querySelector("#personalExpenseForm"),
   personalExpenseDate: document.querySelector("#personalExpenseDate"),
   personalExpenseOwner: document.querySelector("#personalExpenseOwner"),
@@ -1572,6 +1576,12 @@ function extractVoiceAmount(text) {
     (currentText, person) => currentText.replaceAll(normalizeText(person), " "),
     text,
   );
+  const thousandsMatch = textWithoutPeople.match(/\b(\d+(?:[.,]\d+)?)\s*(mil|lucas?|k)\b/);
+  if (thousandsMatch) {
+    const baseAmount = parseAmountInput(thousandsMatch[1]);
+    if (Number.isFinite(baseAmount) && baseAmount > 0) return baseAmount * 1000;
+  }
+
   const digitMatch = textWithoutPeople.match(/\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?\b|\b\d+(?:[.,]\d{1,2})?\b/);
   if (digitMatch) {
     const parsedAmount = parseAmountInput(digitMatch[0]);
@@ -1694,7 +1704,27 @@ function parseSpanishNumberWords(text) {
 
 function detectVoiceCategory(text) {
   const categoryRules = [
-    ["Comida", ["comida", "supermercado", "verduleria", "carniceria", "almacen", "delivery", "restaurante"]],
+    [
+      "Comida",
+      [
+        "comida",
+        "supermercado",
+        "verduleria",
+        "carniceria",
+        "almacen",
+        "delivery",
+        "restaurante",
+        "dulce de leche",
+        "dulce",
+        "leche",
+        "pan",
+        "facturas",
+        "yerba",
+        "gaseosa",
+        "galletitas",
+        "queso",
+      ],
+    ],
     ["Servicios", ["servicio", "servicios", "luz", "gas", "agua", "internet", "seguro", "telefono", "streaming"]],
     ["Limpieza", ["limpieza", "lavandina", "detergente", "jabon"]],
     ["Alquiler", ["alquiler", "expensas"]],
@@ -1778,6 +1808,7 @@ function cleanVoiceNote(transcript, { amount, category, person, isPersonal }) {
   note = note.replace(/\b(comun|común|personal|gasto|gast[eé]|pagu[eé]|pag[oó]|monto|pesos?)\b/gi, " ");
   if (amount) {
     note = note.replace(new RegExp(String(Math.round(amount)).replace(/\B(?=(\d{3})+(?!\d))/g, "[.,]?"), "g"), " ");
+    note = note.replace(/\b\d+(?:[.,]\d+)?\s*(mil|lucas?|k)\b/gi, " ");
   }
   if (category) {
     note = note.replace(new RegExp(category, "gi"), " ");
@@ -1788,6 +1819,7 @@ function cleanVoiceNote(transcript, { amount, category, person, isPersonal }) {
     .split(/\s+/)
     .filter((word) => !numberWords.has(normalizeText(word)))
     .join(" ");
+  note = note.replace(/^\s*(en|por)\s+/i, " ");
 
   return note.replace(/\s+/g, " ").trim().slice(0, 100) || "Gasto dictado por voz";
 }
@@ -1890,6 +1922,7 @@ function handleExpenseSubmit(event) {
   elements.expensePayer.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
+  setRecordsMode("common");
   render();
   elements.expenseAmount.focus();
 }
@@ -1926,6 +1959,7 @@ function handlePersonalExpenseSubmit(event) {
   elements.personalExpenseDate.value = getSelectedWeekKey();
   elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
+  setRecordsMode("personal");
   render();
   elements.personalExpenseAmount.focus();
 }
@@ -1936,6 +1970,15 @@ function setEntryMode(mode) {
   elements.personalTabButton.classList.toggle("is-active", isPersonal);
   elements.commonExpenseSection.classList.toggle("is-hidden", isPersonal);
   elements.personalExpenseSection.classList.toggle("is-hidden", !isPersonal);
+  setRecordsMode(isPersonal ? "personal" : "common");
+}
+
+function setRecordsMode(mode) {
+  const isPersonal = mode === "personal";
+  elements.commonRecordsTabButton.classList.toggle("is-active", !isPersonal);
+  elements.personalRecordsTabButton.classList.toggle("is-active", isPersonal);
+  elements.commonRecordsSection.classList.toggle("is-hidden", isPersonal);
+  elements.personalRecordsSection.classList.toggle("is-hidden", !isPersonal);
 }
 
 function openSettings() {
@@ -2240,6 +2283,8 @@ function init() {
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
   elements.commonTabButton.addEventListener("click", () => setEntryMode("common"));
   elements.personalTabButton.addEventListener("click", () => setEntryMode("personal"));
+  elements.commonRecordsTabButton.addEventListener("click", () => setRecordsMode("common"));
+  elements.personalRecordsTabButton.addEventListener("click", () => setRecordsMode("personal"));
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);
   elements.voiceTextForm.addEventListener("submit", handleVoiceTextSubmit);
   elements.budgetForm.addEventListener("submit", handleBudgetSubmit);

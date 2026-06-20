@@ -243,7 +243,12 @@
           </aside>
         </section>
 
-        <section class="panel table-panel">
+        <nav class="records-tabs" aria-label="Tipo de listado de gastos">
+          <button id="commonRecordsTabButton" class="is-active" type="button">Gastos comunes</button>
+          <button id="personalRecordsTabButton" type="button">Gastos personales</button>
+        </nav>
+
+        <section id="commonRecordsSection" class="panel table-panel">
           <div class="panel-heading table-heading">
             <div>
               <h2>Gastos de la semana</h2>
@@ -310,7 +315,7 @@
           </div>
         </section>
 
-        <section class="panel table-panel">
+        <section id="personalRecordsSection" class="panel table-panel is-hidden">
           <div class="panel-heading table-heading">
             <div>
               <h2>Gastos personales de la semana</h2>
