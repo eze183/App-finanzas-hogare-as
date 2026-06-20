@@ -72,6 +72,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se agrego fallback escrito para la carga por voz: si el navegador bloquea el microfono, se puede escribir la frase y tocar "Interpretar" para completar el formulario.
 - Se reemplazo la pestaña visible de configuracion por un boton de engranaje. La configuracion ahora se abre como panel superpuesto con cierre por X, toque exterior o tecla Escape, pensado para uso movil.
 - Se agrego configuracion de "este dispositivo es de". Cada celular/navegador puede quedar asociado a Eze o Tami, y los gastos comunes/personales se cargan por defecto a esa persona sin elegir pagador en cada carga. El pagador sigue pudiendo cambiarse como excepcion.
+- Se preparo la app como PWA para Android: se agregaron `manifest.json`, `service-worker.js`, `icon.svg` y referencias en `index.html`. Para instalarla en el telefono debe publicarse por HTTPS, por ejemplo con GitHub Pages.
 
 ### 2026-06-14
 
