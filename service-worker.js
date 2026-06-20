@@ -1,4 +1,4 @@
-const CACHE_NAME = "gastos-hogar-v1";
+const CACHE_NAME = "gastos-hogar-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -28,9 +28,12 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).catch(() => caches.match("./index.html"));
-    })
+    fetch(event.request)
+      .then((response) => {
+        const responseClone = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+        return response;
+      })
+      .catch(() => caches.match(event.request).then((cachedResponse) => cachedResponse || caches.match("./index.html")))
   );
 });

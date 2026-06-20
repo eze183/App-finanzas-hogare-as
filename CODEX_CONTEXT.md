@@ -75,6 +75,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se preparo la app como PWA para Android: se agregaron `manifest.json`, `service-worker.js`, `icon.svg` y referencias en `index.html`. Para instalarla en el telefono debe publicarse por HTTPS, por ejemplo con GitHub Pages.
 - Se corrigio la edicion de nombres en configuracion: la app ya no pisa los campos Persona 1/Persona 2 mientras se estan escribiendo, evitando que se borren al abrir el teclado o cambiar el tamaño de pantalla.
 - Se reforzo la correccion de nombres para Android: mientras la configuracion esta abierta, los campos de personas se rellenan solo al abrir el panel y no se repintan con eventos de resize/teclado.
+- Se actualizo el service worker a cache `gastos-hogar-v2` con estrategia network-first para evitar que Android use una version vieja de la PWA. Se agrego `APP_FINANZAS_VERSION` para verificar la version cargada.
 
 ### 2026-06-14
 

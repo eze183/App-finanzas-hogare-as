@@ -1,4 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
+const APP_VERSION = "2026-06-19-nombres-v2";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -158,6 +159,7 @@ let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
 let statementCandidates = [];
+window.APP_FINANZAS_VERSION = APP_VERSION;
 const filters = {
   search: "",
   payer: "",
