@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-20-tabs-personales-v4";
+const APP_VERSION = "2026-06-20-categorias-comida-v6";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -11,7 +11,18 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   year: "numeric",
 });
 const chartColors = ["#2c6f5a", "#d1893d", "#5178a8", "#a84f55", "#7d679d", "#6f7f3e"];
-const categories = ["Comida", "Servicios", "Limpieza", "Alquiler", "Transporte", "Otro"];
+const categories = [
+  "Farmacia",
+  "Supermercado",
+  "Verduleria",
+  "Carniceria",
+  "Polleria/Pescaderia",
+  "Servicios",
+  "Tarjeta de credito",
+  "Combustible",
+  "Otros",
+];
+const foodCategories = new Set(["Supermercado", "Verduleria", "Carniceria", "Polleria/Pescaderia", "Comida"]);
 const sharedExpenseKeywords = [
   "seguro",
   "integrity",
@@ -549,7 +560,7 @@ function renderCategories(expenses) {
 }
 
 function renderBudgets(expenses) {
-  const weeklyTotals = getCategoryTotals(expenses);
+  const weeklyTotals = getCategoryTotals(expenses, { groupFood: false });
   const budgetEntries = categories.filter((category) => state.budgets[category]);
 
   if (!budgetEntries.length) {
@@ -602,9 +613,14 @@ function renderRecurringExpenses() {
     .join("");
 }
 
-function getCategoryTotals(expenses) {
+function getCategoryForStats(category) {
+  return foodCategories.has(category) ? "Comida" : category;
+}
+
+function getCategoryTotals(expenses, { groupFood = true } = {}) {
   return expenses.reduce((acc, expense) => {
-    acc[expense.category] = (acc[expense.category] || 0) + expense.amount;
+    const category = groupFood ? getCategoryForStats(expense.category) : expense.category;
+    acc[category] = (acc[category] || 0) + expense.amount;
     return acc;
   }, {});
 }
@@ -1214,7 +1230,7 @@ function cleanStatementDescription(value) {
 
 function inferCategoryFromStatementLine(normalizedLine, keyword) {
   if (["integrity", "cia seg la mer"].some((word) => normalizedLine.includes(word))) {
-    return "Transporte";
+    return "Combustible";
   }
 
   if (["galicia seguro", "galicia seguros"].some((word) => normalizedLine.includes(word))) {
@@ -1226,7 +1242,7 @@ function inferCategoryFromStatementLine(normalizedLine, keyword) {
   }
 
   if (["auto", "moto"].some((word) => normalizedLine.includes(word))) {
-    return "Transporte";
+    return "Combustible";
   }
 
   if (["internet", "movistar", "personal", "telecentro", "claro", "edenor", "edesur", "aysa", "metrogas"].some((word) => normalizedLine.includes(word))) {
@@ -1234,18 +1250,22 @@ function inferCategoryFromStatementLine(normalizedLine, keyword) {
   }
 
   if (normalizeText(keyword).includes("seguro")) {
-    return normalizedLine.includes("hogar") ? "Servicios" : "Transporte";
+    return normalizedLine.includes("hogar") ? "Servicios" : "Combustible";
   }
 
-  return "Otro";
+  return "Otros";
 }
 
 function inferPersonalCategoryFromStatementLine(normalizedLine) {
-  if (["farmacia", "medic", "salud"].some((word) => normalizedLine.includes(word))) return "Salud";
-  if (["ropa", "indumentaria", "zapato"].some((word) => normalizedLine.includes(word))) return "Ropa";
-  if (["resto", "bar", "cafe", "cine", "steam", "google", "capcut"].some((word) => normalizedLine.includes(word))) return "Ocio";
-  if (["super", "mercado", "kiosco"].some((word) => normalizedLine.includes(word))) return "Comida";
-  return "Otro";
+  if (["farmacia", "medic", "salud"].some((word) => normalizedLine.includes(word))) return "Farmacia";
+  if (["super", "mercado", "kiosco"].some((word) => normalizedLine.includes(word))) return "Supermercado";
+  if (["verduleria", "verdura", "fruta"].some((word) => normalizedLine.includes(word))) return "Verduleria";
+  if (["carniceria", "carne"].some((word) => normalizedLine.includes(word))) return "Carniceria";
+  if (["polleria", "pescaderia", "pollo", "pescado"].some((word) => normalizedLine.includes(word))) return "Polleria/Pescaderia";
+  if (["nafta", "combustible", "ypf", "shell", "axion"].some((word) => normalizedLine.includes(word))) return "Combustible";
+  if (["tarjeta", "visa", "mastercard", "amex"].some((word) => normalizedLine.includes(word))) return "Tarjeta de credito";
+  if (["servicio", "luz", "gas", "agua", "internet"].some((word) => normalizedLine.includes(word))) return "Servicios";
+  return "Otros";
 }
 
 function renderStatementReview(result) {
@@ -1581,6 +1601,8 @@ function extractVoiceAmount(text) {
     const baseAmount = parseAmountInput(thousandsMatch[1]);
     if (Number.isFinite(baseAmount) && baseAmount > 0) return baseAmount * 1000;
   }
+  const spokenThousands = parseSpokenThousands(textWithoutPeople);
+  if (spokenThousands) return spokenThousands;
 
   const digitMatch = textWithoutPeople.match(/\b\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{1,2})?\b|\b\d+(?:[.,]\d{1,2})?\b/);
   if (digitMatch) {
@@ -1589,6 +1611,52 @@ function extractVoiceAmount(text) {
   }
 
   return parseSpanishNumberWords(textWithoutPeople);
+}
+
+function parseSpokenThousands(text) {
+  const numberWords = {
+    un: 1,
+    uno: 1,
+    una: 1,
+    dos: 2,
+    tres: 3,
+    cuatro: 4,
+    cinco: 5,
+    seis: 6,
+    siete: 7,
+    ocho: 8,
+    nueve: 9,
+    diez: 10,
+    once: 11,
+    doce: 12,
+    trece: 13,
+    catorce: 14,
+    quince: 15,
+    dieciseis: 16,
+    diecisiete: 17,
+    dieciocho: 18,
+    diecinueve: 19,
+    veinte: 20,
+    veintiuno: 21,
+    veintidos: 22,
+    veintitres: 23,
+    veinticuatro: 24,
+    veinticinco: 25,
+    veintiseis: 26,
+    veintisiete: 27,
+    veintiocho: 28,
+    veintinueve: 29,
+    treinta: 30,
+    cuarenta: 40,
+    cincuenta: 50,
+    sesenta: 60,
+    setenta: 70,
+    ochenta: 80,
+    noventa: 90,
+  };
+  const pattern = new RegExp(`\\b(${Object.keys(numberWords).join("|")})\\s*mil\\b`);
+  const match = text.match(pattern);
+  return match ? numberWords[match[1]] * 1000 : null;
 }
 
 function parseSpanishNumberWords(text) {
@@ -1704,14 +1772,13 @@ function parseSpanishNumberWords(text) {
 
 function detectVoiceCategory(text) {
   const categoryRules = [
+    ["Farmacia", ["farmacia", "medicamento", "medicamentos", "remedio", "remedios", "salud"]],
     [
-      "Comida",
+      "Supermercado",
       [
-        "comida",
         "supermercado",
-        "verduleria",
-        "carniceria",
         "almacen",
+        "kiosco",
         "delivery",
         "restaurante",
         "dulce de leche",
@@ -1725,14 +1792,13 @@ function detectVoiceCategory(text) {
         "queso",
       ],
     ],
+    ["Verduleria", ["verduleria", "verdura", "verduras", "fruta", "frutas"]],
+    ["Carniceria", ["carniceria", "carne", "asado", "milanesa"]],
+    ["Polleria/Pescaderia", ["polleria", "pescaderia", "pollo", "pescado"]],
     ["Servicios", ["servicio", "servicios", "luz", "gas", "agua", "internet", "seguro", "telefono", "streaming"]],
-    ["Limpieza", ["limpieza", "lavandina", "detergente", "jabon"]],
-    ["Alquiler", ["alquiler", "expensas"]],
-    ["Transporte", ["transporte", "nafta", "combustible", "sube", "taxi", "uber", "peaje"]],
-    ["Salud", ["salud", "farmacia", "medico", "remedio", "prepaga"]],
-    ["Ropa", ["ropa", "zapatillas", "zapatos", "remera", "pantalon"]],
-    ["Ocio", ["ocio", "cine", "salida", "juego", "bar"]],
-    ["Otro", ["otro", "varios"]],
+    ["Tarjeta de credito", ["tarjeta", "visa", "mastercard", "resumen"]],
+    ["Combustible", ["combustible", "nafta", "gasoil", "ypf", "shell", "axion", "peaje"]],
+    ["Otros", ["otro", "otros", "varios", "ropa", "zapatillas", "cine", "bar"]],
   ];
   const match = categoryRules.find(([, words]) => words.some((word) => text.includes(word)));
   return match ? match[0] : "";
@@ -1800,6 +1866,37 @@ function cleanVoiceNote(transcript, { amount, category, person, isPersonal }) {
     "ochocientos",
     "novecientos",
     "mil",
+    "unmil",
+    "unomil",
+    "unamil",
+    "dosmil",
+    "tresmil",
+    "cuatromil",
+    "cincomil",
+    "seismil",
+    "sietemil",
+    "ochomil",
+    "nuevemil",
+    "diezmil",
+    "oncemil",
+    "docemil",
+    "trecemil",
+    "catorcemil",
+    "quincemil",
+    "dieciseismil",
+    "diecisietemil",
+    "dieciochomil",
+    "diecinuevemil",
+    "veintemil",
+    "veintiunomil",
+    "veintidosmil",
+    "veintitresmil",
+    "veinticuatromil",
+    "veinticincomil",
+    "veintiseismil",
+    "veintisietemil",
+    "veintiochomil",
+    "veintinuevemil",
     "millon",
     "millones",
     "y",
