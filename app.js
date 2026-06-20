@@ -379,8 +379,12 @@ function parseAmountInput(value) {
 function renderPeople() {
   const [personA, personB] = state.people;
   const deviceOwner = getDeviceOwner();
-  elements.personAInput.value = personA;
-  elements.personBInput.value = personB;
+  if (document.activeElement !== elements.personAInput) {
+    elements.personAInput.value = personA;
+  }
+  if (document.activeElement !== elements.personBInput) {
+    elements.personBInput.value = personB;
+  }
   elements.commonPayerLabel.textContent = deviceOwner;
   elements.personalOwnerLabel.textContent = deviceOwner;
   elements.personANameSummary.textContent = `${personA} pagó`;
@@ -390,8 +394,10 @@ function renderPeople() {
     .map((person) => `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`)
     .join("");
   elements.expensePayer.innerHTML = peopleOptions;
-  elements.deviceOwnerSelect.innerHTML = peopleOptions;
-  elements.deviceOwnerSelect.value = deviceOwner;
+  if (document.activeElement !== elements.deviceOwnerSelect) {
+    elements.deviceOwnerSelect.innerHTML = peopleOptions;
+    elements.deviceOwnerSelect.value = deviceOwner;
+  }
 
   elements.recurringPayer.innerHTML = elements.expensePayer.innerHTML;
   elements.expensePayer.value = deviceOwner;
