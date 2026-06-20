@@ -379,12 +379,6 @@ function parseAmountInput(value) {
 function renderPeople() {
   const [personA, personB] = state.people;
   const deviceOwner = getDeviceOwner();
-  if (document.activeElement !== elements.personAInput) {
-    elements.personAInput.value = personA;
-  }
-  if (document.activeElement !== elements.personBInput) {
-    elements.personBInput.value = personB;
-  }
   elements.commonPayerLabel.textContent = deviceOwner;
   elements.personalOwnerLabel.textContent = deviceOwner;
   elements.personANameSummary.textContent = `${personA} pagó`;
@@ -394,10 +388,6 @@ function renderPeople() {
     .map((person) => `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`)
     .join("");
   elements.expensePayer.innerHTML = peopleOptions;
-  if (document.activeElement !== elements.deviceOwnerSelect) {
-    elements.deviceOwnerSelect.innerHTML = peopleOptions;
-    elements.deviceOwnerSelect.value = deviceOwner;
-  }
 
   elements.recurringPayer.innerHTML = elements.expensePayer.innerHTML;
   elements.expensePayer.value = deviceOwner;
@@ -409,6 +399,19 @@ function renderPeople() {
     ...state.people.map((person) => `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`),
   ].join("");
   elements.filterPayer.value = filters.payer;
+}
+
+function populateSettingsForm() {
+  const [personA, personB] = state.people;
+  const deviceOwner = getDeviceOwner();
+  const peopleOptions = state.people
+    .map((person) => `<option value="${escapeHtml(person)}">${escapeHtml(person)}</option>`)
+    .join("");
+
+  elements.personAInput.value = personA;
+  elements.personBInput.value = personB;
+  elements.deviceOwnerSelect.innerHTML = peopleOptions;
+  elements.deviceOwnerSelect.value = deviceOwner;
 }
 
 function renderSummary(expenses) {
@@ -1934,6 +1937,7 @@ function setEntryMode(mode) {
 }
 
 function openSettings() {
+  populateSettingsForm();
   elements.settingsView.classList.remove("is-hidden");
   elements.settingsOpenButton.setAttribute("aria-expanded", "true");
 }
@@ -1951,6 +1955,11 @@ function handleGlobalKeydown(event) {
   if (event.key === "Escape" && !elements.settingsView.classList.contains("is-hidden")) {
     closeSettings();
   }
+}
+
+function handleWindowResize() {
+  if (!elements.settingsView.classList.contains("is-hidden")) return;
+  render();
 }
 
 function handleBudgetSubmit(event) {
@@ -2263,7 +2272,7 @@ function init() {
     chartType = "pie";
     render();
   });
-  window.addEventListener("resize", render);
+  window.addEventListener("resize", handleWindowResize);
 
   closeSettings();
   setupVoiceExpenseCapture();
