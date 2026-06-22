@@ -324,7 +324,31 @@ label {
 .top-actions {
   display: flex;
   justify-content: flex-end;
+  margin-bottom: 12px;
+}
+
+.app-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-soft);
   margin-bottom: 18px;
+  padding: 4px;
+}
+
+.app-tabs button {
+  min-height: 40px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+}
+
+.app-tabs button.is-active,
+.app-tabs button:hover {
+  background: var(--accent);
+  color: #07110d;
 }
 
 .icon-button {
@@ -1093,6 +1117,10 @@ td {
 }
 
 .is-hidden {
+  display: none;
+}
+
+.app-view-hidden {
   display: none;
 }
 

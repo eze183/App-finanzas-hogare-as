@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-20-categorias-comida-v6";
+const APP_VERSION = "2026-06-21-simplifica-vistas-v7";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -80,6 +80,9 @@ const elements = {
   currentWeekButton: document.querySelector("#currentWeekButton"),
   settingsOpenButton: document.querySelector("#settingsOpenButton"),
   settingsCloseButton: document.querySelector("#settingsCloseButton"),
+  loadViewButton: document.querySelector("#loadViewButton"),
+  summaryViewButton: document.querySelector("#summaryViewButton"),
+  movementsViewButton: document.querySelector("#movementsViewButton"),
   dailyView: document.querySelector("#dailyView"),
   settingsView: document.querySelector("#settingsView"),
   exportBackupButton: document.querySelector("#exportBackupButton"),
@@ -166,10 +169,14 @@ const elements = {
   chartLegend: document.querySelector("#chartLegend"),
   barChartButton: document.querySelector("#barChartButton"),
   pieChartButton: document.querySelector("#pieChartButton"),
+  loadViewSections: document.querySelectorAll(".load-view-section"),
+  summaryViewSections: document.querySelectorAll(".summary-view-section"),
+  movementsViewSections: document.querySelectorAll(".movements-view-section"),
 };
 
 let state = loadState();
 let chartType = "bar";
+let currentAppView = "load";
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -2078,6 +2085,20 @@ function setRecordsMode(mode) {
   elements.personalRecordsSection.classList.toggle("is-hidden", !isPersonal);
 }
 
+function setAppView(view) {
+  currentAppView = ["load", "summary", "movements"].includes(view) ? view : "load";
+  const isLoad = currentAppView === "load";
+  const isSummary = currentAppView === "summary";
+  const isMovements = currentAppView === "movements";
+
+  elements.loadViewButton.classList.toggle("is-active", isLoad);
+  elements.summaryViewButton.classList.toggle("is-active", isSummary);
+  elements.movementsViewButton.classList.toggle("is-active", isMovements);
+  elements.loadViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isLoad));
+  elements.summaryViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isSummary));
+  elements.movementsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isMovements));
+}
+
 function openSettings() {
   populateSettingsForm();
   elements.settingsView.classList.remove("is-hidden");
@@ -2375,6 +2396,9 @@ function init() {
   elements.settingsCloseButton.addEventListener("click", closeSettings);
   elements.settingsView.addEventListener("click", handleSettingsOverlayClick);
   window.addEventListener("keydown", handleGlobalKeydown);
+  elements.loadViewButton.addEventListener("click", () => setAppView("load"));
+  elements.summaryViewButton.addEventListener("click", () => setAppView("summary"));
+  elements.movementsViewButton.addEventListener("click", () => setAppView("movements"));
   elements.peopleForm.addEventListener("submit", handlePeopleSubmit);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
@@ -2419,6 +2443,7 @@ function init() {
   window.addEventListener("resize", handleWindowResize);
 
   closeSettings();
+  setAppView(currentAppView);
   setupVoiceExpenseCapture();
   render();
 }

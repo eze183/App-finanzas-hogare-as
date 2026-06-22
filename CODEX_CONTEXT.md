@@ -81,6 +81,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se agregaron pestañas de listado para alternar entre "Gastos comunes" y "Gastos personales", separando mejor los gastos individuales. La PWA quedo en version `tabs-personales-v4` y cache `gastos-hogar-v4`.
 - Se corrigio el dictado de importes en palabras con miles: "quince mil" y "quincemil" ahora cargan 15000 y limpian la descripcion correctamente. PWA version `voz-quince-mil-v5`, cache `gastos-hogar-v5`.
 - Se reemplazaron las categorias por Farmacia, Supermercado, Verduleria, Carniceria, Polleria/Pescaderia, Servicios, Tarjeta de credito, Combustible y Otros. En estadisticas, Supermercado/Verduleria/Carniceria/Polleria-Pescaderia se agrupan como "Comida". PWA version `categorias-comida-v6`, cache `gastos-hogar-v6`.
+- Se simplifico la navegacion principal agrupando la app en tres vistas: Cargar, Resumen y Movimientos. Cada vista muestra solo sus secciones relevantes para reducir ruido visual. PWA version `simplifica-vistas-v7`, cache `gastos-hogar-v7`.
 
 ### 2026-06-14
 
