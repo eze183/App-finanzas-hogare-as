@@ -115,6 +115,10 @@
                 <p>Subí un ticket, factura o resumen de tarjeta. La app detecta el tipo y te deja revisar antes de guardar.</p>
               </div>
               <div class="receipt-controls">
+                <label class="file-picker camera-picker">
+                  Sacar foto
+                  <input id="cameraFile" type="file" accept="image/*" capture="environment" />
+                </label>
                 <label class="file-picker">
                   Elegir archivo
                   <input id="documentFile" type="file" accept="image/*,application/pdf,text/plain,.txt,.csv" />

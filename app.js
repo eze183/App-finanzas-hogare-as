@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-21-simplifica-vistas-v7";
+const APP_VERSION = "2026-06-21-foto-ticket-v8";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -138,6 +138,7 @@ const elements = {
   recurringFrequency: document.querySelector("#recurringFrequency"),
   recurringList: document.querySelector("#recurringList"),
   applyRecurringButton: document.querySelector("#applyRecurringButton"),
+  cameraFile: document.querySelector("#cameraFile"),
   documentFile: document.querySelector("#documentFile"),
   receiptPreviewWrap: document.querySelector("#receiptPreviewWrap"),
   receiptPreview: document.querySelector("#receiptPreview"),
@@ -2413,6 +2414,7 @@ function init() {
   elements.recurringForm.addEventListener("submit", handleRecurringSubmit);
   elements.recurringList.addEventListener("click", handleRecurringListClick);
   elements.applyRecurringButton.addEventListener("click", handleApplyRecurring);
+  elements.cameraFile.addEventListener("change", handleDocumentFileChange);
   elements.documentFile.addEventListener("change", handleDocumentFileChange);
   elements.statementReview.addEventListener("click", handleStatementReviewClick);
   elements.statementReview.addEventListener("input", handleStatementReviewInput);
