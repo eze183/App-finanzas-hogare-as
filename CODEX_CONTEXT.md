@@ -83,6 +83,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se reemplazaron las categorias por Farmacia, Supermercado, Verduleria, Carniceria, Polleria/Pescaderia, Servicios, Tarjeta de credito, Combustible y Otros. En estadisticas, Supermercado/Verduleria/Carniceria/Polleria-Pescaderia se agrupan como "Comida". PWA version `categorias-comida-v6`, cache `gastos-hogar-v6`.
 - Se simplifico la navegacion principal agrupando la app en tres vistas: Cargar, Resumen y Movimientos. Cada vista muestra solo sus secciones relevantes para reducir ruido visual. PWA version `simplifica-vistas-v7`, cache `gastos-hogar-v7`.
 - Se agrego boton "Sacar foto" para tickets, usando `capture="environment"` en Android y el mismo flujo OCR/lectura de imagen existente. PWA version `foto-ticket-v8`, cache `gastos-hogar-v8`.
+- Se diferencio visualmente la seccion de gastos personales con un acento rosado/malva en botones, paneles y total personal. PWA version `color-personales-v9`, cache `gastos-hogar-v9`.
 
 ### 2026-06-14
 

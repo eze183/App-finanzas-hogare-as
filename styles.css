@@ -13,6 +13,9 @@
   --blue-soft: #17263a;
   --amber: #e3a35c;
   --amber-soft: #382717;
+  --personal: #d98faf;
+  --personal-strong: #f0aac6;
+  --personal-soft: #321d29;
   --danger: #f08a8a;
   --danger-soft: #3a1f22;
   --shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
@@ -842,8 +845,25 @@ button:disabled {
   color: #07110d;
 }
 
+#personalTabButton.is-active,
+#personalTabButton:hover,
+#personalRecordsTabButton.is-active,
+#personalRecordsTabButton:hover {
+  background: var(--personal);
+  color: #16090f;
+}
+
 .expense-mode-panel {
   display: block;
+}
+
+#personalExpenseSection .form-context {
+  border-color: #70435a;
+  background: var(--personal-soft);
+}
+
+#personalExpenseSection .form-context strong {
+  color: var(--personal-strong);
 }
 
 .statement-review {
@@ -964,9 +984,9 @@ button:disabled {
 .personal-total {
   display: grid;
   gap: 4px;
-  border: 1px solid var(--line);
+  border: 1px solid #70435a;
   border-radius: 7px;
-  background: var(--surface-tint);
+  background: var(--personal-soft);
   padding: 10px 12px;
   min-width: 180px;
 }
@@ -978,7 +998,16 @@ button:disabled {
 }
 
 .personal-total strong {
-  color: var(--accent-strong);
+  color: var(--personal-strong);
+}
+
+#personalRecordsSection {
+  border-color: #70435a;
+  background: linear-gradient(180deg, rgba(50, 29, 41, 0.76), var(--surface) 220px);
+}
+
+#personalRecordsSection th {
+  background: #1f131b;
 }
 
 .expense-form .wide {
