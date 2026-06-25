@@ -90,6 +90,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se amplio el modo visual de gastos personales: al activar personales cambia el fondo general, superficies, paneles, campos y acciones de la vista a una paleta rosada/malva. PWA version `modo-personal-v10`, cache `gastos-hogar-v10`.
 - Se reforzo el modo visual de gastos personales aplicando la clase de tema a `html`, `body` y al contenedor principal, con reglas especificas para fondo general, paneles, pestañas, formularios y botones. Se verifico en vista movil que "Personales" use la paleta malva completa. PWA version `modo-personal-v11`, cache `gastos-hogar-v11`.
 - Se preparo una prueba de sincronizacion con Supabase: se agrego `supabase-config.js`, `supabase-setup.sql`, carga de Supabase por CDN, botones "Traer de Supabase" y "Subir a Supabase", y guardado automatico remoto si esta configurado. El campo `deviceOwner` queda local por dispositivo y no se sincroniza. Se ejecuto el SQL en Supabase y se configuraron URL/publishable key. PWA version `supabase-v12`, cache `gastos-hogar-v12`.
+- Se reforzo la sincronizacion con Supabase: la app ahora consulta cambios remotos cada 15 segundos, al volver al frente y al recuperar foco. Tambien evita que un pull remoto dispare una subida silenciosa innecesaria. PWA version `supabase-auto-v13`, cache `gastos-hogar-v13`.
 
 ### 2026-06-14
 

@@ -1,6 +1,7 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-25-supabase-v12";
+const APP_VERSION = "2026-06-25-supabase-auto-v13";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
+const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -190,6 +191,8 @@ let statementCandidates = [];
 let supabaseClient = null;
 let isApplyingRemoteState = false;
 let cloudSaveTimer = null;
+let cloudPullTimer = null;
+let lastCloudUpdatedAt = "";
 window.APP_FINANZAS_VERSION = APP_VERSION;
 const filters = {
   search: "",
@@ -323,7 +326,7 @@ function applyCloudState(remoteData) {
     ...remoteData,
     deviceOwner: localDeviceOwner,
   });
-  saveState();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
 }
 
@@ -346,6 +349,15 @@ function queueCloudSave() {
   }, 900);
 }
 
+function startCloudAutoPull() {
+  clearInterval(cloudPullTimer);
+  cloudPullTimer = setInterval(() => {
+    if (document.visibilityState === "visible") {
+      pullStateFromSupabase({ silent: true });
+    }
+  }, CLOUD_PULL_INTERVAL_MS);
+}
+
 async function initSupabaseSync() {
   const config = getSupabaseConfig();
   if (!config.isConfigured) {
@@ -365,17 +377,18 @@ async function initSupabaseSync() {
   setSyncStatus("Conectando con Supabase...", "");
 
   await pullStateFromSupabase({ createIfMissing: true });
+  startCloudAutoPull();
 }
 
-async function pullStateFromSupabase({ createIfMissing = false } = {}) {
+async function pullStateFromSupabase({ createIfMissing = false, silent = false } = {}) {
   const config = getSupabaseConfig();
   if (!supabaseClient || !config.isConfigured) {
-    setSyncStatus("Configurá Supabase antes de sincronizar.", "error");
+    if (!silent) setSyncStatus("Configurá Supabase antes de sincronizar.", "error");
     return;
   }
 
   try {
-    setSyncStatus("Trayendo datos de Supabase...", "");
+    if (!silent) setSyncStatus("Trayendo datos de Supabase...", "");
     const { data, error } = await supabaseClient
       .from("app_state")
       .select("data, updated_at")
@@ -391,16 +404,19 @@ async function pullStateFromSupabase({ createIfMissing = false } = {}) {
         return;
       }
 
-      setSyncStatus("No hay datos guardados en Supabase todavía.", "");
+      if (!silent) setSyncStatus("No hay datos guardados en Supabase todavía.", "");
       return;
     }
 
+    if (silent && data.updated_at && data.updated_at === lastCloudUpdatedAt) return;
+
     isApplyingRemoteState = true;
     applyCloudState(data.data);
+    lastCloudUpdatedAt = data.updated_at || lastCloudUpdatedAt;
     setSyncStatus(`Datos actualizados desde Supabase${data.updated_at ? ` (${new Date(data.updated_at).toLocaleString("es-AR")})` : ""}.`, "success");
   } catch (error) {
     console.error(error);
-    setSyncStatus("No pude traer datos de Supabase. Revisá la tabla y las credenciales.", "error");
+    if (!silent) setSyncStatus("No pude traer datos de Supabase. Revisá la tabla y las credenciales.", "error");
   } finally {
     isApplyingRemoteState = false;
   }
@@ -422,7 +438,9 @@ async function pushStateToSupabase({ silent = false } = {}) {
     });
 
     if (error) throw error;
+    const nowLabel = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     if (!silent) setSyncStatus("Datos subidos a Supabase.", "success");
+    if (silent) setSyncStatus(`Sincronizado con Supabase ${nowLabel}.`, "success");
   } catch (error) {
     console.error(error);
     if (!silent) setSyncStatus("No pude subir datos a Supabase. Revisá permisos de la tabla.", "error");
@@ -2587,6 +2605,12 @@ async function init() {
     render();
   });
   window.addEventListener("resize", handleWindowResize);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+      pullStateFromSupabase({ silent: true });
+    }
+  });
+  window.addEventListener("focus", () => pullStateFromSupabase({ silent: true }));
 
   closeSettings();
   setAppView(currentAppView);
