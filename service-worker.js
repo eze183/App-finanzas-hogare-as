@@ -1,9 +1,10 @@
-const CACHE_NAME = "gastos-hogar-v11";
+const CACHE_NAME = "gastos-hogar-v12";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./supabase-config.js",
   "./manifest.json",
   "./icon.svg"
 ];

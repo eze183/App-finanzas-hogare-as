@@ -1,5 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-25-modo-personal-v11";
+const APP_VERSION = "2026-06-25-supabase-v12";
+const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -88,6 +89,9 @@ const elements = {
   exportBackupButton: document.querySelector("#exportBackupButton"),
   importBackupInput: document.querySelector("#importBackupInput"),
   backupStatus: document.querySelector("#backupStatus"),
+  syncPullButton: document.querySelector("#syncPullButton"),
+  syncPushButton: document.querySelector("#syncPushButton"),
+  syncStatus: document.querySelector("#syncStatus"),
   peopleForm: document.querySelector("#peopleForm"),
   personAInput: document.querySelector("#personAInput"),
   personBInput: document.querySelector("#personBInput"),
@@ -183,6 +187,9 @@ let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
 let statementCandidates = [];
+let supabaseClient = null;
+let isApplyingRemoteState = false;
+let cloudSaveTimer = null;
 window.APP_FINANZAS_VERSION = APP_VERSION;
 const filters = {
   search: "",
@@ -289,6 +296,137 @@ function sanitizeBudgets(budgets) {
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  queueCloudSave();
+}
+
+function getSupabaseConfig() {
+  const config = window.SUPABASE_CONFIG || {};
+  const url = typeof config.url === "string" ? config.url.trim() : "";
+  const anonKey = typeof config.anonKey === "string" ? config.anonKey.trim() : "";
+  const stateId = typeof config.stateId === "string" && config.stateId.trim() ? config.stateId.trim() : DEFAULT_SUPABASE_STATE_ID;
+
+  if (!url || !anonKey || url.includes("TU-PROYECTO") || anonKey.includes("TU-ANON-KEY")) {
+    return { isConfigured: false, url, anonKey, stateId };
+  }
+
+  return { isConfigured: true, url, anonKey, stateId };
+}
+
+function getCloudStatePayload() {
+  const { deviceOwner, ...sharedState } = normalizeState(state);
+  return sharedState;
+}
+
+function applyCloudState(remoteData) {
+  const localDeviceOwner = state.deviceOwner;
+  state = normalizeState({
+    ...remoteData,
+    deviceOwner: localDeviceOwner,
+  });
+  saveState();
+  render();
+}
+
+function setSyncStatus(message, tone = "") {
+  elements.syncStatus.textContent = message;
+  elements.syncStatus.className = `inline-status ${tone}`.trim();
+}
+
+function setSyncButtonsEnabled(isEnabled) {
+  elements.syncPullButton.disabled = !isEnabled;
+  elements.syncPushButton.disabled = !isEnabled;
+}
+
+function queueCloudSave() {
+  if (!supabaseClient || isApplyingRemoteState) return;
+
+  clearTimeout(cloudSaveTimer);
+  cloudSaveTimer = setTimeout(() => {
+    pushStateToSupabase({ silent: true });
+  }, 900);
+}
+
+async function initSupabaseSync() {
+  const config = getSupabaseConfig();
+  if (!config.isConfigured) {
+    setSyncButtonsEnabled(false);
+    setSyncStatus("Supabase todavía no está configurado en la app.", "");
+    return;
+  }
+
+  if (!window.supabase?.createClient) {
+    setSyncButtonsEnabled(false);
+    setSyncStatus("No pude cargar Supabase. Revisá la conexión a internet.", "error");
+    return;
+  }
+
+  supabaseClient = window.supabase.createClient(config.url, config.anonKey);
+  setSyncButtonsEnabled(true);
+  setSyncStatus("Conectando con Supabase...", "");
+
+  await pullStateFromSupabase({ createIfMissing: true });
+}
+
+async function pullStateFromSupabase({ createIfMissing = false } = {}) {
+  const config = getSupabaseConfig();
+  if (!supabaseClient || !config.isConfigured) {
+    setSyncStatus("Configurá Supabase antes de sincronizar.", "error");
+    return;
+  }
+
+  try {
+    setSyncStatus("Trayendo datos de Supabase...", "");
+    const { data, error } = await supabaseClient
+      .from("app_state")
+      .select("data, updated_at")
+      .eq("id", config.stateId)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data?.data) {
+      if (createIfMissing) {
+        await pushStateToSupabase({ silent: true });
+        setSyncStatus("Supabase conectado. Subí los datos locales como primera copia.", "success");
+        return;
+      }
+
+      setSyncStatus("No hay datos guardados en Supabase todavía.", "");
+      return;
+    }
+
+    isApplyingRemoteState = true;
+    applyCloudState(data.data);
+    setSyncStatus(`Datos actualizados desde Supabase${data.updated_at ? ` (${new Date(data.updated_at).toLocaleString("es-AR")})` : ""}.`, "success");
+  } catch (error) {
+    console.error(error);
+    setSyncStatus("No pude traer datos de Supabase. Revisá la tabla y las credenciales.", "error");
+  } finally {
+    isApplyingRemoteState = false;
+  }
+}
+
+async function pushStateToSupabase({ silent = false } = {}) {
+  const config = getSupabaseConfig();
+  if (!supabaseClient || !config.isConfigured) {
+    if (!silent) setSyncStatus("Configurá Supabase antes de subir datos.", "error");
+    return;
+  }
+
+  try {
+    if (!silent) setSyncStatus("Subiendo datos a Supabase...", "");
+    const { error } = await supabaseClient.from("app_state").upsert({
+      id: config.stateId,
+      data: getCloudStatePayload(),
+      updated_at: new Date().toISOString(),
+    });
+
+    if (error) throw error;
+    if (!silent) setSyncStatus("Datos subidos a Supabase.", "success");
+  } catch (error) {
+    console.error(error);
+    if (!silent) setSyncStatus("No pude subir datos a Supabase. Revisá permisos de la tabla.", "error");
+  }
 }
 
 function toISODate(date) {
@@ -2390,13 +2528,15 @@ function handleExport() {
   URL.revokeObjectURL(url);
 }
 
-function init() {
+async function init() {
   elements.weekStart.value = toISODate(getWeekStart());
   elements.expenseDate.value = toISODate(new Date());
   elements.personalExpenseDate.value = getSelectedWeekKey();
 
   elements.exportBackupButton.addEventListener("click", handleExportBackup);
   elements.importBackupInput.addEventListener("change", handleImportBackup);
+  elements.syncPullButton.addEventListener("click", () => pullStateFromSupabase());
+  elements.syncPushButton.addEventListener("click", () => pushStateToSupabase());
   elements.settingsOpenButton.addEventListener("click", openSettings);
   elements.settingsCloseButton.addEventListener("click", closeSettings);
   elements.settingsView.addEventListener("click", handleSettingsOverlayClick);
@@ -2452,6 +2592,7 @@ function init() {
   setAppView(currentAppView);
   setupVoiceExpenseCapture();
   render();
+  await initSupabaseSync();
 }
 
 init();

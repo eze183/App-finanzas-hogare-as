@@ -485,9 +485,11 @@
             <div class="panel-heading">
               <div>
                 <h2>Datos y respaldo</h2>
-                <p>Guardá una copia para mover tus gastos entre computadoras o restaurarlos cuando haga falta.</p>
+                <p>Guardá una copia o sincronizá los gastos entre celulares con Supabase.</p>
               </div>
               <div class="table-actions">
+                <button id="syncPullButton" type="button">Traer de Supabase</button>
+                <button id="syncPushButton" type="button">Subir a Supabase</button>
                 <button id="exportBackupButton" type="button">Exportar backup</button>
                 <label class="file-picker secondary">
                   Importar backup
@@ -495,6 +497,7 @@
                 </label>
               </div>
             </div>
+            <p id="syncStatus" class="inline-status" aria-live="polite"></p>
             <p id="backupStatus" class="inline-status" aria-live="polite"></p>
           </article>
         </section>
@@ -508,6 +511,8 @@
       window.pdfjsLib = pdfjsLib;
     </script>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="./supabase-config.js"></script>
     <script src="./app.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
