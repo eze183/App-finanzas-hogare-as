@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-25-color-personales-v9";
+const APP_VERSION = "2026-06-25-modo-personal-v10";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -2080,6 +2080,7 @@ function setEntryMode(mode) {
 
 function setRecordsMode(mode) {
   const isPersonal = mode === "personal";
+  document.body.classList.toggle("personal-mode", isPersonal);
   elements.commonRecordsTabButton.classList.toggle("is-active", !isPersonal);
   elements.personalRecordsTabButton.classList.toggle("is-active", isPersonal);
   elements.commonRecordsSection.classList.toggle("is-hidden", isPersonal);
