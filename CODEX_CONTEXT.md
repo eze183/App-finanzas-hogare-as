@@ -85,6 +85,7 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 - Se agrego boton "Sacar foto" para tickets, usando `capture="environment"` en Android y el mismo flujo OCR/lectura de imagen existente. PWA version `foto-ticket-v8`, cache `gastos-hogar-v8`.
 - Se diferencio visualmente la seccion de gastos personales con un acento rosado/malva en botones, paneles y total personal. PWA version `color-personales-v9`, cache `gastos-hogar-v9`.
 - Se amplio el modo visual de gastos personales: al activar personales cambia el fondo general, superficies, paneles, campos y acciones de la vista a una paleta rosada/malva. PWA version `modo-personal-v10`, cache `gastos-hogar-v10`.
+- Se reforzo el modo visual de gastos personales aplicando la clase de tema a `html`, `body` y al contenedor principal, con reglas especificas para fondo general, paneles, pestañas, formularios y botones. Se verifico en vista movil que "Personales" use la paleta malva completa. PWA version `modo-personal-v11`, cache `gastos-hogar-v11`.
 
 ### 2026-06-14
 

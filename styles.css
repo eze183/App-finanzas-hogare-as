@@ -47,7 +47,9 @@ body::before {
     repeating-linear-gradient(90deg, rgba(238, 247, 242, 0.025) 0 1px, transparent 1px 72px);
 }
 
-body.personal-mode {
+html.personal-mode,
+body.personal-mode,
+.app-shell.personal-mode {
   --bg: #150d12;
   --surface: #21151d;
   --surface-soft: #2b1b25;
@@ -58,14 +60,23 @@ body.personal-mode {
   --accent-soft: #321d29;
   --blue: #f0aac6;
   --blue-soft: #321d29;
-  background: var(--bg);
 }
 
+html.personal-mode,
+body.personal-mode {
+  background: #150d12;
+}
+
+html.personal-mode body::before,
 body.personal-mode::before {
   background:
     radial-gradient(circle at top right, rgba(217, 143, 175, 0.18), transparent 340px),
     linear-gradient(180deg, rgba(41, 24, 34, 0.94), rgba(21, 13, 18, 0) 300px),
     repeating-linear-gradient(90deg, rgba(240, 170, 198, 0.035) 0 1px, transparent 1px 72px);
+}
+
+.app-shell.personal-mode {
+  color: var(--ink);
 }
 
 button,
@@ -1039,22 +1050,32 @@ body.personal-mode #commonRecordsTabButton {
 
 body.personal-mode .panel,
 body.personal-mode .summary-card,
-body.personal-mode .week-card {
+.app-shell.personal-mode .panel,
+.app-shell.personal-mode .summary-card,
+body.personal-mode .week-card,
+.app-shell.personal-mode .week-card {
   border-color: #513348;
-  background: var(--surface);
+  background: #21151d;
 }
 
 body.personal-mode .table-wrap,
 body.personal-mode .filter-bar,
 body.personal-mode .receipt-reader,
 body.personal-mode .voice-reader,
-body.personal-mode .statement-review {
+.app-shell.personal-mode .table-wrap,
+.app-shell.personal-mode .filter-bar,
+.app-shell.personal-mode .receipt-reader,
+.app-shell.personal-mode .voice-reader,
+body.personal-mode .statement-review,
+.app-shell.personal-mode .statement-review {
   border-color: #513348;
-  background: var(--surface-tint);
+  background: #180f15;
 }
 
 body.personal-mode input,
-body.personal-mode select {
+.app-shell.personal-mode input,
+body.personal-mode select,
+.app-shell.personal-mode select {
   border-color: #513348;
   background: #160d12;
 }
@@ -1068,9 +1089,13 @@ body.personal-mode select:focus {
 body.personal-mode .app-tabs,
 body.personal-mode .entry-tabs,
 body.personal-mode .records-tabs,
-body.personal-mode .chart-toggle {
+.app-shell.personal-mode .app-tabs,
+.app-shell.personal-mode .entry-tabs,
+.app-shell.personal-mode .records-tabs,
+body.personal-mode .chart-toggle,
+.app-shell.personal-mode .chart-toggle {
   border-color: #513348;
-  background: var(--surface-soft);
+  background: #2b1b25;
 }
 
 body.personal-mode .app-tabs button.is-active,
@@ -1103,9 +1128,125 @@ body.personal-mode .file-picker:hover {
 body.personal-mode .category-row,
 body.personal-mode .breakdown-item,
 body.personal-mode .metric-row,
-body.personal-mode .history-item {
+.app-shell.personal-mode .category-row,
+.app-shell.personal-mode .breakdown-item,
+.app-shell.personal-mode .metric-row,
+body.personal-mode .history-item,
+.app-shell.personal-mode .history-item {
   border-color: #513348;
-  background: var(--surface-tint);
+  background: #180f15;
+}
+
+html.personal-mode .hero,
+.app-shell.personal-mode .hero {
+  border-bottom-color: #4a2e40;
+}
+
+html.personal-mode .eyebrow,
+.app-shell.personal-mode .eyebrow {
+  color: #f0aac6;
+}
+
+html.personal-mode .week-card,
+html.personal-mode .panel,
+html.personal-mode .summary-card,
+.app-shell.personal-mode .week-card,
+.app-shell.personal-mode .panel,
+.app-shell.personal-mode .summary-card {
+  border-color: #70435a;
+  background: linear-gradient(180deg, #261822, #1d1219);
+  box-shadow: 0 18px 44px rgba(64, 22, 43, 0.34);
+}
+
+html.personal-mode .data-panel,
+html.personal-mode .settings-panel,
+html.personal-mode .category-panel,
+.app-shell.personal-mode .data-panel,
+.app-shell.personal-mode .settings-panel,
+.app-shell.personal-mode .category-panel {
+  background: #180f15;
+}
+
+html.personal-mode .app-tabs,
+html.personal-mode .entry-tabs,
+html.personal-mode .records-tabs,
+html.personal-mode .chart-toggle,
+.app-shell.personal-mode .app-tabs,
+.app-shell.personal-mode .entry-tabs,
+.app-shell.personal-mode .records-tabs,
+.app-shell.personal-mode .chart-toggle {
+  border-color: #754862;
+  background: #321d29;
+}
+
+html.personal-mode .receipt-reader,
+html.personal-mode .voice-reader,
+html.personal-mode .statement-review,
+html.personal-mode .filter-bar,
+html.personal-mode .table-wrap,
+html.personal-mode .form-context,
+.app-shell.personal-mode .receipt-reader,
+.app-shell.personal-mode .voice-reader,
+.app-shell.personal-mode .statement-review,
+.app-shell.personal-mode .filter-bar,
+.app-shell.personal-mode .table-wrap,
+.app-shell.personal-mode .form-context {
+  border-color: #70435a;
+  background: #170d13;
+}
+
+html.personal-mode input,
+html.personal-mode select,
+.app-shell.personal-mode input,
+.app-shell.personal-mode select {
+  border-color: #70435a;
+  background: #12090f;
+}
+
+html.personal-mode .app-tabs button.is-active,
+html.personal-mode .entry-tabs button.is-active,
+html.personal-mode .records-tabs button.is-active,
+.app-shell.personal-mode .app-tabs button.is-active,
+.app-shell.personal-mode .entry-tabs button.is-active,
+.app-shell.personal-mode .records-tabs button.is-active,
+html.personal-mode #personalTabButton.is-active,
+html.personal-mode #personalRecordsTabButton.is-active,
+.app-shell.personal-mode #personalTabButton.is-active,
+.app-shell.personal-mode #personalRecordsTabButton.is-active {
+  background: #d98faf !important;
+  color: #16090f !important;
+}
+
+html.personal-mode #commonTabButton,
+html.personal-mode #commonRecordsTabButton,
+.app-shell.personal-mode #commonTabButton,
+.app-shell.personal-mode #commonRecordsTabButton {
+  background: transparent;
+  color: #b39aa7;
+}
+
+html.personal-mode .expense-form button:not(.danger),
+html.personal-mode .voice-text-form button,
+html.personal-mode .table-actions button:not(.danger),
+html.personal-mode #currentWeekButton,
+.app-shell.personal-mode .expense-form button:not(.danger),
+.app-shell.personal-mode .voice-text-form button,
+.app-shell.personal-mode .table-actions button:not(.danger),
+.app-shell.personal-mode #currentWeekButton {
+  background: #d98faf;
+  color: #16090f;
+}
+
+html.personal-mode .category-row,
+html.personal-mode .breakdown-item,
+html.personal-mode .metric-row,
+html.personal-mode .history-item,
+.app-shell.personal-mode .category-row,
+.app-shell.personal-mode .breakdown-item,
+.app-shell.personal-mode .metric-row,
+.app-shell.personal-mode .history-item {
+  border-color: #70435a;
+  background: #170d13;
 }
 
 .expense-form .wide {

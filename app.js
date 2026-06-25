@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-06-25-modo-personal-v10";
+const APP_VERSION = "2026-06-25-modo-personal-v11";
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
@@ -170,6 +170,7 @@ const elements = {
   chartLegend: document.querySelector("#chartLegend"),
   barChartButton: document.querySelector("#barChartButton"),
   pieChartButton: document.querySelector("#pieChartButton"),
+  appShell: document.querySelector("#appShell"),
   loadViewSections: document.querySelectorAll(".load-view-section"),
   summaryViewSections: document.querySelectorAll(".summary-view-section"),
   movementsViewSections: document.querySelectorAll(".movements-view-section"),
@@ -2080,7 +2081,9 @@ function setEntryMode(mode) {
 
 function setRecordsMode(mode) {
   const isPersonal = mode === "personal";
+  document.documentElement.classList.toggle("personal-mode", isPersonal);
   document.body.classList.toggle("personal-mode", isPersonal);
+  elements.appShell.classList.toggle("personal-mode", isPersonal);
   elements.commonRecordsTabButton.classList.toggle("is-active", !isPersonal);
   elements.personalRecordsTabButton.classList.toggle("is-active", isPersonal);
   elements.commonRecordsSection.classList.toggle("is-hidden", isPersonal);
