@@ -67,6 +67,22 @@ const ignoredStatementKeywords = [
   "vencimiento",
   "debito automatico pago",
 ];
+const householdCommonCategories = new Set(["Farmacia", "Supermercado", "Verduleria", "Carniceria", "Polleria/Pescaderia", "Combustible"]);
+const spanishMonthAbbreviations = {
+  ene: 1,
+  feb: 2,
+  mar: 3,
+  abr: 4,
+  may: 5,
+  jun: 6,
+  jul: 7,
+  ago: 8,
+  sep: 9,
+  set: 9,
+  oct: 10,
+  nov: 11,
+  dic: 12,
+};
 const defaultState = {
   people: ["Eze", "Tami"],
   deviceOwner: "Eze",
@@ -1310,9 +1326,26 @@ function extractStatementCandidates(text) {
   return { owner, common, personal };
 }
 
+function matchStatementDate(line) {
+  const numericMatch = line.match(/^(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
+  if (numericMatch) {
+    return { day: Number(numericMatch[1]), month: Number(numericMatch[2]), yearRaw: numericMatch[3], matchedText: numericMatch[0] };
+  }
+
+  const monthNameMatch = line.match(/^(\d{1,2})[\/.-]([a-zA-Z]{3,4})[\/.-](\d{2,4})\b/);
+  if (monthNameMatch) {
+    const month = spanishMonthAbbreviations[normalizeText(monthNameMatch[2]).slice(0, 3)];
+    if (month) {
+      return { day: Number(monthNameMatch[1]), month, yearRaw: monthNameMatch[3], matchedText: monthNameMatch[0] };
+    }
+  }
+
+  return null;
+}
+
 function extractStatementLine(line) {
-  const dateMatch = line.match(/\b(\d{1,2})[\/.-](\d{1,2})(?:[\/.-](\d{2,4}))?\b/);
-  if (!dateMatch) return null;
+  const dateInfo = matchStatementDate(line);
+  if (!dateInfo) return null;
 
   const amountMatches = [...line.matchAll(/(?:\$|\bARS\b)?\s*(-?[0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})|-?[0-9]+[.,][0-9]{2})/gi)];
   if (!amountMatches.length) return null;
@@ -1326,17 +1359,21 @@ function extractStatementLine(line) {
   const matchedKeyword = sharedExpenseKeywords.find((keyword) => normalizedLine.includes(normalizeText(keyword)));
 
   const selected = parseISODate(elements.weekStart.value || toISODate(new Date()));
-  const year = dateMatch[3] ? normalizeReceiptYear(dateMatch[3]) : selected.getFullYear();
-  const day = Number(dateMatch[1]);
-  const month = Number(dateMatch[2]);
+  const year = dateInfo.yearRaw ? normalizeReceiptYear(dateInfo.yearRaw) : selected.getFullYear();
+  const day = dateInfo.day;
+  const month = dateInfo.month;
   const date = new Date(year, month - 1, day);
   if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
 
   const rawDescription = line
-    .replace(dateMatch[0], "")
+    .replace(dateInfo.matchedText, "")
     .replace(amountMatches.at(-1)[0], "")
     .replace(/\s{2,}/g, " ")
     .trim();
+
+  const category = matchedKeyword
+    ? inferCategoryFromStatementLine(normalizedLine, matchedKeyword)
+    : inferPersonalCategoryFromStatementLine(normalizedLine);
 
   return {
     id: createId(),
@@ -1344,9 +1381,9 @@ function extractStatementLine(line) {
     note: cleanStatementDescription(rawDescription || line),
     amount,
     currency: normalizedLine.includes("usd") ? "USD" : "ARS",
-    category: matchedKeyword ? inferCategoryFromStatementLine(normalizedLine, matchedKeyword) : inferPersonalCategoryFromStatementLine(normalizedLine),
+    category,
     keyword: matchedKeyword || "personal",
-    isCommon: Boolean(matchedKeyword),
+    isCommon: Boolean(matchedKeyword) || householdCommonCategories.has(category),
   };
 }
 

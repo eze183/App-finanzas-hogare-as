@@ -63,6 +63,13 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-11 (fix import de resumen: fechas con nombre de mes)
+
+- El usuario subio un resumen real de Banco Nacion (PDF) y solo se detecto el gasto "Tramat SA y otros"; los 3 gastos de "Superm La Anonima" no aparecieron.
+- Causa: Banco Nacion escribe las fechas como "30-May-26" (dia-mes abreviado en letras-año), pero `extractStatementLine` en `app.js` solo reconocia fechas numericas (DD/MM/AA). Las lineas de supermercado no tenian ningun patron numerico de fecha, asi que se descartaban por completo. La linea de "Tramat SA y otros" se colo de pura casualidad: tiene "02/03" (numero de cuota, 2 de 3) que el regex viejo confundio con una fecha, y ademas tomaba la fecha equivocada (2 de marzo en vez de 1 de mayo).
+- Fix: se agrego reconocimiento de fechas con nombre de mes en español abreviado (`spanishMonthAbbreviations`: ene a dic) ademas del formato numerico, y se ancloron ambos patrones al **inicio** de la linea (antes buscaba la fecha en cualquier parte del texto, lo que causaba el falso positivo con "02/03"). Verificado simulando el parser completo con el texto real extraido del PDF del usuario: ahora detecta las 4 lineas con fecha y monto correctos.
+- Segundo ajuste, pedido por el usuario tras ver el resultado: los gastos detectados en categorias de uso diario compartido (Farmacia, Supermercado, Verduleria, Carniceria, Polleria/Pescaderia, Combustible) ahora se marcan como "Comunes" por defecto en la revision del resumen, no como "Personales". Antes solo seguros/streaming/servicios se marcaban comunes automaticamente; el resto (incluido supermercado) quedaba personal salvo cambio manual. Se agrego el set `householdCommonCategories` para esto.
+
 ### 2026-07-11 (fix dictado: coma como separador de miles)
 
 - El usuario probo el dictado por voz ya instalado en el celular diciendo "trece mil pesos de carne" y la app cargo $13,00 en vez de $13.000.
