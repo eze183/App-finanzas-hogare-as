@@ -63,6 +63,13 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-11 (GitHub Pages + fix service worker)
+
+- Se activo GitHub Pages en el repo (`github.com/eze183/App-finanzas-hogare-as`), deploy desde `main` en la raiz. URL publica: `https://eze183.github.io/App-finanzas-hogare-as/`.
+- Probando la URL publica se encontro un bug real en `service-worker.js`: el listener de `fetch` interceptaba TODAS las peticiones GET sin filtrar por origen, incluidas las llamadas a la API de Supabase. Cuando una de esas llamadas fallaba, el `catch` devolvia el `index.html` cacheado como si fuera la respuesta — confirmado viendo que un fetch a la URL de Supabase volvia con el HTML de la app y status 200. Esto puede haber estado enmascarando fallos silenciosos de sincronizacion todo este tiempo.
+- Fix de una linea: se agrego `if (new URL(event.request.url).origin !== self.location.origin) return;` al handler de `fetch`, asi el service worker solo cachea los archivos propios de la app y deja pasar sin tocar las llamadas a Supabase y CDNs externos. Se subio la version de cache a `gastos-hogar-v14` y `APP_VERSION` a `2026-07-11-sw-fetch-scope-v14` para forzar la actualizacion en los dispositivos que ya tenian la PWA instalada.
+- Verificado: con el fix, una llamada a Supabase que falla ahora da un error de red normal en vez de devolver HTML disfrazado de respuesta valida.
+
 ### 2026-07-11 (ajuste fino de estetica)
 
 - El usuario dio feedback despues de ver el rediseño: "se ve bien pero no me convence 100%". Se le mostro un mockup comparativo (antes/despues) con 3 cambios propuestos y aprobo avanzar con los tres:
