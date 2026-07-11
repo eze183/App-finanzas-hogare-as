@@ -63,6 +63,12 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-11 (sync Supabase pausado + vista de gastos comunes en dos columnas)
+
+- El usuario instalo la PWA en el celular de Tami y no vio los gastos cargados desde su propio celular. Diagnostico: el proyecto de Supabase se habia pausado automaticamente por inactividad (plan gratuito, pausa a los ~7 dias sin uso; habian pasado ~2 semanas desde la ultima prueba). Se resolvio reactivando el proyecto desde el panel de Supabase (accion del usuario, no requirio cambios de codigo). Se confirmo que la sincronizacion ya es automatica (push ~1s despues de guardar, pull cada 15s con la app abierta, y en cada foco/reapertura) — los botones manuales de Configuracion son solo para forzarla, no son necesarios en el uso diario.
+- A pedido del usuario (quiere dejar de anotar a mano en papel quien gasto que), la pestaña Movimientos > Gastos comunes paso de una tabla unica a **dos columnas lado a lado, una por persona** (nombres dinamicos segun `state.people`), cada una con su propio total arriba y sus gastos abajo (descripcion, fecha, categoria, forma de pago, monto, boton de borrar). En mobile las columnas se apilan verticalmente (breakpoint 900px, igual que el resto de los paneles de dos columnas). Los filtros existentes (buscar/persona/categoria/forma de pago) siguen funcionando igual, ahora aplicados a ambas columnas. Los "Gastos personales" NO se tocaron, siguen como tabla unica (el usuario eligio explícitamente que el cambio fuera solo para comunes).
+- Cambios tecnicos: nuevo HTML `#commonExpenseColumns` con dos `.person-column`, `renderTable()` en `app.js` reescrita para filtrar y renderizar por pagador en vez de generar filas de tabla, nuevas clases CSS `.person-columns`/`.person-column`/`.person-expense-row`/etc.
+
 ### 2026-07-11 (fix import de resumen: fechas con nombre de mes)
 
 - El usuario subio un resumen real de Banco Nacion (PDF) y solo se detecto el gasto "Tramat SA y otros"; los 3 gastos de "Superm La Anonima" no aparecieron.

@@ -1349,6 +1349,106 @@ td {
   background: var(--danger-soft);
 }
 
+.person-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.person-column {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  padding: 14px;
+}
+
+.person-column-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+}
+
+.person-column-heading strong {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1rem;
+}
+
+.person-column-heading span {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  color: var(--accent-strong);
+}
+
+.person-expense-list {
+  display: grid;
+  gap: 8px;
+}
+
+.person-expense-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
+  padding: 10px 12px;
+}
+
+.person-expense-info {
+  min-width: 0;
+}
+
+.person-expense-info strong {
+  display: block;
+  font-size: 0.92rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.person-expense-info small {
+  display: block;
+  color: var(--muted);
+  font-size: 0.78rem;
+  margin-top: 2px;
+}
+
+.person-expense-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.person-expense-amount {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.person-expense-actions .delete-row {
+  min-height: 28px;
+  width: 28px;
+  padding: 0;
+  border-radius: 999px;
+  line-height: 1;
+  font-size: 1.1rem;
+}
+
+.person-expense-empty {
+  color: var(--muted);
+  font-size: 0.88rem;
+  margin: 0;
+  text-align: center;
+  padding: 12px 0;
+}
+
 .empty-state {
   color: var(--muted);
   margin: 18px 0 0;
@@ -1406,7 +1506,8 @@ td {
   .settings-grid,
   .summary-grid,
   .detail-grid,
-  .chart-layout {
+  .chart-layout,
+  .person-columns {
     grid-template-columns: 1fr;
   }
 

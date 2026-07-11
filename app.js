@@ -170,7 +170,13 @@ const elements = {
   voiceTextInput: document.querySelector("#voiceTextInput"),
   voiceStatus: document.querySelector("#voiceStatus"),
   categoryList: document.querySelector("#categoryList"),
-  expensesTable: document.querySelector("#expensesTable"),
+  commonExpenseColumns: document.querySelector("#commonExpenseColumns"),
+  commonColumnAName: document.querySelector("#commonColumnAName"),
+  commonColumnBName: document.querySelector("#commonColumnBName"),
+  commonColumnATotal: document.querySelector("#commonColumnATotal"),
+  commonColumnBTotal: document.querySelector("#commonColumnBTotal"),
+  commonColumnAList: document.querySelector("#commonColumnAList"),
+  commonColumnBList: document.querySelector("#commonColumnBList"),
   emptyState: document.querySelector("#emptyState"),
   weekRangeLabel: document.querySelector("#weekRangeLabel"),
   exportButton: document.querySelector("#exportButton"),
@@ -961,25 +967,43 @@ function shortenLabel(label, maxLength) {
 }
 
 function renderTable(expenses) {
-  elements.expensesTable.innerHTML = expenses
+  const [personA, personB] = state.people;
+  elements.commonColumnAName.textContent = personA;
+  elements.commonColumnBName.textContent = personB;
+
+  const expensesA = expenses.filter((expense) => expense.payer === personA);
+  const expensesB = expenses.filter((expense) => expense.payer === personB);
+
+  elements.commonColumnATotal.textContent = formatMoney(expensesA.reduce((sum, expense) => sum + expense.amount, 0));
+  elements.commonColumnBTotal.textContent = formatMoney(expensesB.reduce((sum, expense) => sum + expense.amount, 0));
+
+  elements.commonColumnAList.innerHTML = renderPersonExpenseRows(expensesA);
+  elements.commonColumnBList.innerHTML = renderPersonExpenseRows(expensesB);
+
+  elements.emptyState.classList.toggle("is-hidden", expenses.length > 0);
+}
+
+function renderPersonExpenseRows(expenses) {
+  if (!expenses.length) {
+    return `<p class="person-expense-empty">Sin gastos.</p>`;
+  }
+
+  return expenses
     .map(
       (expense) => `
-        <tr>
-          <td>${dateFormatter.format(parseISODate(expense.date))}</td>
-          <td>${escapeHtml(expense.payer)}</td>
-          <td>${escapeHtml(expense.category)}</td>
-          <td>${escapeHtml(expense.paymentMethod || "Sin especificar")}</td>
-          <td>${escapeHtml(expense.note || "-")}</td>
-          <td class="amount-cell">${formatMoney(expense.amount)}</td>
-          <td class="amount-cell">
-            <button class="delete-row" type="button" data-id="${expense.id}">Borrar</button>
-          </td>
-        </tr>
+        <div class="person-expense-row">
+          <div class="person-expense-info">
+            <strong>${escapeHtml(expense.note || expense.category)}</strong>
+            <small>${dateFormatter.format(parseISODate(expense.date))} · ${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}</small>
+          </div>
+          <div class="person-expense-actions">
+            <span class="person-expense-amount">${formatMoney(expense.amount)}</span>
+            <button class="delete-row" type="button" data-id="${expense.id}" aria-label="Borrar gasto">×</button>
+          </div>
+        </div>
       `,
     )
     .join("");
-
-  elements.emptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
 function renderPersonalExpenses(expenses) {
@@ -2623,7 +2647,7 @@ async function init() {
   elements.statementReview.addEventListener("click", handleStatementReviewClick);
   elements.statementReview.addEventListener("input", handleStatementReviewInput);
   elements.statementReview.addEventListener("change", handleStatementReviewInput);
-  elements.expensesTable.addEventListener("click", handleTableClick);
+  elements.commonExpenseColumns.addEventListener("click", handleTableClick);
   elements.personalExpensesTable.addEventListener("click", handlePersonalTableClick);
   elements.weekStart.addEventListener("change", render);
   elements.currentWeekButton.addEventListener("click", () => {
