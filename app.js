@@ -5,14 +5,14 @@ const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
-  maximumFractionDigits: 2,
+  maximumFractionDigits: 0,
 });
 const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   day: "2-digit",
   month: "2-digit",
   year: "numeric",
 });
-const chartColors = ["#2c6f5a", "#d1893d", "#5178a8", "#a84f55", "#7d679d", "#6f7f3e"];
+const chartColors = ["#60a5fa", "#f97316", "#a78bfa", "#2dd4bf", "#fbbf24", "#94a3b8"];
 const categories = [
   "Farmacia",
   "Supermercado",
@@ -68,8 +68,8 @@ const ignoredStatementKeywords = [
   "debito automatico pago",
 ];
 const defaultState = {
-  people: ["Persona 1", "Persona 2"],
-  deviceOwner: "Persona 1",
+  people: ["Eze", "Tami"],
+  deviceOwner: "Eze",
   expenses: [],
   personalExpenses: [],
   settlements: [],
@@ -850,7 +850,7 @@ function renderChartLegend(chartData) {
 }
 
 function drawEmptyChart(context, width, height) {
-  context.fillStyle = getThemeColor("--muted", "#98aaa2");
+  context.fillStyle = getThemeColor("--muted", "#9aa1ac");
   context.font = "700 16px Inter, system-ui, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
@@ -867,7 +867,7 @@ function drawBarChart(context, chartData, width, height) {
   const totalBarsWidth = barWidth * chartData.length + gap * (chartData.length - 1);
   const startX = padding.left + Math.max(0, (plotWidth - totalBarsWidth) / 2);
 
-  context.strokeStyle = getThemeColor("--muted", "#98aaa2");
+  context.strokeStyle = getThemeColor("--muted", "#9aa1ac");
   context.lineWidth = 1;
   context.beginPath();
   context.moveTo(padding.left, padding.top);
@@ -884,7 +884,7 @@ function drawBarChart(context, chartData, width, height) {
     roundRect(context, x, y, barWidth, barHeight, 7);
     context.fill();
 
-    context.fillStyle = getThemeColor("--muted", "#98aaa2");
+    context.fillStyle = getThemeColor("--muted", "#9aa1ac");
     context.font = "700 12px Inter, system-ui, sans-serif";
     context.textAlign = "center";
     context.textBaseline = "bottom";
@@ -912,11 +912,11 @@ function drawPieChart(context, chartData, width, height) {
 
   context.beginPath();
   context.arc(centerX, centerY, radius * 0.48, 0, Math.PI * 2);
-  context.fillStyle = getThemeColor("--surface-tint", "#121c18");
+  context.fillStyle = getThemeColor("--surface-tint", "#121417");
   context.fill();
 
-  context.fillStyle = getThemeColor("--ink", "#eef7f2");
-  context.font = "800 18px Inter, system-ui, sans-serif";
+  context.fillStyle = getThemeColor("--ink", "#f2f4f6");
+  context.font = "800 18px Manrope, Inter, system-ui, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
   context.fillText(formatMoney(total), centerX, centerY);
@@ -2258,6 +2258,10 @@ function setAppView(view) {
   elements.loadViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isLoad));
   elements.summaryViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isSummary));
   elements.movementsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isMovements));
+
+  if (isSummary) {
+    render();
+  }
 }
 
 function openSettings() {

@@ -4,23 +4,25 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Gastos del hogar</title>
-    <meta name="theme-color" content="#0f1714" />
+    <meta name="theme-color" content="#0b0d10" />
     <meta name="description" content="App para registrar gastos compartidos y personales del hogar." />
     <link rel="manifest" href="./manifest.json" />
     <link rel="icon" href="./icon.svg" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=Inter:wght@400;600;700&display=swap"
+    />
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main id="appShell" class="app-shell">
       <section class="hero">
         <div>
-          <p class="eyebrow">Cierre semanal compartido</p>
           <h1>Gastos del hogar</h1>
-          <p class="subtitle">
-            Registren lo que paga cada persona y vean al instante cómo queda el
-            reparto para que ambos aporten lo mismo.
-          </p>
+          <p class="subtitle">Vean al instante cómo queda el reparto de la semana.</p>
         </div>
         <div class="week-card" aria-label="Semana seleccionada">
           <label for="weekStart">Semana desde</label>
@@ -109,21 +111,38 @@
               </div>
             </div>
 
-            <div class="receipt-reader" aria-label="Cargar comprobante o resumen">
-              <div class="receipt-reader-text">
-                <h3>Desde archivo</h3>
-                <p>Subí un ticket, factura o resumen de tarjeta. La app detecta el tipo y te deja revisar antes de guardar.</p>
-              </div>
-              <div class="receipt-controls">
-                <label class="file-picker camera-picker">
-                  Sacar foto
+            <div class="quick-add" aria-label="Cargar gasto rápido">
+              <p class="quick-add-intro">Sacá una foto, elegí un archivo o dictalo por voz. La app lo revisa antes de guardar.</p>
+              <div class="quick-actions">
+                <label class="quick-action" for="cameraFile">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                  </span>
+                  <span>Sacar foto</span>
                   <input id="cameraFile" type="file" accept="image/*" capture="environment" />
                 </label>
-                <label class="file-picker">
-                  Elegir archivo
+                <label class="quick-action" for="documentFile">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7M8.5 16h5"/></svg>
+                  </span>
+                  <span>Elegir archivo</span>
                   <input id="documentFile" type="file" accept="image/*,application/pdf,text/plain,.txt,.csv" />
                 </label>
+                <button id="voiceExpenseButton" class="quick-action" type="button">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>
+                  </span>
+                  <span>Dictar gasto</span>
+                </button>
               </div>
+              <form id="voiceTextForm" class="voice-text-form">
+                <label>
+                  Si el micrófono falla, escribí la frase
+                  <input id="voiceTextInput" type="text" placeholder="Ej: personal 12000 ropa zapatillas" />
+                </label>
+                <button type="submit">Interpretar</button>
+              </form>
+              <p id="voiceStatus" class="voice-status" aria-live="polite"></p>
               <div id="receiptPreviewWrap" class="receipt-preview-wrap is-hidden">
                 <img id="receiptPreview" alt="Vista previa del ticket cargado" />
               </div>
@@ -134,22 +153,6 @@
             <div class="entry-tabs" role="tablist" aria-label="Tipo de gasto">
               <button id="commonTabButton" class="is-active" type="button">Comunes</button>
               <button id="personalTabButton" type="button">Personales</button>
-            </div>
-
-            <div class="voice-reader" aria-label="Cargar gasto por voz">
-              <div>
-                <h3>Desde audio</h3>
-                <p>Dictá algo como "comida 8500 pagó Persona 1 supermercado" o "personal 12000 ropa".</p>
-              </div>
-              <button id="voiceExpenseButton" class="secondary-button" type="button">Dictar gasto</button>
-              <form id="voiceTextForm" class="voice-text-form">
-                <label>
-                  Si el micrófono falla, escribí la frase
-                  <input id="voiceTextInput" type="text" placeholder="Ej: personal 12000 ropa zapatillas" />
-                </label>
-                <button type="submit">Interpretar</button>
-              </form>
-              <p id="voiceStatus" class="voice-status" aria-live="polite"></p>
             </div>
 
             <section id="commonExpenseSection" class="expense-mode-panel">

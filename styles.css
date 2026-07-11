@@ -1,25 +1,32 @@
 :root {
-  --bg: #0f1714;
-  --surface: #16221e;
-  --surface-soft: #1d2c27;
-  --surface-tint: #121c18;
-  --ink: #eef7f2;
-  --muted: #98aaa2;
-  --line: #2b3d36;
-  --accent: #43b08d;
-  --accent-strong: #6ed1ad;
-  --accent-soft: #17392f;
-  --blue: #8db7ef;
-  --blue-soft: #17263a;
-  --amber: #e3a35c;
-  --amber-soft: #382717;
-  --personal: #d98faf;
-  --personal-strong: #f0aac6;
-  --personal-soft: #321d29;
-  --danger: #f08a8a;
-  --danger-soft: #3a1f22;
-  --shadow: 0 18px 44px rgba(0, 0, 0, 0.3);
-  --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.22);
+  --bg: #0b0d10;
+  --surface: #16191d;
+  --surface-soft: #1d2126;
+  --surface-tint: #121417;
+  --ink: #f2f4f6;
+  --muted: #9aa1ac;
+  --line: #262b31;
+  --accent: #10b981;
+  --accent-strong: #16c98a;
+  --accent-soft: #0f2b22;
+  --blue: #7dd3fc;
+  --blue-soft: #12222c;
+  --amber: #fbbf6b;
+  --amber-soft: #2e2210;
+  --personal: #f472b6;
+  --personal-strong: #f9a8d4;
+  --personal-soft: #2b1420;
+  --danger: #f87171;
+  --danger-soft: #2c1315;
+  --shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.3);
+  --font-body:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-heading: "Manrope", var(--font-body);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
 }
 
 * {
@@ -31,9 +38,7 @@ body {
   min-width: 320px;
   background: var(--bg);
   color: var(--ink);
-  font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-    sans-serif;
+  font-family: var(--font-body);
 }
 
 body::before {
@@ -42,37 +47,35 @@ body::before {
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at top left, rgba(67, 176, 141, 0.12), transparent 360px),
-    linear-gradient(180deg, rgba(25, 38, 33, 0.9), rgba(15, 23, 20, 0) 280px),
-    repeating-linear-gradient(90deg, rgba(238, 247, 242, 0.025) 0 1px, transparent 1px 72px);
+    radial-gradient(circle at top left, rgba(52, 211, 153, 0.1), transparent 360px),
+    linear-gradient(180deg, rgba(22, 25, 29, 0.9), rgba(11, 13, 16, 0) 280px);
 }
 
 html.personal-mode,
 body.personal-mode,
 .app-shell.personal-mode {
-  --bg: #150d12;
-  --surface: #21151d;
-  --surface-soft: #2b1b25;
-  --surface-tint: #180f15;
-  --line: #513348;
-  --accent: #d98faf;
-  --accent-strong: #f0aac6;
-  --accent-soft: #321d29;
-  --blue: #f0aac6;
-  --blue-soft: #321d29;
+  --bg: #100a10;
+  --surface: #1c1420;
+  --surface-soft: #241a28;
+  --surface-tint: #160f1a;
+  --line: #3a2b3f;
+  --accent: #f472b6;
+  --accent-strong: #f9a8d4;
+  --accent-soft: #2b1420;
+  --blue: #f9a8d4;
+  --blue-soft: #2b1420;
 }
 
 html.personal-mode,
 body.personal-mode {
-  background: #150d12;
+  background: #100a10;
 }
 
 html.personal-mode body::before,
 body.personal-mode::before {
   background:
-    radial-gradient(circle at top right, rgba(217, 143, 175, 0.18), transparent 340px),
-    linear-gradient(180deg, rgba(41, 24, 34, 0.94), rgba(21, 13, 18, 0) 300px),
-    repeating-linear-gradient(90deg, rgba(240, 170, 198, 0.035) 0 1px, transparent 1px 72px);
+    radial-gradient(circle at top right, rgba(244, 114, 182, 0.14), transparent 340px),
+    linear-gradient(180deg, rgba(28, 20, 32, 0.94), rgba(16, 10, 16, 0) 300px);
 }
 
 .app-shell.personal-mode {
@@ -87,11 +90,12 @@ select {
 
 button {
   border: 0;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #fff;
+  color: #052017;
   cursor: pointer;
-  font-weight: 700;
+  font-family: var(--font-heading);
+  font-weight: 800;
   min-height: 40px;
   padding: 0 16px;
   transition:
@@ -109,7 +113,7 @@ button:active {
 
 button.danger {
   background: transparent;
-  border: 1px solid #694146;
+  border: 1px solid #6b3232;
   color: var(--danger);
 }
 
@@ -134,8 +138,8 @@ select {
   width: 100%;
   min-height: 40px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #0f1815;
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
   color: var(--ink);
   padding: 0 12px;
 }
@@ -143,12 +147,12 @@ select {
 input:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(67, 176, 141, 0.18);
+  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
   outline: 0;
 }
 
 input::placeholder {
-  color: #71827b;
+  color: #6b7280;
 }
 
 .app-shell {
@@ -181,11 +185,17 @@ p {
   margin-top: 0;
 }
 
+h1,
+h2 {
+  font-family: var(--font-heading);
+  font-weight: 800;
+}
+
 h1 {
-  margin-bottom: 8px;
-  font-size: clamp(2rem, 4.5vw, 3.7rem);
-  line-height: 1;
-  letter-spacing: 0;
+  margin-bottom: 6px;
+  font-size: clamp(1.5rem, 2.6vw, 2.1rem);
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 
 h2 {
@@ -206,7 +216,7 @@ h2 {
 .panel,
 .summary-card {
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface);
   box-shadow: var(--shadow);
 }
@@ -273,13 +283,15 @@ label {
 
 .summary-card strong {
   display: block;
+  font-family: var(--font-heading);
+  font-weight: 800;
   font-size: clamp(1.4rem, 3vw, 2rem);
   line-height: 1.1;
 }
 
 .summary-card.highlight {
   background: var(--blue-soft);
-  border-color: #274464;
+  border-color: #1c3f4d;
 }
 
 .summary-card.highlight strong {
@@ -307,7 +319,7 @@ label {
 .breakdown-item,
 .metric-row {
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-tint);
   padding: 11px 12px;
 }
@@ -315,7 +327,7 @@ label {
 .breakdown-item.wide {
   grid-column: 1 / -1;
   background: var(--accent-soft);
-  border-color: #2d6957;
+  border-color: #1c5940;
 }
 
 .breakdown-item span,
@@ -330,6 +342,8 @@ label {
 .breakdown-item strong,
 .metric-row strong {
   display: block;
+  font-family: var(--font-heading);
+  font-weight: 800;
   font-size: 1rem;
   line-height: 1.25;
 }
@@ -367,7 +381,7 @@ label {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface-soft);
   margin-bottom: 18px;
   padding: 4px;
@@ -420,7 +434,7 @@ label {
   height: 100%;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow);
   padding: 18px;
@@ -493,7 +507,7 @@ label {
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-soft);
   padding: 4px;
 }
@@ -523,8 +537,8 @@ label {
   height: 250px;
   min-height: 250px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #101a16;
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
 }
 
 .chart-legend {
@@ -544,7 +558,7 @@ label {
 .legend-swatch {
   width: 14px;
   height: 14px;
-  border-radius: 4px;
+  border-radius: 5px;
 }
 
 .legend-row span:nth-child(2) {
@@ -584,7 +598,7 @@ label {
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 12px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-soft);
   padding: 10px 12px;
 }
@@ -612,7 +626,7 @@ label {
   display: grid;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-tint);
   padding: 12px;
 }
@@ -629,7 +643,7 @@ label {
 }
 
 .budget-row.is-over {
-  border-color: #694146;
+  border-color: #6b3232;
   background: var(--danger-soft);
 }
 
@@ -681,8 +695,8 @@ label {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid #2d6957;
-  border-radius: 8px;
+  border: 1px solid #1c5940;
+  border-radius: var(--radius-md);
   background: var(--accent-soft);
   padding: 10px 12px;
 }
@@ -702,38 +716,71 @@ label {
   opacity: 0.82;
 }
 
-.receipt-reader {
+.quick-add {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px 18px;
-  align-items: start;
+  gap: 12px;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface-tint);
   margin-bottom: 18px;
   padding: 14px;
 }
 
-.receipt-reader-text {
-  min-width: 0;
-}
-
-.receipt-reader h3 {
-  margin: 0 0 6px;
-  font-size: 1rem;
-}
-
-.receipt-reader p {
+.quick-add-intro {
   color: var(--muted);
   line-height: 1.45;
   margin: 0;
 }
 
-.receipt-controls {
-  display: flex;
-  flex-wrap: wrap;
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
-  justify-content: flex-end;
+}
+
+.quick-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 76px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.86rem;
+  padding: 10px 6px;
+  text-align: center;
+}
+
+.quick-action:hover {
+  background: var(--surface-soft);
+  border-color: var(--accent);
+  color: var(--ink);
+}
+
+.quick-action-icon {
+  display: inline-flex;
+  width: 24px;
+  height: 24px;
+  color: var(--accent-strong);
+}
+
+.quick-action-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.quick-action input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .file-picker {
@@ -741,10 +788,11 @@ label {
   align-items: center;
   justify-content: center;
   min-height: 40px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
   color: #07110d;
   cursor: pointer;
+  font-family: var(--font-heading);
   font-weight: 800;
   padding: 0 16px;
 }
@@ -767,12 +815,11 @@ button:disabled {
 }
 
 .receipt-preview-wrap {
-  grid-column: 1 / -1;
   max-width: 280px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
-  background: #0f1815;
+  background: var(--surface-tint);
 }
 
 .receipt-preview-wrap img {
@@ -783,7 +830,6 @@ button:disabled {
 }
 
 .receipt-status {
-  grid-column: 1 / -1;
   min-height: 22px;
   color: var(--muted);
   font-weight: 700;
@@ -797,38 +843,13 @@ button:disabled {
   color: var(--danger);
 }
 
-.voice-reader {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 10px 14px;
-  align-items: center;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface-tint);
-  margin-bottom: 16px;
-  padding: 14px;
-}
-
-.voice-reader h3 {
-  margin: 0 0 6px;
-  font-size: 1rem;
-}
-
-.voice-reader p {
-  color: var(--muted);
-  line-height: 1.45;
-  margin: 0;
-}
-
 .voice-status {
-  grid-column: 1 / -1;
   min-height: 22px;
   color: var(--muted);
   font-weight: 700;
 }
 
 .voice-text-form {
-  grid-column: 1 / -1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
@@ -851,7 +872,7 @@ button:disabled {
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-soft);
   margin-bottom: 16px;
   padding: 4px;
@@ -882,7 +903,7 @@ button:disabled {
 #personalRecordsTabButton.is-active,
 #personalRecordsTabButton:hover {
   background: var(--personal) !important;
-  color: #16090f;
+  color: #2b0a1a;
 }
 
 body.personal-mode #commonTabButton,
@@ -896,7 +917,7 @@ body.personal-mode #commonRecordsTabButton {
 }
 
 #personalExpenseSection .form-context {
-  border-color: #70435a;
+  border-color: var(--line);
   background: var(--personal-soft);
 }
 
@@ -909,8 +930,8 @@ body.personal-mode #commonRecordsTabButton {
   display: grid;
   gap: 12px;
   border: 1px solid var(--line);
-  border-radius: 7px;
-  background: #101a16;
+  border-radius: var(--radius-sm);
+  background: var(--surface-tint);
   padding: 14px;
 }
 
@@ -967,14 +988,14 @@ body.personal-mode #commonRecordsTabButton {
   align-items: center;
   gap: 10px;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-tint);
   color: var(--ink);
   padding: 10px;
 }
 
 .statement-item.is-personal {
-  background: #201d17;
+  background: var(--personal-soft);
 }
 
 .statement-item input {
@@ -1001,8 +1022,8 @@ body.personal-mode #commonRecordsTabButton {
 .statement-import-total {
   display: grid;
   gap: 3px;
-  border: 1px solid #2d6957;
-  border-radius: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
   background: var(--accent-soft);
   padding: 10px 12px;
 }
@@ -1016,14 +1037,16 @@ body.personal-mode #commonRecordsTabButton {
 
 .statement-import-total strong {
   color: var(--accent-strong);
+  font-family: var(--font-heading);
+  font-weight: 800;
   font-size: 1.08rem;
 }
 
 .personal-total {
   display: grid;
   gap: 4px;
-  border: 1px solid #70435a;
-  border-radius: 7px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
   background: var(--personal-soft);
   padding: 10px 12px;
   min-width: 180px;
@@ -1037,15 +1060,17 @@ body.personal-mode #commonRecordsTabButton {
 
 .personal-total strong {
   color: var(--personal-strong);
+  font-family: var(--font-heading);
+  font-weight: 800;
 }
 
 #personalRecordsSection {
-  border-color: #70435a;
-  background: linear-gradient(180deg, rgba(50, 29, 41, 0.76), var(--surface) 220px);
+  border-color: var(--line);
+  background: var(--surface-tint);
 }
 
 #personalRecordsSection th {
-  background: #1f131b;
+  background: var(--surface-tint);
 }
 
 body.personal-mode .panel,
@@ -1053,37 +1078,55 @@ body.personal-mode .summary-card,
 .app-shell.personal-mode .panel,
 .app-shell.personal-mode .summary-card,
 body.personal-mode .week-card,
-.app-shell.personal-mode .week-card {
-  border-color: #513348;
-  background: #21151d;
+.app-shell.personal-mode .week-card,
+html.personal-mode .week-card,
+html.personal-mode .panel,
+html.personal-mode .summary-card,
+.app-shell.personal-mode .week-card,
+.app-shell.personal-mode .panel,
+.app-shell.personal-mode .summary-card {
+  border-color: var(--line);
+  background: var(--surface);
 }
 
 body.personal-mode .table-wrap,
 body.personal-mode .filter-bar,
-body.personal-mode .receipt-reader,
-body.personal-mode .voice-reader,
+body.personal-mode .quick-add,
 .app-shell.personal-mode .table-wrap,
 .app-shell.personal-mode .filter-bar,
-.app-shell.personal-mode .receipt-reader,
-.app-shell.personal-mode .voice-reader,
+.app-shell.personal-mode .quick-add,
 body.personal-mode .statement-review,
-.app-shell.personal-mode .statement-review {
-  border-color: #513348;
-  background: #180f15;
+.app-shell.personal-mode .statement-review,
+html.personal-mode .quick-add,
+html.personal-mode .statement-review,
+html.personal-mode .filter-bar,
+html.personal-mode .table-wrap,
+html.personal-mode .form-context,
+.app-shell.personal-mode .quick-add,
+.app-shell.personal-mode .statement-review,
+.app-shell.personal-mode .filter-bar,
+.app-shell.personal-mode .table-wrap,
+.app-shell.personal-mode .form-context {
+  border-color: var(--line);
+  background: var(--surface-tint);
 }
 
 body.personal-mode input,
 .app-shell.personal-mode input,
 body.personal-mode select,
+.app-shell.personal-mode select,
+html.personal-mode input,
+html.personal-mode select,
+.app-shell.personal-mode input,
 .app-shell.personal-mode select {
-  border-color: #513348;
-  background: #160d12;
+  border-color: var(--line);
+  background: var(--surface-tint);
 }
 
 body.personal-mode input:focus,
 body.personal-mode select:focus {
   border-color: var(--personal);
-  box-shadow: 0 0 0 3px rgba(217, 143, 175, 0.2);
+  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.22);
 }
 
 body.personal-mode .app-tabs,
@@ -1093,9 +1136,17 @@ body.personal-mode .records-tabs,
 .app-shell.personal-mode .entry-tabs,
 .app-shell.personal-mode .records-tabs,
 body.personal-mode .chart-toggle,
+.app-shell.personal-mode .chart-toggle,
+html.personal-mode .app-tabs,
+html.personal-mode .entry-tabs,
+html.personal-mode .records-tabs,
+html.personal-mode .chart-toggle,
+.app-shell.personal-mode .app-tabs,
+.app-shell.personal-mode .entry-tabs,
+.app-shell.personal-mode .records-tabs,
 .app-shell.personal-mode .chart-toggle {
-  border-color: #513348;
-  background: #2b1b25;
+  border-color: var(--line);
+  background: var(--surface-soft);
 }
 
 body.personal-mode .app-tabs button.is-active,
@@ -1111,98 +1162,7 @@ body.personal-mode .table-actions button:not(.danger),
 body.personal-mode .voice-text-form button,
 body.personal-mode #currentWeekButton,
 body.personal-mode .secondary-button,
-body.personal-mode .file-picker {
-  background: var(--personal);
-  color: #16090f;
-}
-
-body.personal-mode .expense-form button:not(.danger):hover,
-body.personal-mode .table-actions button:not(.danger):hover,
-body.personal-mode .voice-text-form button:hover,
-body.personal-mode #currentWeekButton:hover,
-body.personal-mode .secondary-button:hover,
-body.personal-mode .file-picker:hover {
-  background: var(--personal-strong);
-}
-
-body.personal-mode .category-row,
-body.personal-mode .breakdown-item,
-body.personal-mode .metric-row,
-.app-shell.personal-mode .category-row,
-.app-shell.personal-mode .breakdown-item,
-.app-shell.personal-mode .metric-row,
-body.personal-mode .history-item,
-.app-shell.personal-mode .history-item {
-  border-color: #513348;
-  background: #180f15;
-}
-
-html.personal-mode .hero,
-.app-shell.personal-mode .hero {
-  border-bottom-color: #4a2e40;
-}
-
-html.personal-mode .eyebrow,
-.app-shell.personal-mode .eyebrow {
-  color: #f0aac6;
-}
-
-html.personal-mode .week-card,
-html.personal-mode .panel,
-html.personal-mode .summary-card,
-.app-shell.personal-mode .week-card,
-.app-shell.personal-mode .panel,
-.app-shell.personal-mode .summary-card {
-  border-color: #70435a;
-  background: linear-gradient(180deg, #261822, #1d1219);
-  box-shadow: 0 18px 44px rgba(64, 22, 43, 0.34);
-}
-
-html.personal-mode .data-panel,
-html.personal-mode .settings-panel,
-html.personal-mode .category-panel,
-.app-shell.personal-mode .data-panel,
-.app-shell.personal-mode .settings-panel,
-.app-shell.personal-mode .category-panel {
-  background: #180f15;
-}
-
-html.personal-mode .app-tabs,
-html.personal-mode .entry-tabs,
-html.personal-mode .records-tabs,
-html.personal-mode .chart-toggle,
-.app-shell.personal-mode .app-tabs,
-.app-shell.personal-mode .entry-tabs,
-.app-shell.personal-mode .records-tabs,
-.app-shell.personal-mode .chart-toggle {
-  border-color: #754862;
-  background: #321d29;
-}
-
-html.personal-mode .receipt-reader,
-html.personal-mode .voice-reader,
-html.personal-mode .statement-review,
-html.personal-mode .filter-bar,
-html.personal-mode .table-wrap,
-html.personal-mode .form-context,
-.app-shell.personal-mode .receipt-reader,
-.app-shell.personal-mode .voice-reader,
-.app-shell.personal-mode .statement-review,
-.app-shell.personal-mode .filter-bar,
-.app-shell.personal-mode .table-wrap,
-.app-shell.personal-mode .form-context {
-  border-color: #70435a;
-  background: #170d13;
-}
-
-html.personal-mode input,
-html.personal-mode select,
-.app-shell.personal-mode input,
-.app-shell.personal-mode select {
-  border-color: #70435a;
-  background: #12090f;
-}
-
+body.personal-mode .file-picker,
 html.personal-mode .app-tabs button.is-active,
 html.personal-mode .entry-tabs button.is-active,
 html.personal-mode .records-tabs button.is-active,
@@ -1212,19 +1172,7 @@ html.personal-mode .records-tabs button.is-active,
 html.personal-mode #personalTabButton.is-active,
 html.personal-mode #personalRecordsTabButton.is-active,
 .app-shell.personal-mode #personalTabButton.is-active,
-.app-shell.personal-mode #personalRecordsTabButton.is-active {
-  background: #d98faf !important;
-  color: #16090f !important;
-}
-
-html.personal-mode #commonTabButton,
-html.personal-mode #commonRecordsTabButton,
-.app-shell.personal-mode #commonTabButton,
-.app-shell.personal-mode #commonRecordsTabButton {
-  background: transparent;
-  color: #b39aa7;
-}
-
+.app-shell.personal-mode #personalRecordsTabButton.is-active,
 html.personal-mode .expense-form button:not(.danger),
 html.personal-mode .voice-text-form button,
 html.personal-mode .table-actions button:not(.danger),
@@ -1233,10 +1181,47 @@ html.personal-mode #currentWeekButton,
 .app-shell.personal-mode .voice-text-form button,
 .app-shell.personal-mode .table-actions button:not(.danger),
 .app-shell.personal-mode #currentWeekButton {
-  background: #d98faf;
-  color: #16090f;
+  background: var(--personal) !important;
+  color: #2b0a1a !important;
 }
 
+body.personal-mode .expense-form button:not(.danger):hover,
+body.personal-mode .table-actions button:not(.danger):hover,
+body.personal-mode .voice-text-form button:hover,
+body.personal-mode #currentWeekButton:hover,
+body.personal-mode .secondary-button:hover,
+body.personal-mode .file-picker:hover {
+  background: var(--personal-strong) !important;
+}
+
+body.personal-mode .quick-action,
+html.personal-mode .quick-action,
+.app-shell.personal-mode .quick-action {
+  color: var(--muted);
+}
+
+body.personal-mode .quick-action .quick-action-icon,
+html.personal-mode .quick-action .quick-action-icon,
+.app-shell.personal-mode .quick-action .quick-action-icon {
+  color: var(--personal-strong);
+}
+
+body.personal-mode .quick-action:hover,
+html.personal-mode .quick-action:hover,
+.app-shell.personal-mode .quick-action:hover {
+  background: var(--surface-soft);
+  border-color: var(--personal);
+  color: var(--ink);
+}
+
+body.personal-mode .category-row,
+body.personal-mode .breakdown-item,
+body.personal-mode .metric-row,
+.app-shell.personal-mode .category-row,
+.app-shell.personal-mode .breakdown-item,
+.app-shell.personal-mode .metric-row,
+body.personal-mode .history-item,
+.app-shell.personal-mode .history-item,
 html.personal-mode .category-row,
 html.personal-mode .breakdown-item,
 html.personal-mode .metric-row,
@@ -1245,8 +1230,30 @@ html.personal-mode .history-item,
 .app-shell.personal-mode .breakdown-item,
 .app-shell.personal-mode .metric-row,
 .app-shell.personal-mode .history-item {
-  border-color: #70435a;
-  background: #170d13;
+  border-color: var(--line);
+  background: var(--surface-tint);
+}
+
+html.personal-mode .eyebrow,
+.app-shell.personal-mode .eyebrow {
+  color: var(--personal-strong);
+}
+
+html.personal-mode .data-panel,
+html.personal-mode .settings-panel,
+html.personal-mode .category-panel,
+.app-shell.personal-mode .data-panel,
+.app-shell.personal-mode .settings-panel,
+.app-shell.personal-mode .category-panel {
+  background: var(--surface-tint);
+}
+
+html.personal-mode #commonTabButton,
+html.personal-mode #commonRecordsTabButton,
+.app-shell.personal-mode #commonTabButton,
+.app-shell.personal-mode #commonRecordsTabButton {
+  background: transparent;
+  color: var(--muted);
 }
 
 .expense-form .wide {
@@ -1285,7 +1292,7 @@ html.personal-mode .history-item,
   gap: 12px;
   align-items: end;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-tint);
   margin-bottom: 16px;
   padding: 12px;
@@ -1295,7 +1302,7 @@ html.personal-mode .history-item,
   position: relative;
   overflow-x: auto;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   background: var(--surface);
 }
 
@@ -1363,7 +1370,7 @@ td {
   gap: 14px;
   align-items: center;
   border: 1px solid var(--line);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   background: var(--surface-tint);
   padding: 14px;
 }
@@ -1380,6 +1387,7 @@ td {
 
 .history-item .history-total {
   color: var(--accent-strong);
+  font-family: var(--font-heading);
   font-weight: 800;
   white-space: nowrap;
 }
@@ -1415,6 +1423,13 @@ td {
   .filter-bar button {
     grid-column: 1 / -1;
   }
+
+  .settings-header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--surface);
+  }
 }
 
 @media (max-width: 580px) {
@@ -1442,7 +1457,7 @@ td {
   }
 
   .settings-sheet {
-    border-radius: 10px;
+    border-radius: var(--radius-lg);
     padding: 14px;
   }
 
@@ -1488,7 +1503,7 @@ td {
     display: grid;
     gap: 8px;
     border: 1px solid var(--line);
-    border-radius: 8px;
+    border-radius: var(--radius-md);
     background: var(--surface);
     padding: 12px;
     box-shadow: var(--shadow-soft);
@@ -1548,16 +1563,7 @@ td {
     width: 100%;
   }
 
-  .receipt-controls {
-    display: grid;
-    justify-content: stretch;
-  }
-
-  .receipt-reader {
-    grid-template-columns: 1fr;
-  }
-
-  .voice-reader {
+  .quick-actions {
     grid-template-columns: 1fr;
   }
 
@@ -1582,4 +1588,33 @@ td {
   .recurring-item {
     grid-template-columns: 1fr;
   }
+
+  body {
+    overflow-x: hidden;
+  }
+
+  button,
+  input,
+  select,
+  .file-picker {
+    min-height: 44px;
+  }
+
+  .icon-button {
+    width: 44px;
+    min-height: 44px;
+  }
+
+  .entry-tabs button,
+  .records-tabs button,
+  .chart-toggle button {
+    min-height: 42px;
+  }
+
+  .entry-tabs,
+  .records-tabs {
+    display: grid;
+    width: 100%;
+  }
+
 }
