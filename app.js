@@ -553,6 +553,7 @@ function parseAmountInput(value) {
   const normalizedValue = cleanValue
     .replace(/[^\d,.-]/g, "")
     .replace(/\.(?=\d{3}(?:\D|$))/g, "")
+    .replace(/,(?=\d{3}(?:\D|$))/g, "")
     .replace(",", ".");
 
   return Number(normalizedValue);

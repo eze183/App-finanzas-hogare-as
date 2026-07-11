@@ -63,6 +63,13 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-11 (fix dictado: coma como separador de miles)
+
+- El usuario probo el dictado por voz ya instalado en el celular diciendo "trece mil pesos de carne" y la app cargo $13,00 en vez de $13.000.
+- Causa: el reconocimiento de voz a veces transcribe el numero en digitos con coma como separador de miles ("13,000", estilo ingles) en lugar de la palabra "mil". `parseAmountInput` (`app.js`) asumia que la coma siempre es separador decimal (formato argentino), asi que interpretaba "13,000" como 13 con tres decimales de mas.
+- Fix: se agrego una regla en `parseAmountInput` que reconoce coma seguida de exactamente 3 digitos y fin de cadena/no-digito como separador de miles (misma logica que ya existia para el punto) y la elimina antes de convertir la coma restante en decimal. Como es un fix en la funcion central de parseo de montos, tambien corrige el mismo caso si aparece en carga manual, OCR o import de resumenes, no solo en voz.
+- Verificado: "13,000 pesos de carne" -> $13.000 (antes daba $13,00). Casos con coma decimal real como "13,50" o "1.234,56" siguen funcionando igual que antes.
+
 ### 2026-07-11 (GitHub Pages + fix service worker)
 
 - Se activo GitHub Pages en el repo (`github.com/eze183/App-finanzas-hogare-as`), deploy desde `main` en la raiz. URL publica: `https://eze183.github.io/App-finanzas-hogare-as/`.
