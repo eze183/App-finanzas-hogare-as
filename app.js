@@ -1227,8 +1227,22 @@ function groupPdfTextItemsByLine(items) {
 
 function detectDocumentType(text) {
   const normalizedText = normalizeText(text);
-  const datedLines = text.split(/\r?\n/).filter((line) => /\d{1,2}[\/.-]\d{1,2}/.test(line)).length;
-  const statementWords = ["resumen", "tarjeta", "visa", "mastercard", "amex", "consumos", "cupon", "comprobante"];
+  const currentYear = new Date().getFullYear();
+  const lines = text.split(/\r?\n/);
+  const datedLines = lines.filter((line) => resolveStatementDate(line.trim(), currentYear)).length;
+  const statementWords = [
+    "resumen de cuenta",
+    "resumen consolidado",
+    "consumos del mes",
+    "cuotas del mes",
+    "compras del mes",
+    "detalle del mes",
+    "saldo actual",
+    "pago minimo",
+    "n cupon",
+    "nro cupon",
+    "vencimiento actual",
+  ];
   const hasStatementWord = statementWords.some((word) => normalizedText.includes(word));
 
   return hasStatementWord || datedLines >= 3 ? "statement" : "receipt";
@@ -1367,9 +1381,21 @@ function matchStatementDate(line) {
   return null;
 }
 
-function extractStatementLine(line) {
+function resolveStatementDate(line, fallbackYear) {
   const dateInfo = matchStatementDate(line);
   if (!dateInfo) return null;
+
+  const year = dateInfo.yearRaw ? normalizeReceiptYear(dateInfo.yearRaw) : fallbackYear;
+  const date = new Date(year, dateInfo.month - 1, dateInfo.day);
+  if (date.getFullYear() !== year || date.getMonth() !== dateInfo.month - 1 || date.getDate() !== dateInfo.day) return null;
+
+  return { date, matchedText: dateInfo.matchedText };
+}
+
+function extractStatementLine(line) {
+  const selected = parseISODate(elements.weekStart.value || toISODate(new Date()));
+  const resolvedDate = resolveStatementDate(line, selected.getFullYear());
+  if (!resolvedDate) return null;
 
   const amountMatches = [...line.matchAll(/(?:\$|\bARS\b)?\s*(-?[0-9]{1,3}(?:[.,][0-9]{3})*(?:[.,][0-9]{2})|-?[0-9]+[.,][0-9]{2})/gi)];
   if (!amountMatches.length) return null;
@@ -1382,15 +1408,10 @@ function extractStatementLine(line) {
 
   const matchedKeyword = sharedExpenseKeywords.find((keyword) => normalizedLine.includes(normalizeText(keyword)));
 
-  const selected = parseISODate(elements.weekStart.value || toISODate(new Date()));
-  const year = dateInfo.yearRaw ? normalizeReceiptYear(dateInfo.yearRaw) : selected.getFullYear();
-  const day = dateInfo.day;
-  const month = dateInfo.month;
-  const date = new Date(year, month - 1, day);
-  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) return null;
+  const date = resolvedDate.date;
 
   const rawDescription = line
-    .replace(dateInfo.matchedText, "")
+    .replace(resolvedDate.matchedText, "")
     .replace(amountMatches.at(-1)[0], "")
     .replace(/\s{2,}/g, " ")
     .trim();
