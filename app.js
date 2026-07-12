@@ -1256,7 +1256,7 @@ function extractExpenseFromReceiptText(text) {
 
   return {
     amount: extractReceiptAmount(lines),
-    date: extractReceiptDate(text),
+    date: extractReceiptDate(lines),
     note: extractReceiptNote(lines),
   };
 }
@@ -1298,28 +1298,41 @@ function parseReceiptAmount(value) {
   return Number(`${integerPart}.${decimalPart}`);
 }
 
-function extractReceiptDate(text) {
+function extractReceiptDate(lines) {
   const datePatterns = [
     /\b(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})\b/,
     /\b(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})\b/,
   ];
+  const deprioritizedWords = ["inicio", "actividad", "vencimiento", "nacimiento"];
+  const candidates = [];
 
-  for (const pattern of datePatterns) {
-    const match = text.match(pattern);
-    if (!match) continue;
+  lines.forEach((line, lineIndex) => {
+    const normalizedLine = normalizeText(line);
+    if (deprioritizedWords.some((word) => normalizedLine.includes(word))) return;
 
-    const isYearFirst = match[1].length === 4;
-    const year = normalizeReceiptYear(isYearFirst ? match[1] : match[3]);
-    const month = Number(isYearFirst ? match[2] : match[2]);
-    const day = Number(isYearFirst ? match[3] : match[1]);
-    const date = new Date(year, month - 1, day);
+    const priority = normalizedLine.includes("fecha") ? 2 : 0;
 
-    if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
-      return toISODate(date);
+    for (const pattern of datePatterns) {
+      const match = line.match(pattern);
+      if (!match) continue;
+
+      const isYearFirst = match[1].length === 4;
+      const year = normalizeReceiptYear(isYearFirst ? match[1] : match[3]);
+      const month = Number(match[2]);
+      const day = Number(isYearFirst ? match[3] : match[1]);
+      const date = new Date(year, month - 1, day);
+
+      if (date.getFullYear() === year && date.getMonth() === month - 1 && date.getDate() === day) {
+        candidates.push({ date, priority, lineIndex });
+      }
+      break;
     }
-  }
+  });
 
-  return null;
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => b.priority - a.priority || a.lineIndex - b.lineIndex);
+  return toISODate(candidates[0].date);
 }
 
 function normalizeReceiptYear(value) {
