@@ -37,10 +37,16 @@
         </button>
       </div>
 
+      <div class="entry-tabs" role="tablist" aria-label="Tipo de gasto">
+        <button id="commonTabButton" class="is-active" type="button">Comunes</button>
+        <button id="personalTabButton" type="button">Personales</button>
+      </div>
+
       <nav class="app-tabs" aria-label="Secciones principales">
         <button id="loadViewButton" class="is-active" type="button">Cargar</button>
         <button id="summaryViewButton" type="button">Resumen</button>
         <button id="movementsViewButton" type="button">Movimientos</button>
+        <button id="historyViewButton" type="button">Historial</button>
       </nav>
 
       <section id="dailyView" class="main-view">
@@ -111,50 +117,6 @@
               </div>
             </div>
 
-            <div class="quick-add" aria-label="Cargar gasto rápido">
-              <p class="quick-add-intro">Sacá una foto, elegí un archivo o dictalo por voz. La app lo revisa antes de guardar.</p>
-              <div class="quick-actions">
-                <label class="quick-action" for="cameraFile">
-                  <span class="quick-action-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
-                  </span>
-                  <span>Sacar foto</span>
-                  <input id="cameraFile" type="file" accept="image/*" capture="environment" />
-                </label>
-                <label class="quick-action" for="documentFile">
-                  <span class="quick-action-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7M8.5 16h5"/></svg>
-                  </span>
-                  <span>Elegir archivo</span>
-                  <input id="documentFile" type="file" accept="image/*,application/pdf,text/plain,.txt,.csv" />
-                </label>
-                <button id="voiceExpenseButton" class="quick-action" type="button">
-                  <span class="quick-action-icon" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>
-                  </span>
-                  <span>Dictar gasto</span>
-                </button>
-              </div>
-              <form id="voiceTextForm" class="voice-text-form">
-                <label>
-                  Si el micrófono falla, escribí la frase
-                  <input id="voiceTextInput" type="text" placeholder="Ej: personal 12000 ropa zapatillas" />
-                </label>
-                <button type="submit">Interpretar</button>
-              </form>
-              <p id="voiceStatus" class="voice-status" aria-live="polite"></p>
-              <div id="receiptPreviewWrap" class="receipt-preview-wrap is-hidden">
-                <img id="receiptPreview" alt="Vista previa del ticket cargado" />
-              </div>
-              <p id="receiptStatus" class="receipt-status" aria-live="polite"></p>
-              <div id="statementReview" class="statement-review is-hidden"></div>
-            </div>
-
-            <div class="entry-tabs" role="tablist" aria-label="Tipo de gasto">
-              <button id="commonTabButton" class="is-active" type="button">Comunes</button>
-              <button id="personalTabButton" type="button">Personales</button>
-            </div>
-
             <section id="commonExpenseSection" class="expense-mode-panel">
               <form id="expenseForm" class="expense-form">
                 <div class="form-context wide">
@@ -180,7 +142,7 @@
                     <option value="Servicios">Servicios</option>
                     <option value="Tarjeta de credito">Tarjeta de credito</option>
                     <option value="Combustible">Combustible</option>
-                    <option value="Otros">Otros</option>
+                    <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
                 <label>
@@ -194,13 +156,13 @@
                     <option value="Tarjeta de crédito">Tarjeta de crédito</option>
                     <option value="Tarjeta de débito">Tarjeta de débito</option>
                     <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
                   </select>
                 </label>
                 <label class="wide">
                   Descripción
                   <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
                 </label>
-                <button type="submit">Agregar gasto</button>
               </form>
             </section>
 
@@ -229,7 +191,7 @@
                     <option value="Servicios">Servicios</option>
                     <option value="Tarjeta de credito">Tarjeta de credito</option>
                     <option value="Combustible">Combustible</option>
-                    <option value="Otros">Otros</option>
+                    <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
                 <label>
@@ -243,15 +205,58 @@
                     <option value="Tarjeta de crédito">Tarjeta de crédito</option>
                     <option value="Tarjeta de débito">Tarjeta de débito</option>
                     <option value="Efectivo">Efectivo</option>
+                    <option value="Transferencia">Transferencia</option>
                   </select>
                 </label>
                 <label class="wide">
                   Descripción
                   <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
                 </label>
-                <button type="submit">Agregar personal</button>
               </form>
             </section>
+
+            <div class="quick-add" aria-label="Cargar gasto rápido">
+              <p class="quick-add-intro">Sacá una foto, elegí un archivo o dictalo por voz. La app lo revisa antes de guardar.</p>
+              <div class="quick-actions">
+                <label class="quick-action" for="cameraFile">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                  </span>
+                  <span>Sacar foto</span>
+                  <input id="cameraFile" type="file" accept="image/*" capture="environment" />
+                </label>
+                <label class="quick-action" for="documentFile">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/><path d="M8.5 12.5h7M8.5 16h5"/></svg>
+                  </span>
+                  <span>Elegir archivo</span>
+                  <input id="documentFile" type="file" accept="image/*,application/pdf,text/plain,.txt,.csv" />
+                </label>
+                <button id="voiceExpenseButton" class="quick-action" type="button">
+                  <span class="quick-action-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/><path d="M9 21h6"/></svg>
+                  </span>
+                  <span>Dictar gasto</span>
+                </button>
+              </div>
+              <form id="voiceTextForm" class="voice-text-form">
+                <label>
+                  Si el micrófono falla, escribí la frase y presioná Enter
+                  <input id="voiceTextInput" type="text" placeholder="Ej: personal 12000 ropa zapatillas" />
+                </label>
+              </form>
+              <p id="voiceStatus" class="voice-status" aria-live="polite"></p>
+              <div id="receiptPreviewWrap" class="receipt-preview-wrap is-hidden">
+                <img id="receiptPreview" alt="Vista previa del ticket cargado" />
+              </div>
+              <p id="receiptStatus" class="receipt-status" aria-live="polite"></p>
+              <div id="statementReview" class="statement-review is-hidden"></div>
+            </div>
+
+            <div class="submit-actions">
+              <button type="submit" form="expenseForm" id="commonSubmitButton" class="submit-expense-button">Agregar gasto</button>
+              <button type="submit" form="personalExpenseForm" id="personalSubmitButton" class="submit-expense-button is-hidden">Agregar personal</button>
+            </div>
           </section>
 
           <aside class="panel category-panel">
@@ -260,11 +265,6 @@
             <div id="categoryList" class="category-list"></div>
           </aside>
         </section>
-
-        <nav class="records-tabs movements-view-section app-view-hidden" aria-label="Tipo de listado de gastos">
-          <button id="commonRecordsTabButton" class="is-active" type="button">Gastos comunes</button>
-          <button id="personalRecordsTabButton" type="button">Gastos personales</button>
-        </nav>
 
         <section id="commonRecordsSection" class="panel table-panel movements-view-section app-view-hidden">
           <div class="panel-heading table-heading">
@@ -311,6 +311,7 @@
                 <option value="Tarjeta de crédito">Tarjeta de crédito</option>
                 <option value="Tarjeta de débito">Tarjeta de débito</option>
                 <option value="Efectivo">Efectivo</option>
+                <option value="Transferencia">Transferencia</option>
                 <option value="Sin especificar">Sin especificar</option>
               </select>
             </label>
@@ -367,7 +368,7 @@
           </div>
         </section>
 
-        <section class="panel history-panel movements-view-section app-view-hidden">
+        <section class="panel history-panel history-view-section app-view-hidden">
           <div class="panel-heading">
             <div>
               <h2>Historial de cuentas saldadas</h2>

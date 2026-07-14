@@ -101,6 +101,7 @@ const elements = {
   loadViewButton: document.querySelector("#loadViewButton"),
   summaryViewButton: document.querySelector("#summaryViewButton"),
   movementsViewButton: document.querySelector("#movementsViewButton"),
+  historyViewButton: document.querySelector("#historyViewButton"),
   dailyView: document.querySelector("#dailyView"),
   settingsView: document.querySelector("#settingsView"),
   exportBackupButton: document.querySelector("#exportBackupButton"),
@@ -134,8 +135,8 @@ const elements = {
   expenseNote: document.querySelector("#expenseNote"),
   commonTabButton: document.querySelector("#commonTabButton"),
   personalTabButton: document.querySelector("#personalTabButton"),
-  commonRecordsTabButton: document.querySelector("#commonRecordsTabButton"),
-  personalRecordsTabButton: document.querySelector("#personalRecordsTabButton"),
+  commonSubmitButton: document.querySelector("#commonSubmitButton"),
+  personalSubmitButton: document.querySelector("#personalSubmitButton"),
   commonExpenseSection: document.querySelector("#commonExpenseSection"),
   personalExpenseSection: document.querySelector("#personalExpenseSection"),
   commonRecordsSection: document.querySelector("#commonRecordsSection"),
@@ -201,6 +202,7 @@ const elements = {
   loadViewSections: document.querySelectorAll(".load-view-section"),
   summaryViewSections: document.querySelectorAll(".summary-view-section"),
   movementsViewSections: document.querySelectorAll(".movements-view-section"),
+  historyViewSections: document.querySelectorAll(".history-view-section"),
 };
 
 let state = loadState();
@@ -2328,6 +2330,8 @@ function setEntryMode(mode) {
   elements.personalTabButton.classList.toggle("is-active", isPersonal);
   elements.commonExpenseSection.classList.toggle("is-hidden", isPersonal);
   elements.personalExpenseSection.classList.toggle("is-hidden", !isPersonal);
+  elements.commonSubmitButton.classList.toggle("is-hidden", isPersonal);
+  elements.personalSubmitButton.classList.toggle("is-hidden", !isPersonal);
   setRecordsMode(isPersonal ? "personal" : "common");
 }
 
@@ -2336,24 +2340,25 @@ function setRecordsMode(mode) {
   document.documentElement.classList.toggle("personal-mode", isPersonal);
   document.body.classList.toggle("personal-mode", isPersonal);
   elements.appShell.classList.toggle("personal-mode", isPersonal);
-  elements.commonRecordsTabButton.classList.toggle("is-active", !isPersonal);
-  elements.personalRecordsTabButton.classList.toggle("is-active", isPersonal);
   elements.commonRecordsSection.classList.toggle("is-hidden", isPersonal);
   elements.personalRecordsSection.classList.toggle("is-hidden", !isPersonal);
 }
 
 function setAppView(view) {
-  currentAppView = ["load", "summary", "movements"].includes(view) ? view : "load";
+  currentAppView = ["load", "summary", "movements", "history"].includes(view) ? view : "load";
   const isLoad = currentAppView === "load";
   const isSummary = currentAppView === "summary";
   const isMovements = currentAppView === "movements";
+  const isHistory = currentAppView === "history";
 
   elements.loadViewButton.classList.toggle("is-active", isLoad);
   elements.summaryViewButton.classList.toggle("is-active", isSummary);
   elements.movementsViewButton.classList.toggle("is-active", isMovements);
+  elements.historyViewButton.classList.toggle("is-active", isHistory);
   elements.loadViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isLoad));
   elements.summaryViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isSummary));
   elements.movementsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isMovements));
+  elements.historyViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isHistory));
 
   if (isSummary) {
     render();
@@ -2662,13 +2667,12 @@ async function init() {
   elements.loadViewButton.addEventListener("click", () => setAppView("load"));
   elements.summaryViewButton.addEventListener("click", () => setAppView("summary"));
   elements.movementsViewButton.addEventListener("click", () => setAppView("movements"));
+  elements.historyViewButton.addEventListener("click", () => setAppView("history"));
   elements.peopleForm.addEventListener("submit", handlePeopleSubmit);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
   elements.commonTabButton.addEventListener("click", () => setEntryMode("common"));
   elements.personalTabButton.addEventListener("click", () => setEntryMode("personal"));
-  elements.commonRecordsTabButton.addEventListener("click", () => setRecordsMode("common"));
-  elements.personalRecordsTabButton.addEventListener("click", () => setRecordsMode("personal"));
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);
   elements.voiceTextForm.addEventListener("submit", handleVoiceTextSubmit);
   elements.budgetForm.addEventListener("submit", handleBudgetSubmit);

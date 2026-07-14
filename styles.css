@@ -378,7 +378,7 @@ label {
 
 .app-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
@@ -690,6 +690,14 @@ label {
   align-items: end;
 }
 
+.submit-actions {
+  margin-top: 16px;
+}
+
+.submit-expense-button {
+  width: 100%;
+}
+
 .form-context {
   display: flex;
   align-items: center;
@@ -851,9 +859,7 @@ button:disabled {
 
 .voice-text-form {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
-  align-items: end;
   border-top: 1px solid var(--line);
   padding-top: 12px;
 }
@@ -866,48 +872,37 @@ button:disabled {
   color: var(--danger);
 }
 
-.entry-tabs,
-.records-tabs {
-  display: inline-grid;
+.entry-tabs {
+  display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 4px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--surface-soft);
-  margin-bottom: 16px;
+  margin-bottom: 14px;
   padding: 4px;
 }
 
-.records-tabs {
-  margin-bottom: 18px;
-}
-
-.entry-tabs button,
-.records-tabs button {
-  min-height: 36px;
+.entry-tabs button {
+  min-height: 40px;
   background: transparent;
   color: var(--muted);
   padding: 0 14px;
 }
 
 .entry-tabs button.is-active,
-.entry-tabs button:hover,
-.records-tabs button.is-active,
-.records-tabs button:hover {
+.entry-tabs button:hover {
   background: var(--accent);
   color: #07110d;
 }
 
 #personalTabButton.is-active,
-#personalTabButton:hover,
-#personalRecordsTabButton.is-active,
-#personalRecordsTabButton:hover {
+#personalTabButton:hover {
   background: var(--personal) !important;
   color: #2b0a1a;
 }
 
-body.personal-mode #commonTabButton,
-body.personal-mode #commonRecordsTabButton {
+body.personal-mode #commonTabButton {
   background: transparent;
   color: var(--muted);
 }
@@ -1131,19 +1126,15 @@ body.personal-mode select:focus {
 
 body.personal-mode .app-tabs,
 body.personal-mode .entry-tabs,
-body.personal-mode .records-tabs,
 .app-shell.personal-mode .app-tabs,
 .app-shell.personal-mode .entry-tabs,
-.app-shell.personal-mode .records-tabs,
 body.personal-mode .chart-toggle,
 .app-shell.personal-mode .chart-toggle,
 html.personal-mode .app-tabs,
 html.personal-mode .entry-tabs,
-html.personal-mode .records-tabs,
 html.personal-mode .chart-toggle,
 .app-shell.personal-mode .app-tabs,
 .app-shell.personal-mode .entry-tabs,
-.app-shell.personal-mode .records-tabs,
 .app-shell.personal-mode .chart-toggle {
   border-color: var(--line);
   background: var(--surface-soft);
@@ -1153,41 +1144,30 @@ body.personal-mode .app-tabs button.is-active,
 body.personal-mode .app-tabs button:hover,
 body.personal-mode .entry-tabs button.is-active,
 body.personal-mode .entry-tabs button:hover,
-body.personal-mode .records-tabs button.is-active,
-body.personal-mode .records-tabs button:hover,
 #personalTabButton.is-active,
-#personalRecordsTabButton.is-active,
-body.personal-mode .expense-form button:not(.danger),
+body.personal-mode .submit-expense-button,
 body.personal-mode .table-actions button:not(.danger),
-body.personal-mode .voice-text-form button,
 body.personal-mode #currentWeekButton,
 body.personal-mode .secondary-button,
 body.personal-mode .file-picker,
 html.personal-mode .app-tabs button.is-active,
 html.personal-mode .entry-tabs button.is-active,
-html.personal-mode .records-tabs button.is-active,
 .app-shell.personal-mode .app-tabs button.is-active,
 .app-shell.personal-mode .entry-tabs button.is-active,
-.app-shell.personal-mode .records-tabs button.is-active,
 html.personal-mode #personalTabButton.is-active,
-html.personal-mode #personalRecordsTabButton.is-active,
 .app-shell.personal-mode #personalTabButton.is-active,
-.app-shell.personal-mode #personalRecordsTabButton.is-active,
-html.personal-mode .expense-form button:not(.danger),
-html.personal-mode .voice-text-form button,
+html.personal-mode .submit-expense-button,
 html.personal-mode .table-actions button:not(.danger),
 html.personal-mode #currentWeekButton,
-.app-shell.personal-mode .expense-form button:not(.danger),
-.app-shell.personal-mode .voice-text-form button,
+.app-shell.personal-mode .submit-expense-button,
 .app-shell.personal-mode .table-actions button:not(.danger),
 .app-shell.personal-mode #currentWeekButton {
   background: var(--personal) !important;
   color: #2b0a1a !important;
 }
 
-body.personal-mode .expense-form button:not(.danger):hover,
+body.personal-mode .submit-expense-button:hover,
 body.personal-mode .table-actions button:not(.danger):hover,
-body.personal-mode .voice-text-form button:hover,
 body.personal-mode #currentWeekButton:hover,
 body.personal-mode .secondary-button:hover,
 body.personal-mode .file-picker:hover {
@@ -1249,9 +1229,7 @@ html.personal-mode .category-panel,
 }
 
 html.personal-mode #commonTabButton,
-html.personal-mode #commonRecordsTabButton,
-.app-shell.personal-mode #commonTabButton,
-.app-shell.personal-mode #commonRecordsTabButton {
+.app-shell.personal-mode #commonTabButton {
   background: transparent;
   color: var(--muted);
 }
@@ -1707,13 +1685,11 @@ td {
   }
 
   .entry-tabs button,
-  .records-tabs button,
   .chart-toggle button {
     min-height: 42px;
   }
 
-  .entry-tabs,
-  .records-tabs {
+  .entry-tabs {
     display: grid;
     width: 100%;
   }

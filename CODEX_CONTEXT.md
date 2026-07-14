@@ -63,6 +63,18 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-13 (6 pedidos de UX: formulario, historial y switch global)
+
+El usuario pidio 6 cambios juntos. Antes de tocar codigo se le preguntaron 2 dudas (los iconos de carga rapida ya estaban arriba del formulario, pero el pedido real era pegarlos justo arriba del boton "Agregar gasto" -no al principio del panel-; y si el sub-menu "Gastos comunes/Gastos personales" de Movimientos debia sacarse al mover el switch global -> si, para no tener dos controles redundantes).
+
+1. Se saco el boton "Interpretar" del dictado por texto; el formulario se sigue mandando con Enter (funciona igual con un solo input de texto, sin boton, es comportamiento estandar del navegador).
+2. La categoria por defecto en carga de gastos (comunes y personales) paso de "Farmacia" (primer item de la lista) a "Otros", con el atributo `selected` en el option.
+3. Se agrego "Transferencia" como forma de pago en los 3 selects (comunes, personales, filtro de movimientos).
+4. Se reordeno el panel "Agregar gasto": ahora los campos del formulario van primero, despues los iconos de Sacar foto/Elegir archivo/Dictar gasto, y recién al final el boton de guardar. Como el bloque de iconos tiene su propio `<form>` anidado (el de dictado por texto), los botones de guardar se sacaron del `<form>` de cada modo y se conectaron por fuera con el atributo `form="expenseForm"`/`form="personalExpenseForm"`, para poder ubicarlos donde se quiera sin HTML invalido.
+5. "Historial de cuentas saldadas" dejo de vivir dentro de "Movimientos" y paso a ser una 4ta pestaña principal (Cargar/Resumen/Movimientos/Historial). Se agrego `historyViewButton` + `.history-view-section` en `setAppView`.
+6. El switch "Comunes/Personales" se movio del panel "Agregar gasto" al principio de toda la app (antes de las pestañas principales), ya que siempre cambio el tema visual completo de la app (no solo el formulario). Se elimino el sub-menu redundante "Gastos comunes/Gastos personales" que existía dentro de Movimientos; ahora el mismo switch global controla que tabla se ve ahi.
+- Verificado por código (la herramienta de captura de pantalla quedó trabada en esta sesion, se uso lectura de estado del DOM en su lugar): orden correcto de elementos, Enter sigue interpretando la frase de voz, el botón externo "Agregar gasto" guarda y resetea el formulario correctamente, el switch global sincroniza tema + formulario + tabla de movimientos, e Historial es independiente de Movimientos.
+
 ### 2026-07-11 (fix lectura de tickets: falsos positivos de "resumen")
 
 - El usuario reportaba que la mayoria de los tickets (ej. supermercado) fallaban con "Detecte un resumen, pero no encontre consumos claros para importar". Mando 2 fotos reales de tickets (Granjas Pampeanas y La Anonima) para diagnosticar.
