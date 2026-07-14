@@ -63,6 +63,13 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-13 (fix real: la PWA instalada quedaba pegada a versiones viejas)
+
+- El usuario reporto que el fix del hueco vacio (commit anterior) no se veia en su celular incluso despues de cerrar la app del todo y reabrirla. Se verifico que el CSS publicado en GitHub Pages SI tenia el fix (se bajo el archivo real con fetch), y que en un navegador de escritorio normal se veia perfecto. Confirmado: el problema no era el codigo, era que la PWA instalada quedaba pegada a una version vieja.
+- Causa raiz real: el service worker (`service-worker.js`) hace "network-first" (`fetch(event.request)` antes de usar el cache), pero un `fetch()` normal sin opciones respeta el cache HTTP normal del navegador. Si GitHub Pages sirve `styles.css`/`app.js` con headers que permiten cachearlos un rato, el `fetch()` del service worker podia devolver una copia vieja del cache HTTP del telefono sin siquiera llegar a la red, aunque la logica "network-first" pareciera estar pidiendo la version mas reciente. Cerrar y reabrir la app no alcanzaba porque el problema no era el Cache Storage del service worker (que si se limpia bien), sino el cache HTTP normal del navegador, un nivel mas abajo.
+- Fix: se agrego `{ cache: "reload" }` al fetch del service worker, forzando que siempre baje bytes frescos del servidor salteando el cache HTTP del navegador. Se subio la version de cache a `gastos-hogar-v15` y `APP_VERSION` a `2026-07-13-sw-cache-reload-v15`. Esto deberia evitar que se repita este tipo de "no veo los cambios" en el futuro, no solo para este caso puntual.
+- Para que el celular ya instalado tome este fix puede hacer falta cerrar y reabrir la app 2 veces seguidas (la primera reabierta instala el service worker nuevo, la segunda ya usa la logica corregida). Si sigue sin verse, la solucion segura es desinstalar la PWA del celular y volver a instalarla desde `https://eze183.github.io/App-finanzas-hogare-as/`.
+
 ### 2026-07-13 (fix: hueco vacío bajo "Dictar gasto")
 
 - Tras sacar el formulario de respaldo de voz, quedaba un espacio vacío sin sentido debajo de los iconos de carga rapida. Causa: `#voiceStatus` y `#receiptStatus` son parrafos de estado con `min-height:22px` que antes quedaban disimulados porque el formulario de respaldo llenaba ese lugar visualmente; al sacarlo, esos dos parrafos vacios (mas los gaps de la grilla `.quick-add`) quedaban ocupando lugar sin mostrar nada hasta que se usaba dictado/foto.

@@ -1,4 +1,4 @@
-const CACHE_NAME = "gastos-hogar-v14";
+const CACHE_NAME = "gastos-hogar-v15";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -30,7 +30,7 @@ self.addEventListener("fetch", (event) => {
   if (new URL(event.request.url).origin !== self.location.origin) return;
 
   event.respondWith(
-    fetch(event.request)
+    fetch(event.request, { cache: "reload" })
       .then((response) => {
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
