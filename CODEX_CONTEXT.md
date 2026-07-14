@@ -63,6 +63,11 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-13 (fix: hueco vacío bajo "Dictar gasto")
+
+- Tras sacar el formulario de respaldo de voz, quedaba un espacio vacío sin sentido debajo de los iconos de carga rapida. Causa: `#voiceStatus` y `#receiptStatus` son parrafos de estado con `min-height:22px` que antes quedaban disimulados porque el formulario de respaldo llenaba ese lugar visualmente; al sacarlo, esos dos parrafos vacios (mas los gaps de la grilla `.quick-add`) quedaban ocupando lugar sin mostrar nada hasta que se usaba dictado/foto.
+- Fix: `.voice-status:empty, .receipt-status:empty { display: none; }` — colapsan a cero cuando no tienen texto y vuelven a aparecer normalmente en cuanto `setVoiceStatus`/`setReceiptStatus` les ponen un mensaje. Verificado midiendo el espacio real bajo los iconos (ahora es solo el padding del contenedor) y confirmando que el mensaje reaparece bien al tener texto.
+
 ### 2026-07-13 (quitar respaldo de texto por voz + fix pestañas en móvil)
 
 - Se quito por completo el formulario de respaldo "Si el microfono falla, escribi la frase" (el usuario lo considero redundante). Se elimino el HTML, `elements.voiceTextForm`/`voiceTextInput`, la funcion `handleVoiceTextSubmit` (quedaba muerta sin el formulario) y el CSS `.voice-text-form`. Se actualizaron los 2 mensajes de estado que mencionaban esta opcion ("escribi la frase y toca Interpretar" ya no existia igual desde el cambio anterior) para que ahora digan que hay que cargar el gasto manualmente si el navegador no soporta dictado. La logica de interpretar texto (`fillExpenseFromVoice`) sigue intacta, la sigue usando el resultado real del reconocimiento de voz.

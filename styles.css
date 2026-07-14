@@ -860,6 +860,11 @@ button:disabled {
   font-weight: 700;
 }
 
+.voice-status:empty,
+.receipt-status:empty {
+  display: none;
+}
+
 .voice-status.success {
   color: var(--accent-strong);
 }
