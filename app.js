@@ -167,8 +167,6 @@ const elements = {
   receiptStatus: document.querySelector("#receiptStatus"),
   statementReview: document.querySelector("#statementReview"),
   voiceExpenseButton: document.querySelector("#voiceExpenseButton"),
-  voiceTextForm: document.querySelector("#voiceTextForm"),
-  voiceTextInput: document.querySelector("#voiceTextInput"),
   voiceStatus: document.querySelector("#voiceStatus"),
   categoryList: document.querySelector("#categoryList"),
   commonExpenseColumns: document.querySelector("#commonExpenseColumns"),
@@ -1750,7 +1748,7 @@ function setupVoiceExpenseCapture() {
   const SpeechRecognition = getSpeechRecognition();
   if (!SpeechRecognition) {
     elements.voiceExpenseButton.disabled = true;
-    setVoiceStatus("Tu navegador no permite dictado desde esta app. Podés escribir la frase y tocar Interpretar.", "error");
+    setVoiceStatus("Tu navegador no permite dictado desde esta app. Cargá el gasto manualmente.", "error");
     return;
   }
 
@@ -1767,25 +1765,13 @@ function setupVoiceExpenseCapture() {
   voiceRecognition.addEventListener("error", () => {
     isListeningForExpense = false;
     elements.voiceExpenseButton.textContent = "Dictar gasto";
-    setVoiceStatus("No pude escuchar el audio. Revisá el permiso del micrófono o escribí la frase abajo.", "error");
+    setVoiceStatus("No pude escuchar el audio. Revisá el permiso del micrófono e intentá de nuevo.", "error");
   });
 
   voiceRecognition.addEventListener("end", () => {
     isListeningForExpense = false;
     elements.voiceExpenseButton.textContent = "Dictar gasto";
   });
-}
-
-function handleVoiceTextSubmit(event) {
-  event.preventDefault();
-  const text = elements.voiceTextInput.value.trim();
-  if (!text) {
-    setVoiceStatus("Escribí una frase con monto y descripción para interpretarla.", "error");
-    return;
-  }
-
-  fillExpenseFromVoice(text);
-  elements.voiceTextInput.value = "";
 }
 
 function handleVoiceExpenseClick() {
@@ -2674,7 +2660,6 @@ async function init() {
   elements.commonTabButton.addEventListener("click", () => setEntryMode("common"));
   elements.personalTabButton.addEventListener("click", () => setEntryMode("personal"));
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);
-  elements.voiceTextForm.addEventListener("submit", handleVoiceTextSubmit);
   elements.budgetForm.addEventListener("submit", handleBudgetSubmit);
   elements.budgetList.addEventListener("click", handleBudgetListClick);
   elements.recurringForm.addEventListener("submit", handleRecurringSubmit);

@@ -392,6 +392,9 @@ label {
   background: transparent;
   color: var(--muted);
   padding: 0 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .app-tabs button.is-active,
@@ -855,13 +858,6 @@ button:disabled {
   min-height: 22px;
   color: var(--muted);
   font-weight: 700;
-}
-
-.voice-text-form {
-  display: grid;
-  gap: 10px;
-  border-top: 1px solid var(--line);
-  padding-top: 12px;
 }
 
 .voice-status.success {
@@ -1517,6 +1513,12 @@ td {
     padding: 16px 0 24px;
   }
 
+  .app-tabs button {
+    font-size: 0.68rem;
+    padding: 0;
+    letter-spacing: -0.02em;
+  }
+
   .panel-heading,
   .table-heading,
   .chart-heading {
@@ -1643,10 +1645,6 @@ td {
   }
 
   .quick-actions {
-    grid-template-columns: 1fr;
-  }
-
-  .voice-text-form {
     grid-template-columns: 1fr;
   }
 

@@ -63,6 +63,11 @@ La app se abre directamente desde `index.html`. No tiene backend. Guarda los dat
 
 ## Registro breve de cambios
 
+### 2026-07-13 (quitar respaldo de texto por voz + fix pestañas en móvil)
+
+- Se quito por completo el formulario de respaldo "Si el microfono falla, escribi la frase" (el usuario lo considero redundante). Se elimino el HTML, `elements.voiceTextForm`/`voiceTextInput`, la funcion `handleVoiceTextSubmit` (quedaba muerta sin el formulario) y el CSS `.voice-text-form`. Se actualizaron los 2 mensajes de estado que mencionaban esta opcion ("escribi la frase y toca Interpretar" ya no existia igual desde el cambio anterior) para que ahora digan que hay que cargar el gasto manualmente si el navegador no soporta dictado. La logica de interpretar texto (`fillExpenseFromVoice`) sigue intacta, la sigue usando el resultado real del reconocimiento de voz.
+- Bug reportado: los nombres de las 4 pestañas principales (Cargar/Resumen/Movimientos/Historial) se superponian en vista movil. Causa: se agrego una 4ta pestaña ("Historial") sin ajustar el tamaño de fuente para pantallas chicas, y "Movimientos" (11 caracteres) no entraba en el espacio de una grilla de 4 columnas a 375px de ancho. Fix: se agrego `overflow:hidden; text-overflow:ellipsis; white-space:nowrap` como red de seguridad, y en el breakpoint de 580px se redujo `.app-tabs button` a `font-size:0.68rem` sin padding lateral. Verificado midiendo el ancho real de cada boton en 375px y 340px: ninguno desborda.
+
 ### 2026-07-13 (6 pedidos de UX: formulario, historial y switch global)
 
 El usuario pidio 6 cambios juntos. Antes de tocar codigo se le preguntaron 2 dudas (los iconos de carga rapida ya estaban arriba del formulario, pero el pedido real era pegarlos justo arriba del boton "Agregar gasto" -no al principio del panel-; y si el sub-menu "Gastos comunes/Gastos personales" de Movimientos debia sacarse al mover el switch global -> si, para no tener dos controles redundantes).
