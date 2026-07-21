@@ -20,9 +20,9 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 ## Sync merge-based con tombstones, no reemplazo del estado completo
 
-**Decisión** (2026-07-20, en curso): reemplazar el modelo de sync "el que sube último pisa todo" por un merge por id con tombstones para borrados.
+**Decisión** (2026-07-20, commit `135956e`): reemplazar el modelo de sync "el que sube último pisa todo" por un merge por id con tombstones para borrados.
 
-**Por qué**: revisión de código encontró que el diseño anterior (`UPSERT` del estado local completo) podía perder gastos: si dos dispositivos agregaban algo distinto casi al mismo tiempo, el segundo `push` sobreescribía el array entero del primero, perdiendo su gasto nuevo silenciosamente. No fue un bug reportado por el usuario, sino encontrado proactivamente al auditar la app y confirmado que era el riesgo más importante a resolver primero (ver `roadmap.md` para el estado de esta migración).
+**Por qué**: revisión de código encontró que el diseño anterior (`UPSERT` del estado local completo) podía perder gastos: si dos dispositivos agregaban algo distinto casi al mismo tiempo, el segundo `push` sobreescribía el array entero del primero, perdiendo su gasto nuevo silenciosamente. No fue un bug reportado por el usuario, sino encontrado proactivamente al auditar la app y confirmado que era el riesgo más importante a resolver primero.
 
 **Alternativas consideradas y descartadas**:
 - Merge aditivo puro (unión de arrays sin tombstones): descartado porque no respeta los borrados — un dispositivo que borra algo localmente vería "resucitar" el registro en el próximo sync si el otro dispositivo todavía tenía la versión vieja.

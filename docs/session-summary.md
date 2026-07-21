@@ -10,11 +10,13 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 Se creó `CLAUDE.md` en la raíz y la carpeta `docs/` completa (`architecture.md`, `decisions.md`, `roadmap.md`, este archivo), a pedido explícito del usuario, para facilitar el trabajo en futuras sesiones. Todo extraído del código real, `git log` y `CODEX_CONTEXT.md` — nada inventado. Se estableció como regla permanente actualizar `session-summary.md` y `roadmap.md` después de cada funcionalidad importante.
 
-## 2026-07-20 — Sync merge-based (en curso, ver `roadmap.md`)
+## 2026-07-20 — Sync merge-based (cerrado, commit `135956e`)
 
-Se rediseñó la sincronización con Supabase para que mezcle por id en vez de reemplazar el estado completo, evitando que un dispositivo pise los gastos que el otro acaba de agregar. Se agregaron `updatedAt`/`deletedAt` a cada registro, tombstones para los borrados (en vez de eliminar físicamente), poda de tombstones viejos (90 días), y merge separado para `settlements` (con deduplicación por semana) y para `people`/`budgets` (last-write-wins de campo completo). Verificado con 6 pruebas unitarias de la lógica de merge y un smoke test completo del flujo normal de la app. **Falta**: probar con Supabase desconectado y commitear/pushear (ver `roadmap.md`).
+Se rediseñó la sincronización con Supabase para que mezcle por id en vez de reemplazar el estado completo, evitando que un dispositivo pise los gastos que el otro acaba de agregar. Se agregaron `updatedAt`/`deletedAt` a cada registro, tombstones para los borrados (en vez de eliminar físicamente), poda de tombstones viejos (90 días), y merge separado para `settlements` (con deduplicación por semana) y para `people`/`budgets` (last-write-wins de campo completo).
 
-Durante las pruebas se escribió por error contra la base de Supabase de producción real (no una de prueba) usando el botón real de la app — se corrigió manualmente y se verificó que no se perdió ningún gasto real; quedó pendiente que el usuario revise sus presupuestos. Detalle completo en `roadmap.md`.
+Verificado en tres niveles: 6 pruebas unitarias de la lógica de merge, un smoke test completo del flujo normal de la app (agregar, borrar, presupuesto, recurrentes, cierre semanal, renombrar personas), y una prueba end-to-end final con Supabase completamente mockeado en memoria (inyectado temporalmente en `index.html`, revertido antes de commitear) simulando un segundo dispositivo agregando un gasto: el dispositivo local pasó de 24 a 25 gastos al traer los datos, conservando los propios y sumando el del otro dispositivo sin pisar nada. Commiteado y pusheado a GitHub (`135956e`). **Falta**: verificar en los dos celulares reales tras el deploy (ver `roadmap.md`).
+
+Durante el desarrollo (antes de la prueba mockeada) se escribió por error contra la base de Supabase de producción real usando el botón real de la app — se corrigió manualmente y se verificó que no se perdió ningún gasto real; quedó pendiente que el usuario revise sus presupuestos. Detalle completo en `roadmap.md`.
 
 ## 2026-07-13 — Seis mejoras de UX + fixes de estabilidad de la PWA
 

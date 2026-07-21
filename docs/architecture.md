@@ -109,7 +109,7 @@ Cuatro caminos, todos terminan llenando el mismo formulario (`#expenseForm`/`#pe
 
 ## Sincronización con Supabase
 
-**Estado al 2026-07-20: el modelo de merge descrito acá está implementado en `app.js` pero todavía no está commiteado ni pusheado — ver `docs/roadmap.md`.**
+**Estado al 2026-07-20: el modelo de merge descrito acá está implementado, commiteado (`135956e`) y pusheado a GitHub Pages.**
 
 Diseño (antes del merge, y el problema que resolvió):
 
