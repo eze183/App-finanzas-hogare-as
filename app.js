@@ -85,13 +85,16 @@ const spanishMonthAbbreviations = {
 };
 const defaultState = {
   people: ["Eze", "Tami"],
+  peopleUpdatedAt: 0,
   deviceOwner: "Eze",
   expenses: [],
   personalExpenses: [],
   settlements: [],
   recurringExpenses: [],
   budgets: {},
+  budgetsUpdatedAt: 0,
 };
+const TOMBSTONE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 const elements = {
   weekStart: document.querySelector("#weekStart"),
@@ -230,12 +233,14 @@ function loadState() {
 
     return normalizeState({
       people: Array.isArray(saved.people) && saved.people.length === 2 ? saved.people : defaultState.people,
+      peopleUpdatedAt: saved.peopleUpdatedAt,
       deviceOwner: saved.deviceOwner || saved.people?.[0] || defaultState.deviceOwner,
       expenses: Array.isArray(saved.expenses) ? saved.expenses : [],
       personalExpenses: Array.isArray(saved.personalExpenses) ? saved.personalExpenses : [],
       settlements: Array.isArray(saved.settlements) ? saved.settlements : [],
       recurringExpenses: Array.isArray(saved.recurringExpenses) ? saved.recurringExpenses : [],
       budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
+      budgetsUpdatedAt: saved.budgetsUpdatedAt,
     });
   } catch {
     return structuredClone(defaultState);
@@ -245,17 +250,19 @@ function loadState() {
 function normalizeState(value) {
   return {
     people: Array.isArray(value.people) && value.people.length === 2 ? value.people : [...defaultState.people],
+    peopleUpdatedAt: Number(value.peopleUpdatedAt) || 0,
     deviceOwner:
       Array.isArray(value.people) && value.people.includes(value.deviceOwner) ? value.deviceOwner : value.people?.[0] || defaultState.deviceOwner,
     expenses: Array.isArray(value.expenses) ? value.expenses.map(normalizeExpense).filter(Boolean) : [],
     personalExpenses: Array.isArray(value.personalExpenses)
       ? value.personalExpenses.map(normalizePersonalExpense).filter(Boolean)
       : [],
-    settlements: Array.isArray(value.settlements) ? value.settlements : [],
+    settlements: Array.isArray(value.settlements) ? value.settlements.map(normalizeSettlement).filter(Boolean) : [],
     recurringExpenses: Array.isArray(value.recurringExpenses)
       ? value.recurringExpenses.map(normalizeRecurringExpense).filter(Boolean)
       : [],
     budgets: value.budgets && typeof value.budgets === "object" ? sanitizeBudgets(value.budgets) : {},
+    budgetsUpdatedAt: Number(value.budgetsUpdatedAt) || 0,
   };
 }
 
@@ -264,6 +271,7 @@ function normalizePersonalExpense(expense) {
   const amount = Number(expense.amount);
   if (!Number.isFinite(amount) || amount <= 0) return null;
 
+  const createdAt = Number(expense.createdAt) || Date.now();
   return {
     id: expense.id || createId(),
     date: expense.date,
@@ -272,7 +280,9 @@ function normalizePersonalExpense(expense) {
     paymentMethod: expense.paymentMethod || "",
     amount,
     note: expense.note || "",
-    createdAt: Number(expense.createdAt) || Date.now(),
+    createdAt,
+    updatedAt: Number(expense.updatedAt) || createdAt,
+    deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
   };
 }
 
@@ -281,6 +291,7 @@ function normalizeExpense(expense) {
   const amount = Number(expense.amount);
   if (!Number.isFinite(amount) || amount <= 0) return null;
 
+  const createdAt = Number(expense.createdAt) || Date.now();
   return {
     id: expense.id || createId(),
     date: expense.date,
@@ -290,7 +301,9 @@ function normalizeExpense(expense) {
     amount,
     note: expense.note || "",
     recurringId: expense.recurringId || "",
-    createdAt: Number(expense.createdAt) || Date.now(),
+    createdAt,
+    updatedAt: Number(expense.updatedAt) || createdAt,
+    deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
   };
 }
 
@@ -299,6 +312,7 @@ function normalizeRecurringExpense(expense) {
   const amount = Number(expense.amount);
   if (!Number.isFinite(amount) || amount <= 0) return null;
 
+  const createdAt = Number(expense.createdAt) || Date.now();
   return {
     id: expense.id || createId(),
     payer: expense.payer,
@@ -307,7 +321,20 @@ function normalizeRecurringExpense(expense) {
     amount,
     note: expense.note,
     frequency: expense.frequency === "monthly" ? "monthly" : "weekly",
-    createdAt: Number(expense.createdAt) || Date.now(),
+    createdAt,
+    updatedAt: Number(expense.updatedAt) || createdAt,
+    deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
+  };
+}
+
+function normalizeSettlement(settlement) {
+  if (!settlement || !settlement.weekKey || !Array.isArray(settlement.people)) return null;
+
+  const fallbackTime = settlement.settledAt ? parseISODate(settlement.settledAt).getTime() : Date.now();
+  return {
+    ...settlement,
+    id: settlement.id || createId(),
+    updatedAt: Number(settlement.updatedAt) || fallbackTime,
   };
 }
 
@@ -317,6 +344,38 @@ function sanitizeBudgets(budgets) {
       .map(([category, amount]) => [category, Number(amount)])
       .filter(([, amount]) => Number.isFinite(amount) && amount > 0),
   );
+}
+
+function mergeRecordLists(localList, remoteList) {
+  const merged = new Map();
+  for (const record of remoteList) merged.set(record.id, record);
+  for (const record of localList) {
+    const existing = merged.get(record.id);
+    if (!existing) {
+      merged.set(record.id, record);
+      continue;
+    }
+    const winner = (record.updatedAt || 0) >= (existing.updatedAt || 0) ? record : existing;
+    const deletedAt = record.deletedAt || existing.deletedAt || null;
+    merged.set(record.id, deletedAt === winner.deletedAt ? winner : { ...winner, deletedAt });
+  }
+  return [...merged.values()];
+}
+
+function pruneTombstones(list) {
+  const cutoff = Date.now() - TOMBSTONE_RETENTION_MS;
+  return list.filter((record) => !record.deletedAt || record.deletedAt > cutoff);
+}
+
+function dedupeSettlementsByWeek(settlements) {
+  const byWeek = new Map();
+  for (const settlement of settlements) {
+    const existing = byWeek.get(settlement.weekKey);
+    if (!existing || (settlement.updatedAt || 0) > (existing.updatedAt || 0)) {
+      byWeek.set(settlement.weekKey, settlement);
+    }
+  }
+  return [...byWeek.values()];
 }
 
 function saveState() {
@@ -342,12 +401,26 @@ function getCloudStatePayload() {
   return sharedState;
 }
 
-function applyCloudState(remoteData) {
-  const localDeviceOwner = state.deviceOwner;
-  state = normalizeState({
-    ...remoteData,
-    deviceOwner: localDeviceOwner,
+function mergeCloudState(remoteData) {
+  const remote = normalizeState(remoteData || {});
+  const peopleWinner = remote.peopleUpdatedAt > state.peopleUpdatedAt ? remote : state;
+  const budgetsWinner = remote.budgetsUpdatedAt > state.budgetsUpdatedAt ? remote : state;
+
+  return normalizeState({
+    people: peopleWinner.people,
+    peopleUpdatedAt: peopleWinner.peopleUpdatedAt,
+    deviceOwner: state.deviceOwner,
+    expenses: pruneTombstones(mergeRecordLists(state.expenses, remote.expenses)),
+    personalExpenses: pruneTombstones(mergeRecordLists(state.personalExpenses, remote.personalExpenses)),
+    recurringExpenses: pruneTombstones(mergeRecordLists(state.recurringExpenses, remote.recurringExpenses)),
+    settlements: dedupeSettlementsByWeek(mergeRecordLists(state.settlements, remote.settlements)),
+    budgets: budgetsWinner.budgets,
+    budgetsUpdatedAt: budgetsWinner.budgetsUpdatedAt,
   });
+}
+
+function applyCloudState(remoteData) {
+  state = mergeCloudState(remoteData);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   render();
 }
@@ -453,6 +526,23 @@ async function pushStateToSupabase({ silent = false } = {}) {
 
   try {
     if (!silent) setSyncStatus("Subiendo datos a Supabase...", "");
+
+    const { data: existing, error: fetchError } = await supabaseClient
+      .from("app_state")
+      .select("data, updated_at")
+      .eq("id", config.stateId)
+      .maybeSingle();
+
+    if (fetchError) throw fetchError;
+
+    if (existing?.data) {
+      isApplyingRemoteState = true;
+      state = mergeCloudState(existing.data);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      isApplyingRemoteState = false;
+      lastCloudUpdatedAt = existing.updated_at || lastCloudUpdatedAt;
+    }
+
     const { error } = await supabaseClient.from("app_state").upsert({
       id: config.stateId,
       data: getCloudStatePayload(),
@@ -460,11 +550,13 @@ async function pushStateToSupabase({ silent = false } = {}) {
     });
 
     if (error) throw error;
+    render();
     const nowLabel = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
     if (!silent) setSyncStatus("Datos subidos a Supabase.", "success");
     if (silent) setSyncStatus(`Sincronizado con Supabase ${nowLabel}.`, "success");
   } catch (error) {
     console.error(error);
+    isApplyingRemoteState = false;
     if (!silent) setSyncStatus("No pude subir datos a Supabase. Revisá permisos de la tabla.", "error");
   }
 }
@@ -516,13 +608,13 @@ function isExpenseInSelectedWeek(expense) {
 
 function getCurrentWeekExpenses() {
   return state.expenses
-    .filter(isExpenseInSelectedWeek)
+    .filter((expense) => !expense.deletedAt && isExpenseInSelectedWeek(expense))
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
 function getCurrentWeekPersonalExpenses() {
   return state.personalExpenses
-    .filter(isExpenseInSelectedWeek)
+    .filter((expense) => !expense.deletedAt && isExpenseInSelectedWeek(expense))
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
@@ -548,6 +640,7 @@ function getCurrentMonthExpenses() {
   const month = selected.getMonth();
 
   return state.expenses.filter((expense) => {
+    if (expense.deletedAt) return false;
     const expenseDate = parseISODate(expense.date);
     return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
   });
@@ -780,12 +873,14 @@ function renderBudgets(expenses) {
 }
 
 function renderRecurringExpenses() {
-  if (!state.recurringExpenses.length) {
+  const activeRecurring = state.recurringExpenses.filter((expense) => !expense.deletedAt);
+
+  if (!activeRecurring.length) {
     elements.recurringList.innerHTML = `<p class="empty-state">Sin gastos recurrentes guardados.</p>`;
     return;
   }
 
-  elements.recurringList.innerHTML = state.recurringExpenses
+  elements.recurringList.innerHTML = activeRecurring
     .map(
       (expense) => `
         <div class="recurring-item">
@@ -2214,24 +2309,30 @@ function handlePeopleSubmit(event) {
 
   const previousPeople = state.people;
   const previousDeviceOwnerIndex = previousPeople.indexOf(state.deviceOwner);
+  const namesChanged = personA !== previousPeople[0] || personB !== previousPeople[1];
   state.people = [personA, personB];
   state.deviceOwner =
     selectedDeviceOwner === previousPeople[1] || previousDeviceOwnerIndex === 1 ? personB : personA;
-  state.expenses = state.expenses.map((expense) => {
-    if (expense.payer === previousPeople[0]) return { ...expense, payer: personA };
-    if (expense.payer === previousPeople[1]) return { ...expense, payer: personB };
-    return expense;
-  });
-  state.personalExpenses = state.personalExpenses.map((expense) => {
-    if (expense.owner === previousPeople[0]) return { ...expense, owner: personA };
-    if (expense.owner === previousPeople[1]) return { ...expense, owner: personB };
-    return expense;
-  });
-  state.recurringExpenses = state.recurringExpenses.map((expense) => {
-    if (expense.payer === previousPeople[0]) return { ...expense, payer: personA };
-    if (expense.payer === previousPeople[1]) return { ...expense, payer: personB };
-    return expense;
-  });
+
+  if (namesChanged) {
+    const renamedAt = Date.now();
+    state.peopleUpdatedAt = renamedAt;
+    state.expenses = state.expenses.map((expense) => {
+      if (expense.payer === previousPeople[0]) return { ...expense, payer: personA, updatedAt: renamedAt };
+      if (expense.payer === previousPeople[1]) return { ...expense, payer: personB, updatedAt: renamedAt };
+      return expense;
+    });
+    state.personalExpenses = state.personalExpenses.map((expense) => {
+      if (expense.owner === previousPeople[0]) return { ...expense, owner: personA, updatedAt: renamedAt };
+      if (expense.owner === previousPeople[1]) return { ...expense, owner: personB, updatedAt: renamedAt };
+      return expense;
+    });
+    state.recurringExpenses = state.recurringExpenses.map((expense) => {
+      if (expense.payer === previousPeople[0]) return { ...expense, payer: personA, updatedAt: renamedAt };
+      if (expense.payer === previousPeople[1]) return { ...expense, payer: personB, updatedAt: renamedAt };
+      return expense;
+    });
+  }
 
   saveState();
   elements.expensePayer.value = getDeviceOwner();
@@ -2387,6 +2488,7 @@ function handleBudgetSubmit(event) {
   }
 
   state.budgets[elements.budgetCategory.value] = amount;
+  state.budgetsUpdatedAt = Date.now();
   saveState();
   elements.budgetForm.reset();
   render();
@@ -2418,7 +2520,8 @@ function handleRecurringSubmit(event) {
 }
 
 function handleApplyRecurring() {
-  if (!state.recurringExpenses.length) {
+  const activeRecurring = state.recurringExpenses.filter((expense) => !expense.deletedAt);
+  if (!activeRecurring.length) {
     alert("Primero guardá algún gasto recurrente.");
     return;
   }
@@ -2427,10 +2530,10 @@ function handleApplyRecurring() {
   const { start } = getSelectedWeekRange();
   let added = 0;
 
-  for (const recurring of state.recurringExpenses) {
+  for (const recurring of activeRecurring) {
     const shouldApply = recurring.frequency === "weekly" || isFirstWeekOfMonth(start);
     const alreadyApplied = state.expenses.some(
-      (expense) => expense.recurringId === recurring.id && toISODate(getWeekStart(parseISODate(expense.date))) === weekKey,
+      (expense) => !expense.deletedAt && expense.recurringId === recurring.id && toISODate(getWeekStart(parseISODate(expense.date))) === weekKey,
     );
 
     if (!shouldApply || alreadyApplied) continue;
@@ -2550,6 +2653,7 @@ function handleSettleWeek() {
     debtor: settlement.debtor,
     creditor: settlement.creditor,
     people: [...state.people],
+    updatedAt: Date.now(),
   };
 
   state.settlements = [
@@ -2565,11 +2669,16 @@ function createId() {
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+function tombstoneRecords(list, idsToDelete) {
+  const now = Date.now();
+  return list.map((record) => (idsToDelete.has(record.id) ? { ...record, deletedAt: now, updatedAt: now } : record));
+}
+
 function handleTableClick(event) {
   const expenseButton = event.target.closest("button[data-id]");
   if (!expenseButton) return;
 
-  state.expenses = state.expenses.filter((expense) => expense.id !== expenseButton.dataset.id);
+  state.expenses = tombstoneRecords(state.expenses, new Set([expenseButton.dataset.id]));
   saveState();
   render();
 }
@@ -2578,7 +2687,7 @@ function handlePersonalTableClick(event) {
   const expenseButton = event.target.closest("button[data-personal-id]");
   if (!expenseButton) return;
 
-  state.personalExpenses = state.personalExpenses.filter((expense) => expense.id !== expenseButton.dataset.personalId);
+  state.personalExpenses = tombstoneRecords(state.personalExpenses, new Set([expenseButton.dataset.personalId]));
   saveState();
   render();
 }
@@ -2588,6 +2697,7 @@ function handleBudgetListClick(event) {
   if (!button) return;
 
   delete state.budgets[button.dataset.budgetCategory];
+  state.budgetsUpdatedAt = Date.now();
   saveState();
   render();
 }
@@ -2596,7 +2706,7 @@ function handleRecurringListClick(event) {
   const button = event.target.closest("button[data-recurring-id]");
   if (!button) return;
 
-  state.recurringExpenses = state.recurringExpenses.filter((expense) => expense.id !== button.dataset.recurringId);
+  state.recurringExpenses = tombstoneRecords(state.recurringExpenses, new Set([button.dataset.recurringId]));
   saveState();
   render();
 }
@@ -2609,7 +2719,7 @@ function handleClearWeek() {
   if (!confirmed) return;
 
   const idsToDelete = new Set(expenses.map((expense) => expense.id));
-  state.expenses = state.expenses.filter((expense) => !idsToDelete.has(expense.id));
+  state.expenses = tombstoneRecords(state.expenses, idsToDelete);
   saveState();
   render();
 }
