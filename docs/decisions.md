@@ -80,6 +80,14 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario. El switch se movió porque *ya* cambiaba el tema visual completo de la app (no solo el formulario de carga), así que tenía sentido que viviera en un lugar global, no escondido dentro de un panel específico. Al moverlo, se eliminó el sub-menú redundante "Gastos comunes/Gastos personales" que existía separado dentro de Movimientos, para no tener dos controles que se pudieran desincronizar.
 
+## Compras en cuotas: campos en `personalExpenses`, no una entidad nueva
+
+**Decisión** (2026-07-20): para el problema de "compro algo en cuotas con una de las 4 tarjetas y me olvido de que la sigo pagando", se evaluó crear una entidad `installmentPurchases` separada (con generación automática de un gasto por mes) pero se descartó a pedido explícito del usuario ("me gustaría que sea simple"). En cambio: `personalExpenses` ganó dos campos opcionales, `card` (una de 4 tarjetas fijas: Visa Banco Galicia, Mastercard Banco Galicia, Mastercard Mercado Pago, Mastercard Banco Nación) y `installments` (cantidad de cuotas, 1 por defecto). El monto cargado sigue siendo el total de la compra, una sola vez.
+
+**Por qué esta forma y no la entidad separada**: pedido explícito de simplicidad del usuario, y alcance reducido a gastos personales únicamente (no gastos comunes) — también pedido explícito. Al ser campos de un registro existente, no hace falta tocar el modelo de sync (ya mergea `personalExpenses` por id) ni generar gastos nuevos cada mes (que hubiera requerido lógica de "aplicar cuotas" como los recurrentes, con su propio riesgo de duplicados). El "en qué cuota estoy" se calcula al vuelo comparando la fecha de compra con la fecha actual (`getPendingInstallments()` en `app.js`), no se guarda como número en el estado.
+
+**Trade-off aceptado**: si el usuario carga la compra con la fecha real de la compra (no la del primer débito), el cálculo de "cuota N/M" puede correrse un mes respecto al resumen real de la tarjeta. No se resolvió porque no se pidió, y es un caso borde poco frecuente.
+
 ## Historial de cuentas saldadas es una pestaña propia, no parte de Movimientos
 
 **Decisión** (2026-07-13): pedido explícito del usuario, sin motivo adicional registrado más allá de preferencia de navegación.

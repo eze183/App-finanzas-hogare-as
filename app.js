@@ -151,6 +151,12 @@ const elements = {
   personalExpenseAmount: document.querySelector("#personalExpenseAmount"),
   personalExpensePaymentMethod: document.querySelector("#personalExpensePaymentMethod"),
   personalExpenseNote: document.querySelector("#personalExpenseNote"),
+  personalCardFields: document.querySelector("#personalCardFields"),
+  personalExpenseCard: document.querySelector("#personalExpenseCard"),
+  personalExpenseInstallments: document.querySelector("#personalExpenseInstallments"),
+  pendingInstallmentsPanel: document.querySelector("#pendingInstallmentsPanel"),
+  pendingInstallmentsList: document.querySelector("#pendingInstallmentsList"),
+  pendingInstallmentsTotal: document.querySelector("#pendingInstallmentsTotal"),
   budgetForm: document.querySelector("#budgetForm"),
   budgetCategory: document.querySelector("#budgetCategory"),
   budgetAmount: document.querySelector("#budgetAmount"),
@@ -280,6 +286,8 @@ function normalizePersonalExpense(expense) {
     paymentMethod: expense.paymentMethod || "",
     amount,
     note: expense.note || "",
+    card: expense.card || "",
+    installments: Number(expense.installments) > 1 ? Math.floor(Number(expense.installments)) : 1,
     createdAt,
     updatedAt: Number(expense.updatedAt) || createdAt,
     deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
@@ -1125,6 +1133,45 @@ function renderPersonalExpenses(expenses) {
   elements.personalEmptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
+function updatePersonalCardFieldsVisibility() {
+  const isCard = elements.personalExpensePaymentMethod.value === "Tarjeta de crédito";
+  elements.personalCardFields.classList.toggle("is-hidden", !isCard);
+}
+
+function getPendingInstallments(referenceDate = new Date()) {
+  const pending = [];
+  for (const expense of state.personalExpenses) {
+    if (expense.deletedAt || expense.installments <= 1) continue;
+    const purchaseDate = parseISODate(expense.date);
+    const monthsElapsed =
+      (referenceDate.getFullYear() - purchaseDate.getFullYear()) * 12 + (referenceDate.getMonth() - purchaseDate.getMonth());
+    const currentInstallment = monthsElapsed + 1;
+    if (currentInstallment < 1 || currentInstallment > expense.installments) continue;
+    pending.push({ expense, currentInstallment, installmentAmount: expense.amount / expense.installments });
+  }
+  return pending.sort((a, b) => parseISODate(a.expense.date) - parseISODate(b.expense.date));
+}
+
+function renderPendingInstallments() {
+  const pending = getPendingInstallments();
+  elements.pendingInstallmentsPanel.classList.toggle("is-hidden", pending.length === 0);
+  elements.pendingInstallmentsList.innerHTML = pending
+    .map(
+      ({ expense, currentInstallment, installmentAmount }) => `
+        <div class="pending-installment-item">
+          <div>
+            <strong>${escapeHtml(expense.note || expense.category)}</strong>
+            <span class="pending-installment-meta">${escapeHtml(expense.card || "Tarjeta sin especificar")} · cuota ${currentInstallment}/${expense.installments} · total ${formatMoney(expense.amount)}</span>
+          </div>
+          <span class="pending-installment-amount">${formatMoney(installmentAmount)}</span>
+        </div>
+      `,
+    )
+    .join("");
+  const total = pending.reduce((sum, { installmentAmount }) => sum + installmentAmount, 0);
+  elements.pendingInstallmentsTotal.textContent = formatMoney(total);
+}
+
 function renderFilterValues() {
   elements.searchInput.value = filters.search;
   elements.filterPayer.value = filters.payer;
@@ -1183,6 +1230,7 @@ function render() {
   renderChart(expenses);
   renderTable(filteredExpenses);
   renderPersonalExpenses(personalExpenses);
+  renderPendingInstallments();
   renderSettlementHistory();
 }
 
@@ -2390,14 +2438,21 @@ function handlePersonalExpenseSubmit(event) {
     return;
   }
 
+  const paymentMethod = elements.personalExpensePaymentMethod.value;
+  const isCard = paymentMethod === "Tarjeta de crédito";
+  const installments = isCard ? Math.max(1, parseInt(elements.personalExpenseInstallments.value, 10) || 1) : 1;
+  const card = isCard ? elements.personalExpenseCard.value : "";
+
   state.personalExpenses.push({
     id: createId(),
     date: expenseDate,
     owner,
     category: elements.personalExpenseCategory.value,
-    paymentMethod: elements.personalExpensePaymentMethod.value,
+    paymentMethod,
     amount,
     note: elements.personalExpenseNote.value.trim(),
+    card,
+    installments,
     createdAt: Date.now(),
   });
 
@@ -2406,6 +2461,7 @@ function handlePersonalExpenseSubmit(event) {
   elements.personalExpenseDate.value = getSelectedWeekKey();
   elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
+  updatePersonalCardFieldsVisibility();
   setRecordsMode("personal");
   render();
   elements.personalExpenseAmount.focus();
@@ -2751,6 +2807,7 @@ async function init() {
   elements.weekStart.value = toISODate(getWeekStart());
   elements.expenseDate.value = toISODate(new Date());
   elements.personalExpenseDate.value = getSelectedWeekKey();
+  updatePersonalCardFieldsVisibility();
 
   elements.exportBackupButton.addEventListener("click", handleExportBackup);
   elements.importBackupInput.addEventListener("change", handleImportBackup);
@@ -2767,6 +2824,7 @@ async function init() {
   elements.peopleForm.addEventListener("submit", handlePeopleSubmit);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
+  elements.personalExpensePaymentMethod.addEventListener("change", updatePersonalCardFieldsVisibility);
   elements.commonTabButton.addEventListener("click", () => setEntryMode("common"));
   elements.personalTabButton.addEventListener("click", () => setEntryMode("personal"));
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);

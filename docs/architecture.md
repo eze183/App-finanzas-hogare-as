@@ -57,6 +57,8 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
   id,                // crypto.randomUUID() (createId())
   date, payer/owner, category, paymentMethod, amount, note,
   recurringId,        // solo en expenses: referencia a la plantilla que lo generó, o ""
+  card,               // solo en personalExpenses: tarjeta elegida si paymentMethod es "Tarjeta de crédito", o ""
+  installments,       // solo en personalExpenses: cantidad de cuotas (1 si no es compra en cuotas)
   createdAt,          // timestamp de creación, no cambia nunca
   updatedAt,          // timestamp de la última modificación de contenido (rename de persona, por ejemplo)
   deletedAt,          // null normalmente; timestamp si está "borrado" (tombstone, ver sync más abajo)
@@ -64,6 +66,14 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
 ```
 
 `state.settlements` tiene además `weekKey`, `weekLabel`, `settledAt`, `total`, `amount`, `debtor`, `creditor`, `people` (snapshot de los nombres al momento de saldar), y `updatedAt`.
+
+### Compras en cuotas (solo gastos personales)
+
+**Decisión** (2026-07-20): en vez de una entidad nueva, `card`/`installments` son campos opcionales de `personalExpenses`. El monto cargado es el **total de la compra** (no la cuota mensual) — se registra una sola vez, no se generan gastos nuevos cada mes.
+
+`getPendingInstallments()` (`app.js`) calcula en qué cuota está cada compra comparando el mes de `date` contra el mes actual (`monthsElapsed + 1`), sin guardar ese número en el estado. Un panel en Movimientos → Personales (`renderPendingInstallments()`) muestra, para cada compra con `installments > 1` que todavía no terminó, el concepto, la tarjeta, "cuota N/M" y el monto de la cuota de este mes (`amount / installments`), más el total a pagar este mes sumando todas las compras activas.
+
+No hay generación automática de gastos ni de recordatorios push — es solo un panel informativo que se recalcula en cada `render()` a partir de la fecha real del dispositivo, así que no se puede "perder" un mes ni duplicar el conteo.
 
 Todo el estado pasa siempre por `normalizeState()`/`normalizeExpense()`/etc. al cargar (`loadState`), al mezclar con la nube (`mergeCloudState`), y al armar el payload de subida (`getCloudStatePayload`) — así que un registro con forma inválida o campos faltantes nunca llega a `render()`.
 

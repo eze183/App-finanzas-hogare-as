@@ -208,6 +208,22 @@
                     <option value="Transferencia">Transferencia</option>
                   </select>
                 </label>
+                <div id="personalCardFields" class="card-fields is-hidden">
+                  <label>
+                    Tarjeta
+                    <select id="personalExpenseCard">
+                      <option value="">Elegí una tarjeta</option>
+                      <option value="Visa Banco Galicia">Visa Banco Galicia</option>
+                      <option value="Mastercard Banco Galicia">Mastercard Banco Galicia</option>
+                      <option value="Mastercard Mercado Pago">Mastercard Mercado Pago</option>
+                      <option value="Mastercard Banco Nación">Mastercard Banco Nación</option>
+                    </select>
+                  </label>
+                  <label>
+                    Cantidad de cuotas
+                    <input id="personalExpenseInstallments" type="number" min="1" max="60" value="1" />
+                  </label>
+                </div>
                 <label class="wide">
                   Descripción
                   <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
@@ -341,6 +357,14 @@
               <span>Total personal</span>
               <strong id="personalWeekTotal">$0</strong>
             </div>
+          </div>
+
+          <div id="pendingInstallmentsPanel" class="pending-installments is-hidden">
+            <div class="pending-installments-heading">
+              <h3>Cuotas pendientes este mes</h3>
+              <strong id="pendingInstallmentsTotal">$0</strong>
+            </div>
+            <div id="pendingInstallmentsList" class="pending-installments-list"></div>
           </div>
 
           <div class="table-wrap">

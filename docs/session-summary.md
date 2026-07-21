@@ -10,6 +10,14 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 Se creó `CLAUDE.md` en la raíz y la carpeta `docs/` completa (`architecture.md`, `decisions.md`, `roadmap.md`, este archivo), a pedido explícito del usuario, para facilitar el trabajo en futuras sesiones. Todo extraído del código real, `git log` y `CODEX_CONTEXT.md` — nada inventado. Se estableció como regla permanente actualizar `session-summary.md` y `roadmap.md` después de cada funcionalidad importante.
 
+## 2026-07-20 — Compras en cuotas con tarjeta (gastos personales)
+
+Pedido del usuario: se olvidaba de compras en cuotas hechas con cualquiera de sus 4 tarjetas de crédito, lo que le hacía sumar gastos sin contemplar el compromiso pendiente. Se evaluó una entidad separada con generación automática de gastos mensuales, pero el usuario pidió algo simple, acotado solo a gastos personales.
+
+Solución implementada: `personalExpenses` ganó dos campos opcionales, `card` (Visa Banco Galicia, Mastercard Banco Galicia, Mastercard Mercado Pago o Mastercard Banco Nación) e `installments` (cantidad de cuotas). Al elegir "Tarjeta de crédito" como forma de pago en el formulario de carga personal aparecen esos dos campos. El monto cargado es el total de la compra, se registra una sola vez (no se duplican gastos mes a mes). Un panel nuevo en Movimientos → Personales ("Cuotas pendientes este mes") calcula al vuelo, a partir de la fecha real de la compra y la fecha actual, en qué cuota va cada compra activa, mostrando concepto, tarjeta, "cuota N/M", total de la compra y monto de la cuota de este mes, más el total a pagar sumando todas las compras activas.
+
+Verificado en navegador local con Supabase mockeado (mismo mock temporal de la sesión anterior, revertido después): se cargó una compra de $120.000 en 6 cuotas con fecha 2 meses atrás y el panel mostró correctamente "cuota 3/6 — $20.000". Detalle técnico en `architecture.md` y decisión de diseño en `decisions.md`.
+
 ## 2026-07-20 — Sync merge-based (cerrado, commit `135956e`)
 
 Se rediseñó la sincronización con Supabase para que mezcle por id en vez de reemplazar el estado completo, evitando que un dispositivo pise los gastos que el otro acaba de agregar. Se agregaron `updatedAt`/`deletedAt` a cada registro, tombstones para los borrados (en vez de eliminar físicamente), poda de tombstones viejos (90 días), y merge separado para `settlements` (con deduplicación por semana) y para `people`/`budgets` (last-write-wins de campo completo).

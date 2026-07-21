@@ -19,6 +19,7 @@ Nada en curso al cierre de esta sesión — ver "Pendiente" abajo para lo que fa
 
 ## Hecho (funcionalidades grandes, resumen — el detalle día a día está en `session-summary.md` y `CODEX_CONTEXT.md`)
 
+- Compras en cuotas con tarjeta de crédito para gastos personales: al elegir "Tarjeta de crédito" como forma de pago se puede indicar la tarjeta (una de 4 fijas) y la cantidad de cuotas; un panel en Movimientos → Personales muestra qué compras siguen activas, en qué cuota van y cuánto toca pagar este mes. 2026-07-20 (ver `decisions.md`/`architecture.md`).
 - Sincronización con Supabase rediseñada a merge por id con tombstones (evita que un dispositivo pise gastos agregados por el otro casi al mismo tiempo). Commit `135956e`, 2026-07-20.
 - Carga de gastos comunes y personales con fecha, categoría, forma de pago, monto, descripción.
 - Resumen semanal con reparto 50/50, detalle de cierre, vista mensual.
