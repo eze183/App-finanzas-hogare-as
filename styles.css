@@ -1,32 +1,36 @@
 :root {
-  --bg: #0b0d10;
-  --surface: #16191d;
-  --surface-soft: #1d2126;
-  --surface-tint: #121417;
-  --ink: #f2f4f6;
-  --muted: #9aa1ac;
-  --line: #262b31;
-  --accent: #10b981;
-  --accent-strong: #16c98a;
-  --accent-soft: #0f2b22;
-  --blue: #7dd3fc;
-  --blue-soft: #12222c;
-  --amber: #fbbf6b;
-  --amber-soft: #2e2210;
-  --personal: #f472b6;
-  --personal-strong: #f9a8d4;
-  --personal-soft: #2b1420;
-  --danger: #f87171;
-  --danger-soft: #2c1315;
-  --shadow: 0 20px 48px rgba(0, 0, 0, 0.4);
-  --shadow-soft: 0 10px 26px rgba(0, 0, 0, 0.3);
+  /* Sistema Modernist: paleta clara, acento rojo, tipografía Archivo, sin radios. */
+  --bg: #f3f2f2;
+  --surface: #ffffff;
+  --surface-soft: #eae9e9;
+  --surface-tint: #f8f4f4;
+  --ink: #201e1d;
+  --muted: #7d7979;
+  --line: #cbc7c7;
+  --line-strong: color-mix(in srgb, #201e1d 40%, transparent);
+  --accent: #ec3013;
+  --accent-strong: #dd2b0f;
+  --accent-deep: #ae1800;
+  --accent-soft: #ffe0d9;
+  --on-accent: #ffffff;
+  --blue: #ae1800;
+  --blue-soft: #fff2ef;
+  --amber: #7c1405;
+  --amber-soft: #ffe0d9;
+  --personal: #c2185b;
+  --personal-strong: #a3134d;
+  --personal-soft: #fce4ec;
+  --danger: #ec3013;
+  --danger-soft: #ffe0d9;
+  --shadow: 0 12px 32px color-mix(in srgb, #2d2b2b 22%, transparent);
+  --shadow-soft: 0 3px 10px color-mix(in srgb, #2d2b2b 16%, transparent);
   --font-body:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Archivo", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
-  --font-heading: "Manrope", var(--font-body);
-  --radius-sm: 10px;
-  --radius-md: 14px;
-  --radius-lg: 18px;
+  --font-heading: var(--font-body);
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
 }
 
 * {
@@ -41,41 +45,15 @@ body {
   font-family: var(--font-body);
 }
 
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(circle at top left, rgba(52, 211, 153, 0.1), transparent 360px),
-    linear-gradient(180deg, rgba(22, 25, 29, 0.9), rgba(11, 13, 16, 0) 280px);
-}
-
 html.personal-mode,
 body.personal-mode,
 .app-shell.personal-mode {
-  --bg: #100a10;
-  --surface: #1c1420;
-  --surface-soft: #241a28;
-  --surface-tint: #160f1a;
-  --line: #3a2b3f;
-  --accent: #f472b6;
-  --accent-strong: #f9a8d4;
-  --accent-soft: #2b1420;
-  --blue: #f9a8d4;
-  --blue-soft: #2b1420;
-}
-
-html.personal-mode,
-body.personal-mode {
-  background: #100a10;
-}
-
-html.personal-mode body::before,
-body.personal-mode::before {
-  background:
-    radial-gradient(circle at top right, rgba(244, 114, 182, 0.14), transparent 340px),
-    linear-gradient(180deg, rgba(28, 20, 32, 0.94), rgba(16, 10, 16, 0) 300px);
+  --accent: #c2185b;
+  --accent-strong: #a3134d;
+  --accent-deep: #880e3f;
+  --accent-soft: #fce4ec;
+  --blue: #880e3f;
+  --blue-soft: #fce4ec;
 }
 
 .app-shell.personal-mode {
@@ -92,7 +70,7 @@ button {
   border: 0;
   border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #052017;
+  color: var(--on-accent);
   cursor: pointer;
   font-family: var(--font-heading);
   font-weight: 800;
@@ -113,7 +91,7 @@ button:active {
 
 button.danger {
   background: transparent;
-  border: 1px solid #6b3232;
+  border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
   color: var(--danger);
 }
 
@@ -147,12 +125,12 @@ select {
 input:focus,
 select:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(52, 211, 153, 0.2);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
   outline: 0;
 }
 
 input::placeholder {
-  color: #6b7280;
+  color: var(--muted);
 }
 
 .app-shell {
@@ -291,7 +269,7 @@ label {
 
 .summary-card.highlight {
   background: var(--blue-soft);
-  border-color: #1c3f4d;
+  border-color: var(--line);
 }
 
 .summary-card.highlight strong {
@@ -331,7 +309,7 @@ label {
 .breakdown-item.wide {
   grid-column: 1 / -1;
   background: var(--accent-soft);
-  border-color: #1c5940;
+  border-color: var(--line);
 }
 
 .breakdown-item span,
@@ -404,7 +382,7 @@ label {
 .app-tabs button.is-active,
 .app-tabs button:hover {
   background: var(--accent);
-  color: #07110d;
+  color: var(--on-accent);
 }
 
 .icon-button {
@@ -423,7 +401,7 @@ label {
 
 .icon-button:hover {
   background: var(--accent);
-  color: #07110d;
+  color: var(--on-accent);
 }
 
 .settings-overlay {
@@ -529,7 +507,7 @@ label {
 .chart-toggle button.is-active,
 .chart-toggle button:hover {
   background: var(--accent);
-  color: #07110d;
+  color: var(--on-accent);
 }
 
 .chart-layout {
@@ -650,7 +628,7 @@ label {
 }
 
 .budget-row.is-over {
-  border-color: #6b3232;
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
   background: var(--danger-soft);
 }
 
@@ -710,7 +688,7 @@ label {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  border: 1px solid #1c5940;
+  border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--accent-soft);
   padding: 10px 12px;
@@ -805,7 +783,7 @@ label {
   min-height: 40px;
   border-radius: var(--radius-sm);
   background: var(--accent);
-  color: #07110d;
+  color: var(--on-accent);
   cursor: pointer;
   font-family: var(--font-heading);
   font-weight: 800;
@@ -898,13 +876,13 @@ button:disabled {
 .entry-tabs button.is-active,
 .entry-tabs button:hover {
   background: var(--accent);
-  color: #07110d;
+  color: var(--on-accent);
 }
 
 #personalTabButton.is-active,
 #personalTabButton:hover {
   background: var(--personal) !important;
-  color: #2b0a1a;
+  color: var(--on-accent);
 }
 
 body.personal-mode #commonTabButton {
@@ -1194,7 +1172,7 @@ html.personal-mode select,
 body.personal-mode input:focus,
 body.personal-mode select:focus {
   border-color: var(--personal);
-  box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.22);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 body.personal-mode .summary-grid,
@@ -1242,7 +1220,7 @@ html.personal-mode #currentWeekButton,
 .app-shell.personal-mode .table-actions button:not(.danger),
 .app-shell.personal-mode #currentWeekButton {
   background: var(--personal) !important;
-  color: #2b0a1a !important;
+  color: var(--on-accent) !important;
 }
 
 body.personal-mode .submit-expense-button:hover,
