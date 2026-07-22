@@ -4,7 +4,19 @@ Estado real al 2026-07-20, extraído del código, del historial de git y de la �
 
 ## En curso ahora mismo
 
-Nada en curso al cierre de esta sesión — ver "Pendiente" abajo para lo que falta y "Hecho" para el sync merge recién cerrado.
+### Rediseño visual Modernist (traído de Claude Design)
+
+El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistema llamado "Modernist" (paleta clara, acento rojo #ec3013, tipografía Archivo, sin bordes redondeados, dividers marcados, mobile-first con barra inferior). El export vive en `design-export/` (no se usa en runtime, es referencia). Se está portando por partes al código real, manteniendo intacta la lógica de `app.js`.
+
+**Hecho hasta ahora** (commiteado y pusheado):
+1. Capa visual: se remapearon los tokens de `styles.css` (colores/tipografía/espaciado/radios) al sistema Modernist, sin reescribir la CSS ni tocar la estructura. Commit `8ff3789`.
+2. Barra de navegación inferior fija en móvil (<=700px) con íconos, item activo en rojo; en escritorio se mantienen las pestañas de arriba. Commit `e809554`.
+
+**Falta** (reestructuración mobile-first pantalla por pantalla, decisiones de diseño ya tomadas — switch Comunes/Personales queda global, Configuración queda como panel único):
+- Cargar: monto como campo protagonista arriba, categorías como chips scrolleables, forma de pago/descripción colapsadas en "+ Más detalles".
+- Resumen: total semanal como número hero, bloque rojo "Para emparejar", barras por categoría.
+- Movimientos: lista agrupada por día con tag de persona (hoy es tabla/columnas).
+- Configuración: reorganización visual en secciones (sin drill-down).
 
 ## Pendiente — decisiones que le tocan al usuario
 
