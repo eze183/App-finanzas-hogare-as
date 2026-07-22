@@ -12,9 +12,9 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 1. Capa visual: se remapearon los tokens de `styles.css` (colores/tipografía/espaciado/radios) al sistema Modernist, sin reescribir la CSS ni tocar la estructura. Commit `8ff3789`.
 2. Barra de navegación inferior fija en móvil (<=700px) con íconos, item activo en rojo; en escritorio se mantienen las pestañas de arriba. Commit `e809554`.
 3. Pantalla Cargar reestructurada: monto como campo protagonista arriba (input grande sin borde en caja propia), categoría, Fecha+Pagó en 2 columnas, y forma de pago/descripción/cuotas colapsadas en un `<details>` "+ Más detalles". Íconos de carga rápida en grilla de 3 también en móvil. Aplica a ambos formularios (común y personal). Sin tocar `app.js` (todos los IDs se mantuvieron). La categoría quedó como `<select>` estilizado, no chips (los chips requerían wiring en JS con la carga por voz/OCR; se dejó para más adelante si el usuario lo pide).
+4. Pantalla Resumen reestructurada: "Total semanal" como número hero suelto (sin tarjeta), bloque rojo "Para emparejar" a todo el ancho con el botón "Marcar semana saldada" **movido adentro** (antes vivía en Movimientos > acciones de tabla — se relocalizó el elemento real, mismo id, sin tocar `app.js`), tarjetas Eze/Tami pagó lado a lado debajo. El gráfico de categorías se recoloreó con la rampa roja/gris de Modernist (antes multicolor). Se mantuvieron "Detalle del cierre" y "Vista mensual" como cards secundarias más abajo (el mockup no las tenía, pero sacarlas requería tocar `app.js`; se dejaron pero reordenadas — Vista mensual primero, Detalle del cierre después). Verificado que en modo Personales el bloque rojo/tarjetas de reparto se ocultan sin dejar huecos.
 
 **Falta** (reestructuración mobile-first pantalla por pantalla, decisiones de diseño ya tomadas — switch Comunes/Personales queda global, Configuración queda como panel único):
-- Resumen: total semanal como número hero, bloque rojo "Para emparejar", barras por categoría.
 - Movimientos: lista agrupada por día con tag de persona (hoy es tabla/columnas).
 - Configuración: reorganización visual en secciones (sin drill-down).
 

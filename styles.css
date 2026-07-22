@@ -238,17 +238,75 @@ label {
   font-weight: 700;
 }
 
+/* — Resumen: número hero + bloque de emparejar — */
+.summary-hero {
+  margin-bottom: 14px;
+}
+
+.summary-hero-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  margin-bottom: 6px;
+}
+
+.summary-hero-amount {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(2.2rem, 6vw, 2.9rem);
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.settlement-block {
+  display: grid;
+  gap: 12px;
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+.settlement-block-label {
+  color: color-mix(in srgb, var(--on-accent) 85%, transparent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settlement-block-text {
+  display: block;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  line-height: 1.25;
+}
+
+.settlement-block-button {
+  width: 100%;
+  background: var(--on-accent);
+  color: var(--accent-deep);
+}
+
+.settlement-block-button:hover {
+  background: color-mix(in srgb, var(--on-accent) 90%, var(--accent-soft));
+}
+
 .summary-grid {
   display: grid;
-  grid-template-columns: 1.15fr 1fr 1fr 1.25fr;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
   margin-bottom: 18px;
 }
 
 .summary-card {
-  min-height: 108px;
+  min-height: 92px;
   padding: 16px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: none;
+  border: 2px solid var(--line-strong);
 }
 
 .summary-card span {
@@ -284,7 +342,7 @@ label {
   margin-bottom: 18px;
 }
 
-#settlementDetailCard.is-hidden + .monthly-panel {
+.detail-grid:has(#settlementDetailCard.is-hidden) .monthly-panel {
   grid-column: 1 / -1;
 }
 

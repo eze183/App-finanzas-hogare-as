@@ -62,11 +62,18 @@
       </nav>
 
       <section id="dailyView" class="main-view">
-      <section class="summary-grid summary-view-section app-view-hidden" aria-label="Resumen semanal">
-        <article class="summary-card">
-          <span>Total semanal</span>
-          <strong id="totalAmount">$0</strong>
-        </article>
+      <section class="summary-hero summary-view-section app-view-hidden" aria-label="Resumen semanal">
+        <span class="summary-hero-label">Total semanal</span>
+        <strong id="totalAmount" class="summary-hero-amount">$0</strong>
+      </section>
+
+      <section id="settlementCard" class="settlement-block summary-view-section app-view-hidden" aria-label="Para emparejar">
+        <span class="settlement-block-label">Para emparejar</span>
+        <strong id="settlementText" class="settlement-block-text">Sin gastos esta semana</strong>
+        <button id="settleWeekButton" type="button" class="settlement-block-button">Marcar semana saldada</button>
+      </section>
+
+      <section class="summary-grid summary-view-section app-view-hidden" aria-label="Reparto por persona">
         <article id="personATotalCard" class="summary-card">
           <span id="personANameSummary">Persona 1 pagó</span>
           <strong id="personATotal">$0</strong>
@@ -74,32 +81,6 @@
         <article id="personBTotalCard" class="summary-card">
           <span id="personBNameSummary">Persona 2 pagó</span>
           <strong id="personBTotal">$0</strong>
-        </article>
-        <article id="settlementCard" class="summary-card highlight">
-          <span>Para emparejar</span>
-          <strong id="settlementText">Sin gastos esta semana</strong>
-        </article>
-      </section>
-
-      <section class="detail-grid summary-view-section app-view-hidden" aria-label="Detalle de cierre">
-        <article id="settlementDetailCard" class="panel settlement-detail">
-          <div class="panel-heading">
-            <div>
-              <h2>Detalle del cierre</h2>
-              <p id="settlementDetailIntro"></p>
-            </div>
-          </div>
-          <div id="settlementBreakdown" class="breakdown-grid"></div>
-        </article>
-
-        <article class="panel monthly-panel">
-          <div class="panel-heading">
-            <div>
-              <h2>Vista mensual</h2>
-              <p id="monthRangeLabel"></p>
-            </div>
-          </div>
-          <div id="monthlySummary" class="monthly-summary"></div>
         </article>
       </section>
 
@@ -118,6 +99,28 @@
           <canvas id="categoryChart" width="720" height="320" aria-label="Gráfico de gastos por categoría"></canvas>
           <div id="chartLegend" class="chart-legend"></div>
         </div>
+      </section>
+
+      <section class="detail-grid summary-view-section app-view-hidden" aria-label="Detalle de cierre">
+        <article class="panel monthly-panel">
+          <div class="panel-heading">
+            <div>
+              <h2>Vista mensual</h2>
+              <p id="monthRangeLabel"></p>
+            </div>
+          </div>
+          <div id="monthlySummary" class="monthly-summary"></div>
+        </article>
+
+        <article id="settlementDetailCard" class="panel settlement-detail">
+          <div class="panel-heading">
+            <div>
+              <h2>Detalle del cierre</h2>
+              <p id="settlementDetailIntro"></p>
+            </div>
+          </div>
+          <div id="settlementBreakdown" class="breakdown-grid"></div>
+        </article>
       </section>
 
         <section class="workspace load-view-section">
@@ -315,7 +318,6 @@
             <div class="table-actions">
               <button id="exportButton" type="button">Exportar</button>
               <button id="applyRecurringButton" type="button">Aplicar recurrentes</button>
-              <button id="settleWeekButton" type="button">Marcar saldada</button>
               <button id="clearWeekButton" class="danger" type="button">Borrar semana</button>
             </div>
           </div>

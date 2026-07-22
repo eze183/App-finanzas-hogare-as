@@ -12,7 +12,7 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   month: "2-digit",
   year: "numeric",
 });
-const chartColors = ["#60a5fa", "#f97316", "#a78bfa", "#2dd4bf", "#fbbf24", "#94a3b8"];
+const chartColors = ["#ec3013", "#7d7979", "#ff9783", "#201e1d", "#dd2b0f", "#bab6b6"];
 const categories = [
   "Farmacia",
   "Supermercado",
