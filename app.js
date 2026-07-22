@@ -151,6 +151,10 @@ const elements = {
   personalExpenseAmount: document.querySelector("#personalExpenseAmount"),
   personalExpensePaymentMethod: document.querySelector("#personalExpensePaymentMethod"),
   personalExpenseNote: document.querySelector("#personalExpenseNote"),
+  personATotalCard: document.querySelector("#personATotalCard"),
+  personBTotalCard: document.querySelector("#personBTotalCard"),
+  settlementCard: document.querySelector("#settlementCard"),
+  settlementDetailCard: document.querySelector("#settlementDetailCard"),
   personalCardFields: document.querySelector("#personalCardFields"),
   personalExpenseCard: document.querySelector("#personalExpenseCard"),
   personalExpenseInstallments: document.querySelector("#personalExpenseInstallments"),
@@ -215,6 +219,7 @@ const elements = {
 let state = loadState();
 let chartType = "bar";
 let currentAppView = "load";
+let currentEntryMode = "common";
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -642,16 +647,20 @@ function getFilteredExpenses(expenses) {
   });
 }
 
-function getCurrentMonthExpenses() {
+function getMonthExpensesFrom(list) {
   const selected = parseISODate(elements.weekStart.value);
   const year = selected.getFullYear();
   const month = selected.getMonth();
 
-  return state.expenses.filter((expense) => {
+  return list.filter((expense) => {
     if (expense.deletedAt) return false;
     const expenseDate = parseISODate(expense.date);
     return expenseDate.getFullYear() === year && expenseDate.getMonth() === month;
   });
+}
+
+function getCurrentMonthExpenses() {
+  return getMonthExpensesFrom(state.expenses);
 }
 
 function formatMoney(amount) {
@@ -720,11 +729,18 @@ function populateSettingsForm() {
   elements.deviceOwnerSelect.value = deviceOwner;
 }
 
-function renderSummary(expenses) {
+function renderSummary(expenses, isPersonal) {
+  elements.personATotalCard.classList.toggle("is-hidden", isPersonal);
+  elements.personBTotalCard.classList.toggle("is-hidden", isPersonal);
+  elements.settlementCard.classList.toggle("is-hidden", isPersonal);
+
+  const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  elements.totalAmount.textContent = formatMoney(total);
+
+  if (isPersonal) return;
+
   const settlement = calculateSettlement(expenses);
   const [personA, personB] = state.people;
-
-  elements.totalAmount.textContent = formatMoney(settlement.total);
   elements.personATotal.textContent = formatMoney(settlement.totals[personA] || 0);
   elements.personBTotal.textContent = formatMoney(settlement.totals[personB] || 0);
 
@@ -737,7 +753,10 @@ function renderSummary(expenses) {
   }
 }
 
-function renderSettlementDetail(expenses) {
+function renderSettlementDetail(expenses, isPersonal) {
+  elements.settlementDetailCard.classList.toggle("is-hidden", isPersonal);
+  if (isPersonal) return;
+
   const settlement = calculateSettlement(expenses);
   const [personA, personB] = state.people;
   const half = settlement.total / 2;
@@ -778,8 +797,8 @@ function renderSettlementDetail(expenses) {
   `;
 }
 
-function renderMonthlySummary() {
-  const monthExpenses = getCurrentMonthExpenses();
+function renderMonthlySummary(isPersonal) {
+  const monthExpenses = getMonthExpensesFrom(isPersonal ? state.personalExpenses : state.expenses);
   const selected = parseISODate(elements.weekStart.value);
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(selected);
   const monthlyTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -1215,19 +1234,21 @@ function renderSettlementHistory() {
 }
 
 function render() {
+  const isPersonal = currentEntryMode === "personal";
   const expenses = getCurrentWeekExpenses();
   const personalExpenses = getCurrentWeekPersonalExpenses();
   const filteredExpenses = getFilteredExpenses(expenses);
+  const summaryExpenses = isPersonal ? personalExpenses : expenses;
   renderPeople();
   renderFilterValues();
   renderWeekLabel();
-  renderSummary(expenses);
-  renderSettlementDetail(expenses);
-  renderMonthlySummary();
+  renderSummary(summaryExpenses, isPersonal);
+  renderSettlementDetail(expenses, isPersonal);
+  renderMonthlySummary(isPersonal);
   renderCategories(expenses);
   renderBudgets(expenses);
   renderRecurringExpenses();
-  renderChart(expenses);
+  renderChart(summaryExpenses);
   renderTable(filteredExpenses);
   renderPersonalExpenses(personalExpenses);
   renderPendingInstallments();
@@ -2475,11 +2496,17 @@ function setEntryMode(mode) {
   elements.personalExpenseSection.classList.toggle("is-hidden", !isPersonal);
   elements.commonSubmitButton.classList.toggle("is-hidden", isPersonal);
   elements.personalSubmitButton.classList.toggle("is-hidden", !isPersonal);
+  elements.historyViewButton.classList.toggle("is-hidden", isPersonal);
+  if (isPersonal && currentAppView === "history") {
+    setAppView("load");
+  }
   setRecordsMode(isPersonal ? "personal" : "common");
+  render();
 }
 
 function setRecordsMode(mode) {
   const isPersonal = mode === "personal";
+  currentEntryMode = isPersonal ? "personal" : "common";
   document.documentElement.classList.toggle("personal-mode", isPersonal);
   document.body.classList.toggle("personal-mode", isPersonal);
   elements.appShell.classList.toggle("personal-mode", isPersonal);

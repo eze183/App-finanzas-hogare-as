@@ -306,6 +306,10 @@ label {
   margin-bottom: 18px;
 }
 
+#settlementDetailCard.is-hidden + .monthly-panel {
+  grid-column: 1 / -1;
+}
+
 .breakdown-grid,
 .monthly-summary {
   display: grid;
@@ -1191,6 +1195,12 @@ body.personal-mode input:focus,
 body.personal-mode select:focus {
   border-color: var(--personal);
   box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.22);
+}
+
+body.personal-mode .summary-grid,
+html.personal-mode .summary-grid,
+.app-shell.personal-mode .summary-grid {
+  grid-template-columns: 1fr;
 }
 
 body.personal-mode .app-tabs,

@@ -10,6 +10,14 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 Se creó `CLAUDE.md` en la raíz y la carpeta `docs/` completa (`architecture.md`, `decisions.md`, `roadmap.md`, este archivo), a pedido explícito del usuario, para facilitar el trabajo en futuras sesiones. Todo extraído del código real, `git log` y `CODEX_CONTEXT.md` — nada inventado. Se estableció como regla permanente actualizar `session-summary.md` y `roadmap.md` después de cada funcionalidad importante.
 
+## 2026-07-20 — Resumen e Historial adaptados al modo Comunes/Personales
+
+Pedido del usuario: la pestaña Personales repetía información de Comunes que no aplica (reparto "Eze pagó"/"Tami pagó", detalle de cierre semanal diferenciado por persona en Resumen, e Historial de saldos). Antes de este cambio el switch global solo afectaba el formulario de carga y Movimientos; Resumen e Historial ignoraban el modo y siempre mostraban datos comunes.
+
+Se agregó `currentEntryMode` (global en `app.js`) actualizado por `setRecordsMode()`. En modo personal: `renderSummary`/`renderMonthlySummary`/el gráfico usan `personalExpenses` en vez de `expenses`; las tarjetas de reparto por persona y el panel "Detalle del cierre" se ocultan (`#personATotalCard`/`#personBTotalCard`/`#settlementCard`/`#settlementDetailCard`); y el botón "Historial" se oculta, redirigiendo a "Cargar" si el usuario estaba ahí al cambiar de modo. No se tocó el panel "Por categoría"/presupuestos de la pestaña Cargar, que no fue mencionado.
+
+Verificado en navegador con Supabase mockeado (mismo mock temporal, revertido después): al entrar en modo personal las tarjetas y el detalle de cierre quedan con `is-hidden`, el total semanal y la vista mensual pasan a reflejar montos personales reales, el layout de grilla se reacomoda a una columna sin huecos, y al volver a Comunes todo se restaura correctamente. Detalle técnico en `architecture.md`, decisión en `decisions.md`.
+
 ## 2026-07-20 — Compras en cuotas con tarjeta (gastos personales)
 
 Pedido del usuario: se olvidaba de compras en cuotas hechas con cualquiera de sus 4 tarjetas de crédito, lo que le hacía sumar gastos sin contemplar el compromiso pendiente. Se evaluó una entidad separada con generación automática de gastos mensuales, pero el usuario pidió algo simple, acotado solo a gastos personales.

@@ -106,6 +106,8 @@ Aparte, un switch global "Comunes/Personales" (`#commonTabButton`/`#personalTabB
 
 Es decir: es un modo global de la app, no un filtro local de una sola vista.
 
+**Resumen e Historial también son sensibles a este modo** (desde 2026-07-20): en modo personal, `render()` calcula `totalAmount`/`Vista mensual`/el gráfico por categoría a partir de `personalExpenses` en vez de `expenses`, y oculta las tarjetas "Persona pagó"/"Para emparejar" y el panel "Detalle del cierre" (`#personATotalCard`/`#personBTotalCard`/`#settlementCard`/`#settlementDetailCard`, toggleados en `renderSummary()`/`renderSettlementDetail()`) porque no existe reparto 50/50 en gastos personales. La pestaña Historial (saldos entre personas) tampoco aplica a gastos personales, así que `setEntryMode()` oculta directamente el botón `#historyViewButton` y redirige a "Cargar" si el usuario estaba ahí al cambiar a modo personal. `currentEntryMode` (global en `app.js`, actualizado por `setRecordsMode()`) es la fuente de verdad que lee `render()` para decidir qué mostrar.
+
 ## Cómo se carga un gasto
 
 Cuatro caminos, todos terminan llenando el mismo formulario (`#expenseForm`/`#personalExpenseForm`) para que el usuario confirme antes de guardar — **nada se guarda automáticamente**:

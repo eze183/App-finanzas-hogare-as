@@ -88,6 +88,14 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Trade-off aceptado**: si el usuario carga la compra con la fecha real de la compra (no la del primer débito), el cálculo de "cuota N/M" puede correrse un mes respecto al resumen real de la tarjeta. No se resolvió porque no se pidió, y es un caso borde poco frecuente.
 
+## Resumen e Historial se ocultan/adaptan en modo personal
+
+**Decisión** (2026-07-20): pedido explícito del usuario — "la pestaña de personales es casi idéntica a la de comunes, pero hay cosas de más". Antes de este cambio, el switch global Comunes/Personales solo afectaba el formulario de carga y la tabla de Movimientos; Resumen e Historial mostraban siempre datos comunes sin importar el modo, incluyendo "Eze pagó"/"Tami pagó" y el detalle de cierre semanal diferenciado por persona, que no tienen sentido para gastos personales (no se reparten 50/50).
+
+**Solución**: en modo personal, Resumen recalcula el total semanal, la vista mensual y el gráfico por categoría con `personalExpenses` en vez de `expenses`, y oculta las tarjetas de reparto por persona y el detalle de cierre. La pestaña Historial (saldos entre personas) se oculta directamente, porque los gastos personales nunca se "saldan".
+
+**Por qué no se tocó el panel "Por categoría"/presupuestos del tab Cargar**: el usuario no lo mencionó y sigue siendo información de contexto mientras se carga un gasto, no una duplicación confusa como sí lo eran los campos de reparto en Resumen.
+
 ## Historial de cuentas saldadas es una pestaña propia, no parte de Movimientos
 
 **Decisión** (2026-07-13): pedido explícito del usuario, sin motivo adicional registrado más allá de preferencia de navegación.
