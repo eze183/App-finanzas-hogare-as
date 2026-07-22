@@ -99,3 +99,19 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 ## Historial de cuentas saldadas es una pestaña propia, no parte de Movimientos
 
 **Decisión** (2026-07-13): pedido explícito del usuario, sin motivo adicional registrado más allá de preferencia de navegación.
+
+## Rediseño visual Modernist traído de Claude Design
+
+**Decisión** (2026-07-21, en curso): el usuario armó una propuesta de rediseño completo en la app "Design" de Claude (herramienta separada, no este chat), bajo un sistema de diseño llamado "Modernist": paleta clara (#f3f2f2 de fondo), acento rojo único (#ec3013), tipografía Archivo, `radius: 0` en todos lados, dividers marcados de 2px, mobile-first con barra de navegación inferior. Reemplaza la paleta oscura "grafito moderno" (acento esmeralda) adoptada el 2026-07-10.
+
+**Cómo se trajo el diseño al proyecto**: no hay integración directa entre Claude Design y este repo. El usuario exportó el proyecto de Design como "Project archive" (zip con todos los archivos: el `.dc.html` con el mockup de las 5 pantallas, el design system completo en `_ds/.../styles.css`, capturas). Ese export vive en `design-export/` **solo como referencia** — no se carga en runtime, no tiene build step ni se linkea desde `index.html`. Cada pantalla se reimplementa a mano leyendo el mockup, no se copia el HTML/CSS del export directamente (ese HTML usa un web component propio `<x-dc>`/`<x-import>` que no existe fuera de la herramienta Design).
+
+**Por qué remapear variables en vez de reescribir `styles.css`**: la CSS actual (~1800 líneas) ya usa variables (`--bg`, `--ink`, `--accent`, etc.) consistentemente en todo el archivo. Cambiar solo los valores de esas variables en `:root` (más los pocos colores hardcodeados que quedaban sueltos, migrados a variables) logró el cambio de paleta completo sin tocar la estructura ni arriesgar reescribir 1800 líneas a mano. Es la misma técnica que ya se usa para el modo personal (override de variables bajo `.personal-mode`).
+
+**Decisiones de alcance tomadas explícitamente por el agente, confirmadas con "lo que consideres mejor" del usuario**:
+- El switch Comunes/Personales **queda global** (arriba de todo, fuera de las pestañas) en vez de volver a vivir dentro de cada pantalla como en el mockup — porque ya se había sacado de ahí a propósito el 2026-07-13 (ver decisión de esa fecha) y el mockup no tenía ese contexto.
+- Configuración **queda como panel único** (no se agrega drill-down a sub-páginas como en el mockup) — un panel único es más simple y consistente con la filosofía "sin over-engineering" del proyecto para una app de 2 personas.
+- La categoría en el formulario de carga quedó como `<select>` estilizado, **no como chips** (el mockup los mostraba como chips horizontales scrolleables) — los chips hubieran requerido wiring nuevo en JS (estado de selección, sincronización con la carga por voz/OCR que hoy setea `expenseCategory.value` directamente). Se puede hacer más adelante si se pide explícitamente.
+- El gráfico de categorías (barras/torta, dibujado en `<canvas>`) se mantuvo tal cual, solo recoloreado a la rampa roja/gris de Modernist — el mockup mostraba barras de progreso HTML simples en vez de canvas, pero reemplazar el canvas hubiera sido un cambio de `app.js` mucho más grande que un ajuste de paleta.
+
+**Regla seguida en cada paso**: nunca tocar los `id` que usa `app.js` al reestructurar HTML — se reordenan/envuelven nodos pero los ids se preservan, así ningún paso de este rediseño requirió (ni debería requerir) cambios en la lógica de la app. La única excepción fue mover el botón `#settleWeekButton` de Movimientos a Resumen (relocalización del mismo elemento, no una copia) y actualizar el array `chartColors` en `app.js` (una constante de colores, no lógica).

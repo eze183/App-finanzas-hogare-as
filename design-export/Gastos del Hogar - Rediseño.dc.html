@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/modernist-dc5d55ed-ef70-4e17-9a36-309824d6e363/styles.css">
+  <script src="_ds/modernist-dc5d55ed-ef70-4e17-9a36-309824d6e363/_ds_bundle.js"></script>
+  <style>
+    a { color: var(--color-accent-700); }
+    a:hover { color: var(--color-accent); }
+  </style>
+</helmet>
+
+<div style="background: var(--color-neutral-200); min-height: 100vh; padding: var(--space-8) var(--space-6);">
+
+  <div style="max-width: 1040px; margin: 0 auto var(--space-8); display: grid; gap: var(--space-3);">
+    <span style="font: 700 11px var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent-700);">Rediseño · Gastos del hogar</span>
+    <h1 style="font: 800 34px/1.1 var(--font-heading); color: var(--color-text); margin: 0;">Cargar gastos sin fricción, entender el reparto de un vistazo</h1>
+    <p style="font: 400 15px/1.5 var(--font-body); color: var(--color-neutral-700); max-width: 640px; margin: 0;">Mobile-first, sobre el sistema Modernist. Tres cambios principales: (1) cargar un gasto ahora toma 3 pasos en vez de 8 campos visibles a la vez, (2) cada pantalla tiene un solo número protagonista en vez de todo con el mismo peso, (3) las acciones secundarias (exportar, borrar, aplicar recurrentes) se agrupan detrás de un menú en vez de amontonarse en la cabecera.</p>
+  </div>
+
+  <div style="max-width: 1040px; margin: 0 auto var(--space-4); display: flex; gap: var(--space-2); flex-wrap: wrap;">
+    <span class="tag tag-outline">1 · Cargar</span>
+    <span class="tag tag-outline">2 · Resumen</span>
+    <span class="tag tag-outline">3 · Movimientos</span>
+    <span class="tag tag-outline">4 · Historial</span>
+    <span class="tag tag-outline">5 · Configuración</span>
+  </div>
+
+  <div style="display: flex; gap: var(--space-6); overflow-x: auto; padding: var(--space-4) 4px var(--space-8);">
+
+    <!-- SCREEN 1 — CARGAR -->
+    <div style="display: grid; gap: var(--space-3); flex: none;">
+      <span style="font: 700 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600);">1 · Cargar</span>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="height: 100%; display: flex; flex-direction: column; background: var(--color-bg); font-family: var(--font-body); padding-top: 54px; box-sizing: border-box;">
+          <div style="flex: 1; overflow: auto; padding: 0 var(--space-4) 200px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: var(--space-3) 0 var(--space-4);">
+              <div>
+                <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600);">Semana del 20 al 26 de jul.</div>
+                <div style="font: 800 22px var(--font-heading); color: var(--color-text);">Cargar gasto</div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-icon" aria-label="Configuración" style="border-radius: 999px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+            </div>
+
+            <div class="seg" role="radiogroup" aria-label="Tipo de gasto" style="margin-bottom: var(--space-4);">
+              <label class="seg-opt"><input type="radio" name="mode" checked />Comunes</label>
+              <label class="seg-opt"><input type="radio" name="mode" />Personales</label>
+            </div>
+
+            <div style="border: 2px solid var(--color-divider); background: var(--color-surface); padding: var(--space-4); margin-bottom: var(--space-4);">
+              <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: var(--space-2);">Monto</div>
+              <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font: 800 28px var(--font-heading); color: var(--color-neutral-500);">$</span>
+                <input class="input" value="0,00" style="border: 0; background: transparent; padding: 0; font: 800 44px var(--font-heading); color: var(--color-text); height: auto;" />
+              </div>
+            </div>
+
+            <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: var(--space-2);">Categoría</div>
+            <div style="display: flex; gap: var(--space-2); overflow-x: auto; padding-bottom: var(--space-2); margin-bottom: var(--space-4);">
+              <span class="tag tag-accent" style="flex: none;">Supermercado</span>
+              <span class="tag tag-outline" style="flex: none;">Farmacia</span>
+              <span class="tag tag-outline" style="flex: none;">Verduleria</span>
+              <span class="tag tag-outline" style="flex: none;">Carniceria</span>
+              <span class="tag tag-outline" style="flex: none;">Combustible</span>
+              <span class="tag tag-outline" style="flex: none;">Otros</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div class="field"><label>Fecha</label><input class="input" type="date" value="2026-07-21" /></div>
+              <div class="field"><label>Pagó</label>
+                <div class="seg" role="radiogroup" aria-label="Pagador">
+                  <label class="seg-opt"><input type="radio" name="payer" checked />Eze</label>
+                  <label class="seg-opt"><input type="radio" name="payer" />Tami</label>
+                </div>
+              </div>
+            </div>
+
+            <details style="border-top: 2px solid var(--color-divider); padding-top: var(--space-3); margin-bottom: var(--space-4);">
+              <summary style="cursor: pointer; font: 700 13px var(--font-body); color: var(--color-accent-700);">+ Más detalles (forma de pago, descripción)</summary>
+              <div style="display: grid; gap: var(--space-3); margin-top: var(--space-3);">
+                <div class="field"><label>Forma de pago</label>
+                  <select class="input"><option>Sin especificar</option><option>Tarjeta de crédito</option><option>Tarjeta de débito</option><option>Efectivo</option></select>
+                </div>
+                <div class="field"><label>Descripción</label><input class="input" placeholder="Ej: compra supermercado" /></div>
+              </div>
+            </details>
+
+            <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: var(--space-2);">O cargá rápido</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-2);">
+              <button type="button" class="btn btn-secondary" style="flex-direction: column; height: 72px; gap: 6px; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.5-2h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>
+                Foto
+              </button>
+              <button type="button" class="btn btn-secondary" style="flex-direction: column; height: 72px; gap: 6px; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h8l4 4v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1z"/><path d="M14 3v4h4"/></svg>
+                Archivo
+              </button>
+              <button type="button" class="btn btn-secondary" style="flex-direction: column; height: 72px; gap: 6px; justify-content: center;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/></svg>
+                Voz
+              </button>
+            </div>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 90px; padding: 0 var(--space-4);">
+            <button type="button" class="btn btn-primary btn-block" style="box-shadow: var(--shadow-md);">Agregar gasto</button>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--color-divider); background: var(--color-surface); padding-bottom: 22px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-accent-700);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="font: 700 10px var(--font-body);">Cargar</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              <span style="font: 700 10px var(--font-body);">Resumen</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              <span style="font: 700 10px var(--font-body);">Movs.</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span style="font: 700 10px var(--font-body);">Historial</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- SCREEN 2 — RESUMEN -->
+    <div style="display: grid; gap: var(--space-3); flex: none;">
+      <span style="font: 700 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600);">2 · Resumen</span>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="height: 100%; display: flex; flex-direction: column; background: var(--color-bg); font-family: var(--font-body); padding-top: 54px; box-sizing: border-box;">
+          <div style="flex: 1; overflow: auto; padding: 0 var(--space-4) 110px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: var(--space-3) 0 var(--space-4);">
+              <div>
+                <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600);">Semana del 20 al 26 de jul.</div>
+                <div style="font: 800 22px var(--font-heading); color: var(--color-text);">Resumen</div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-icon" aria-label="Configuración" style="border-radius: 999px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+              </button>
+            </div>
+
+            <div style="font: 700 12px var(--font-body); color: var(--color-neutral-600); margin-bottom: 6px;">Total semanal</div>
+            <div style="font: 800 46px var(--font-heading); color: var(--color-text); margin-bottom: var(--space-4);">$186.400</div>
+
+            <div style="background: var(--color-accent); color: #fff; padding: var(--space-4); margin-bottom: var(--space-4);">
+              <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.85; margin-bottom: 6px;">Para emparejar</div>
+              <div style="font: 800 21px var(--font-heading); margin-bottom: var(--space-3);">Tami le pasa $12.450 a Eze</div>
+              <button type="button" class="btn" style="background: #fff; color: var(--color-accent-800); width: 100%;">Marcar semana saldada</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div style="border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="font: 700 11px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: 6px;">Eze pagó</div>
+                <div style="font: 800 22px var(--font-heading); color: var(--color-text);">$99.425</div>
+              </div>
+              <div style="border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="font: 700 11px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: 6px;">Tami pagó</div>
+                <div style="font: 800 22px var(--font-heading); color: var(--color-text);">$86.975</div>
+              </div>
+            </div>
+
+            <div style="font: 700 13px var(--font-body); color: var(--color-text); margin-bottom: var(--space-3);">Gastos por categoría</div>
+            <div style="display: grid; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div>
+                <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Supermercado</span><strong style="color: var(--color-text);">$74.200</strong></div>
+                <div style="height: 8px; background: var(--color-neutral-200);"><div style="height: 100%; width: 68%; background: var(--color-accent);"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Farmacia</span><strong style="color: var(--color-text);">$38.900</strong></div>
+                <div style="height: 8px; background: var(--color-neutral-200);"><div style="height: 100%; width: 36%; background: var(--color-accent-500);"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Combustible</span><strong style="color: var(--color-text);">$31.100</strong></div>
+                <div style="height: 8px; background: var(--color-neutral-200);"><div style="height: 100%; width: 28%; background: var(--color-accent-400);"></div></div>
+              </div>
+              <div>
+                <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Otros</span><strong style="color: var(--color-text);">$42.200</strong></div>
+                <div style="height: 8px; background: var(--color-neutral-200);"><div style="height: 100%; width: 32%; background: var(--color-accent-300);"></div></div>
+              </div>
+            </div>
+
+            <div class="card" style="background: var(--color-neutral-100);">
+              <div class="card-kicker">Vista mensual · julio</div>
+              <div class="card-title">$742.300 en 4 semanas</div>
+              <p class="card-body">18 gastos cargados · categoría principal: Supermercado</p>
+            </div>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--color-divider); background: var(--color-surface); padding-bottom: 22px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="font: 700 10px var(--font-body);">Cargar</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-accent-700);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              <span style="font: 700 10px var(--font-body);">Resumen</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              <span style="font: 700 10px var(--font-body);">Movs.</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span style="font: 700 10px var(--font-body);">Historial</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- SCREEN 3 — MOVIMIENTOS -->
+    <div style="display: grid; gap: var(--space-3); flex: none;">
+      <span style="font: 700 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600);">3 · Movimientos</span>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="height: 100%; display: flex; flex-direction: column; background: var(--color-bg); font-family: var(--font-body); padding-top: 54px; box-sizing: border-box;">
+          <div style="flex: 1; overflow: auto; padding: 0 var(--space-4) 110px;">
+            <div style="display: flex; align-items: flex-start; justify-content: space-between; padding: var(--space-3) 0 var(--space-4);">
+              <div>
+                <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600);">Semana del 20 al 26 de jul.</div>
+                <div style="font: 800 22px var(--font-heading); color: var(--color-text);">Movimientos</div>
+              </div>
+              <button type="button" class="btn btn-secondary btn-icon" aria-label="Más acciones" style="border-radius: 999px;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+              </button>
+            </div>
+
+            <div class="seg" role="radiogroup" aria-label="Tipo de gasto" style="margin-bottom: var(--space-3);">
+              <label class="seg-opt"><input type="radio" name="mode2" checked />Comunes</label>
+              <label class="seg-opt"><input type="radio" name="mode2" />Personales</label>
+            </div>
+
+            <div style="display: flex; gap: var(--space-2); margin-bottom: var(--space-4);">
+              <input class="input" placeholder="Buscar descripción" style="flex: 1;" />
+              <button type="button" class="btn btn-secondary btn-icon" aria-label="Filtros">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M7 12h10M10 19h4"/></svg>
+              </button>
+            </div>
+
+            <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: var(--space-2);">Lunes 21 de julio</div>
+            <div style="display: grid; margin-bottom: var(--space-4);">
+              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider);">
+                <span class="tag tag-neutral" style="flex: none;">Eze</span>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font: 700 14px var(--font-body); color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Supermercado Día</div>
+                  <div style="font: 400 12px var(--font-body); color: var(--color-neutral-600);">Tarjeta de débito</div>
+                </div>
+                <strong style="font: 800 15px var(--font-heading); color: var(--color-text); white-space: nowrap;">$28.400</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider);">
+                <span class="tag tag-neutral" style="flex: none;">Tami</span>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font: 700 14px var(--font-body); color: var(--color-text);">Farmacity</div>
+                  <div style="font: 400 12px var(--font-body); color: var(--color-neutral-600);">Efectivo</div>
+                </div>
+                <strong style="font: 800 15px var(--font-heading); color: var(--color-text); white-space: nowrap;">$11.250</strong>
+              </div>
+            </div>
+
+            <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600); margin-bottom: var(--space-2);">Domingo 20 de julio</div>
+            <div style="display: grid; margin-bottom: var(--space-4);">
+              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider);">
+                <span class="tag tag-neutral" style="flex: none;">Eze</span>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font: 700 14px var(--font-body); color: var(--color-text);">Carga de nafta YPF</div>
+                  <div style="font: 400 12px var(--font-body); color: var(--color-neutral-600);">Tarjeta de crédito</div>
+                </div>
+                <strong style="font: 800 15px var(--font-heading); color: var(--color-text); white-space: nowrap;">$31.100</strong>
+              </div>
+              <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--color-divider);">
+                <span class="tag tag-neutral" style="flex: none;">Tami</span>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font: 700 14px var(--font-body); color: var(--color-text);">Verdulería Don Pepe</div>
+                  <div style="font: 400 12px var(--font-body); color: var(--color-neutral-600);">Efectivo</div>
+                </div>
+                <strong style="font: 800 15px var(--font-heading); color: var(--color-text); white-space: nowrap;">$9.800</strong>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-ghost btn-block" style="color: var(--color-neutral-600);">Ver los 14 movimientos de la semana</button>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--color-divider); background: var(--color-surface); padding-bottom: 22px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="font: 700 10px var(--font-body);">Cargar</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              <span style="font: 700 10px var(--font-body);">Resumen</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-accent-700);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              <span style="font: 700 10px var(--font-body);">Movs.</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span style="font: 700 10px var(--font-body);">Historial</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- SCREEN 4 — HISTORIAL -->
+    <div style="display: grid; gap: var(--space-3); flex: none;">
+      <span style="font: 700 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600);">4 · Historial</span>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="height: 100%; display: flex; flex-direction: column; background: var(--color-bg); font-family: var(--font-body); padding-top: 54px; box-sizing: border-box;">
+          <div style="flex: 1; overflow: auto; padding: 0 var(--space-4) 110px;">
+            <div style="padding: var(--space-3) 0 var(--space-4);">
+              <div style="font: 700 11px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-neutral-600);">Cuentas saldadas</div>
+              <div style="font: 800 22px var(--font-heading); color: var(--color-text);">Historial</div>
+            </div>
+
+            <div style="display: grid; gap: var(--space-3);">
+              <div class="card">
+                <div class="card-kicker">14 – 20 de julio</div>
+                <div class="card-title">Tami pagó $9.300 a Eze</div>
+                <p class="card-body">Total $168.900 · saldada el 21 de julio</p>
+              </div>
+              <div class="card">
+                <div class="card-kicker">7 – 13 de julio</div>
+                <div class="card-title">Eze pagó $22.150 a Tami</div>
+                <p class="card-body">Total $201.300 · saldada el 14 de julio</p>
+              </div>
+              <div class="card">
+                <div class="card-kicker">30 de jun. – 6 de jul.</div>
+                <div class="card-title">Cuenta pareja — sin transferencia</div>
+                <p class="card-body">Total $154.600 · saldada el 7 de julio</p>
+              </div>
+              <div class="card">
+                <div class="card-kicker">23 – 29 de junio</div>
+                <div class="card-title">Tami pagó $17.800 a Eze</div>
+                <p class="card-body">Total $190.400 · saldada el 30 de junio</p>
+              </div>
+            </div>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(4, 1fr); border-top: 2px solid var(--color-divider); background: var(--color-surface); padding-bottom: 22px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+              <span style="font: 700 10px var(--font-body);">Cargar</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-5 3 3 5-7"/></svg>
+              <span style="font: 700 10px var(--font-body);">Resumen</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-neutral-500);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+              <span style="font: 700 10px var(--font-body);">Movs.</span>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0; color: var(--color-accent-700);">
+              <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              <span style="font: 700 10px var(--font-body);">Historial</span>
+            </div>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- SCREEN 5 — CONFIGURACIÓN -->
+    <div style="display: grid; gap: var(--space-3); flex: none;">
+      <span style="font: 700 12px var(--font-body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-neutral-600);">5 · Configuración</span>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+        <div style="height: 100%; display: flex; flex-direction: column; background: var(--color-bg); font-family: var(--font-body); padding-top: 54px; box-sizing: border-box;">
+          <div style="flex: 1; overflow: auto; padding: 0 var(--space-4) var(--space-6);">
+            <div style="display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0 var(--space-4);">
+              <button type="button" class="btn btn-ghost btn-icon" aria-label="Volver">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+              </button>
+              <div style="font: 800 22px var(--font-heading); color: var(--color-text);">Configuración</div>
+            </div>
+
+            <div style="display: grid; gap: var(--space-3); margin-bottom: var(--space-4);">
+              <div style="display: flex; align-items: center; gap: var(--space-3); border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="flex: 1;">
+                  <div style="font: 700 15px var(--font-body); color: var(--color-text);">Hogar y dispositivo</div>
+                  <div style="font: 400 13px var(--font-body); color: var(--color-neutral-600);">Eze · Tami · este celular es de Eze</div>
+                </div>
+                <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="var(--color-neutral-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+
+              <div style="border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3);">
+                  <div>
+                    <div style="font: 700 15px var(--font-body); color: var(--color-text);">Presupuestos</div>
+                    <div style="font: 400 13px var(--font-body); color: var(--color-neutral-600);">2 categorías con límite semanal</div>
+                  </div>
+                </div>
+                <div style="display: grid; gap: var(--space-2);">
+                  <div>
+                    <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Supermercado</span><span>$74.200 / $70.000</span></div>
+                    <div style="height: 6px; background: var(--color-neutral-200);"><div style="height: 100%; width: 100%; background: var(--color-accent);"></div></div>
+                  </div>
+                  <div>
+                    <div style="display: flex; justify-content: space-between; font: 600 13px var(--font-body); color: var(--color-neutral-700); margin-bottom: 4px;"><span>Farmacia</span><span>$38.900 / $50.000</span></div>
+                    <div style="height: 6px; background: var(--color-neutral-200);"><div style="height: 100%; width: 78%; background: var(--color-neutral-500);"></div></div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: var(--space-3); border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="flex: 1;">
+                  <div style="font: 700 15px var(--font-body); color: var(--color-text);">Gastos recurrentes</div>
+                  <div style="font: 400 13px var(--font-body); color: var(--color-neutral-600);">Alquiler, internet · 2 mensuales</div>
+                </div>
+                <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="var(--color-neutral-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: var(--space-3); border: 2px solid var(--color-divider); padding: var(--space-4);">
+                <div style="flex: 1;">
+                  <div style="font: 700 15px var(--font-body); color: var(--color-text);">Datos y respaldo</div>
+                  <div style="font: 400 13px var(--font-body); color: var(--color-neutral-600);">Sincronización Supabase · backup JSON</div>
+                </div>
+                <svg width="8" height="14" viewBox="0 0 8 14"><path d="M1 1l6 6-6 6" stroke="var(--color-neutral-500)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+            </div>
+
+            <button type="button" class="btn btn-secondary btn-block danger-outline" style="color: var(--color-accent-700); border-color: var(--color-accent-700);">Cerrar sesión de este dispositivo</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</div>
+
+</x-dc>
+</body>
+</html>

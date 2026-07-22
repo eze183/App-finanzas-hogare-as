@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-21 — Rediseño visual Modernist traído de Claude Design (en curso, pausado para retomar mañana)
+
+El usuario armó una propuesta de rediseño completo en la app "Design" de Claude (herramienta separada de este chat), bajo un sistema de diseño llamado "Modernist": paleta clara, acento rojo único (#ec3013), tipografía Archivo, sin bordes redondeados, dividers de 2px marcados, mobile-first con barra de navegación inferior. Reemplaza la paleta oscura "grafito moderno" del 2026-07-10.
+
+**Cómo se trajo al proyecto**: no hay integración directa entre Claude Design y el repo. El usuario exportó el proyecto como "Project archive" (zip con el mockup `.dc.html` de las 5 pantallas, el design system en `_ds/.../styles.css`, capturas) y lo descomprimió en `design-export/` dentro del proyecto — carpeta que queda solo como referencia visual, no se usa en runtime. Cada pantalla se reimplementó a mano leyendo el mockup (el HTML del export usa un web component propio de la herramienta que no funciona fuera de ella).
+
+**Se avanzó por partes, todas commiteadas y pusheadas** (detalle técnico completo en `roadmap.md` y las decisiones de alcance en `decisions.md`):
+1. **Capa de tokens** (`8ff3789`): remapeo de variables CSS existentes en `styles.css` (colores/tipografía/espaciado/radios) a la paleta Modernist, sin reescribir la estructura. Se migraron a variables varios colores que estaban hardcodeados (texto sobre fondo de acento, bordes de peligro) para que tomaran bien el contraste con la nueva paleta clara.
+2. **Barra de navegación inferior** (`e809554`): las 4 secciones pasan a verse como barra fija con íconos en móvil (<=700px); en escritorio se mantienen las pestañas de arriba. El panel de Configuración se subió de z-index para quedar por encima.
+3. **Pantalla Cargar** (`991f18e`): reestructurada con el monto como campo protagonista arriba, categoría y Fecha+Pagó en dos columnas, y forma de pago/descripción/cuotas colapsadas detrás de un `<details>` "+ Más detalles". Aplica a los dos formularios (común y personal).
+4. **Pantalla Resumen** (`0279861`): "Total semanal" como número hero suelto, bloque rojo "Para emparejar" a todo el ancho con el botón "Marcar semana saldada" movido adentro (relocalizado desde Movimientos, mismo elemento), tarjetas Eze/Tami pagó lado a lado. Gráfico de categorías recoloreado a tonos rojo/gris.
+
+**Regla seguida en todo el proceso**: nunca tocar los `id` que usa `app.js` al reestructurar HTML, así ningún paso requirió cambios de lógica — excepto mover el botón `#settleWeekButton` (relocalización, no copia) y actualizar la constante `chartColors`. Cada pantalla se probó en el navegador con Supabase mockeado (mismo mock temporal de sesiones anteriores, siempre revertido antes de commitear) en modo Comunes y Personales, móvil y escritorio, sin errores de consola.
+
+**Decisiones de alcance tomadas por el agente y confirmadas por el usuario** ("lo que consideres mejor"): el switch Comunes/Personales se mantiene global (no vuelve a cada pantalla como en el mockup), Configuración se mantiene como panel único (sin drill-down), la categoría del formulario sigue siendo un `<select>` (no chips, para no requerir wiring nuevo con voz/OCR), y el gráfico de categorías sigue en `<canvas>` (no se reemplazó por barras HTML).
+
+**Queda pendiente para la próxima sesión**: reestructurar Movimientos (lista agrupada por día con tag de persona, hoy es tabla/columnas) — es el próximo paso explícito —, revisar Historial, y reorganizar visualmente Configuración.
+
 ## 2026-07-20 — Documentación del proyecto
 
 Se creó `CLAUDE.md` en la raíz y la carpeta `docs/` completa (`architecture.md`, `decisions.md`, `roadmap.md`, este archivo), a pedido explícito del usuario, para facilitar el trabajo en futuras sesiones. Todo extraído del código real, `git log` y `CODEX_CONTEXT.md` — nada inventado. Se estableció como regla permanente actualizar `session-summary.md` y `roadmap.md` después de cada funcionalidad importante.

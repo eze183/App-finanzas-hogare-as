@@ -1,22 +1,30 @@
 # Roadmap
 
-Estado real al 2026-07-20, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-07-21, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
-### Rediseño visual Modernist (traído de Claude Design)
+### Rediseño visual Modernist (traído de Claude Design) — pausado, se retoma la próxima sesión
 
-El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistema llamado "Modernist" (paleta clara, acento rojo #ec3013, tipografía Archivo, sin bordes redondeados, dividers marcados, mobile-first con barra inferior). El export vive en `design-export/` (no se usa en runtime, es referencia). Se está portando por partes al código real, manteniendo intacta la lógica de `app.js`.
+El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistema llamado "Modernist" (paleta clara, acento rojo #ec3013, tipografía Archivo, sin bordes redondeados, dividers marcados, mobile-first con barra inferior). El export vive en `design-export/` (no se usa en runtime, es referencia — ver `decisions.md` para cómo se trajo al proyecto). Se está portando por partes al código real, manteniendo intacta la lógica de `app.js` (se preservan todos los `id` al reestructurar HTML).
 
-**Hecho hasta ahora** (commiteado y pusheado):
+**Hecho hasta ahora** (commiteado y pusheado, ya visible en producción):
 1. Capa visual: se remapearon los tokens de `styles.css` (colores/tipografía/espaciado/radios) al sistema Modernist, sin reescribir la CSS ni tocar la estructura. Commit `8ff3789`.
 2. Barra de navegación inferior fija en móvil (<=700px) con íconos, item activo en rojo; en escritorio se mantienen las pestañas de arriba. Commit `e809554`.
-3. Pantalla Cargar reestructurada: monto como campo protagonista arriba (input grande sin borde en caja propia), categoría, Fecha+Pagó en 2 columnas, y forma de pago/descripción/cuotas colapsadas en un `<details>` "+ Más detalles". Íconos de carga rápida en grilla de 3 también en móvil. Aplica a ambos formularios (común y personal). Sin tocar `app.js` (todos los IDs se mantuvieron). La categoría quedó como `<select>` estilizado, no chips (los chips requerían wiring en JS con la carga por voz/OCR; se dejó para más adelante si el usuario lo pide).
-4. Pantalla Resumen reestructurada: "Total semanal" como número hero suelto (sin tarjeta), bloque rojo "Para emparejar" a todo el ancho con el botón "Marcar semana saldada" **movido adentro** (antes vivía en Movimientos > acciones de tabla — se relocalizó el elemento real, mismo id, sin tocar `app.js`), tarjetas Eze/Tami pagó lado a lado debajo. El gráfico de categorías se recoloreó con la rampa roja/gris de Modernist (antes multicolor). Se mantuvieron "Detalle del cierre" y "Vista mensual" como cards secundarias más abajo (el mockup no las tenía, pero sacarlas requería tocar `app.js`; se dejaron pero reordenadas — Vista mensual primero, Detalle del cierre después). Verificado que en modo Personales el bloque rojo/tarjetas de reparto se ocultan sin dejar huecos.
+3. Pantalla Cargar reestructurada: monto como campo protagonista arriba (input grande sin borde en caja propia), categoría, Fecha+Pagó en 2 columnas, y forma de pago/descripción/cuotas colapsadas en un `<details>` "+ Más detalles". Íconos de carga rápida en grilla de 3 también en móvil. Aplica a ambos formularios (común y personal). Commit `991f18e`.
+4. Pantalla Resumen reestructurada: "Total semanal" como número hero suelto (sin tarjeta), bloque rojo "Para emparejar" a todo el ancho con el botón "Marcar semana saldada" **movido adentro** (antes vivía en Movimientos > acciones de tabla — se relocalizó el elemento real, mismo id), tarjetas Eze/Tami pagó lado a lado debajo. El gráfico de categorías se recoloreó con la rampa roja/gris de Modernist (antes multicolor). Se mantuvieron "Detalle del cierre" y "Vista mensual" como cards secundarias más abajo (el mockup no las tenía, pero sacarlas requería tocar `app.js`; se dejaron pero reordenadas). Commit `0279861`.
 
-**Falta** (reestructuración mobile-first pantalla por pantalla, decisiones de diseño ya tomadas — switch Comunes/Personales queda global, Configuración queda como panel único):
-- Movimientos: lista agrupada por día con tag de persona (hoy es tabla/columnas).
-- Configuración: reorganización visual en secciones (sin drill-down).
+**Decisiones de alcance ya tomadas** (no hace falta repreguntar al retomar — detalle completo en `decisions.md`):
+- Switch Comunes/Personales queda **global**, no vuelve a vivir dentro de cada pantalla.
+- Configuración queda como **panel único**, sin drill-down a sub-páginas.
+- Categoría en el form de carga queda como `<select>`, no como chips (evita wiring nuevo con voz/OCR).
+- El gráfico de categorías sigue en `<canvas>` (barras/torta), no se reemplaza por barras HTML.
+
+**Falta para terminar el rediseño**:
+- **Movimientos**: lista agrupada por día con tag de persona (hoy es tabla/columnas). *Es el próximo paso — arrancar por acá la próxima sesión.*
+- **Historial**: restilo de las cards de semanas saldadas al sistema Modernist (probablemente ya se ve razonable por el remapeo de tokens del paso 1, pero no se revisó specíficamente).
+- **Configuración**: reorganización visual en secciones (sin drill-down, ver decisión arriba).
+- Repaso final: revisar que no queden reglas CSS viejas huérfanas relevantes (`.summary-card.highlight`, `.form-context` quedaron sin uso en HTML tras los cambios — inofensivas pero se podrían limpiar en una pasada de orden).
 
 ## Pendiente — decisiones que le tocan al usuario
 
