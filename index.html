@@ -131,19 +131,14 @@
 
             <section id="commonExpenseSection" class="expense-mode-panel">
               <form id="expenseForm" class="expense-form">
-                <div class="form-context wide">
-                  <span>Este gasto se carga como</span>
-                  <strong id="commonPayerLabel">Persona 1</strong>
+                <div class="amount-hero">
+                  <span class="amount-hero-label">Monto</span>
+                  <div class="amount-hero-field">
+                    <span class="amount-hero-currency">$</span>
+                    <input id="expenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                  </div>
                 </div>
-                <label>
-                  Fecha
-                  <input id="expenseDate" type="date" required />
-                </label>
-                <label class="payer-override">
-                  Cambiar pagador
-                  <select id="expensePayer" required></select>
-                </label>
-                <label>
+                <label class="field-block">
                   Categoría
                   <select id="expenseCategory" required>
                     <option value="Farmacia">Farmacia</option>
@@ -157,42 +152,51 @@
                     <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
-                <label>
-                  Monto
-                  <input id="expenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
-                </label>
-                <label>
-                  Forma de pago
-                  <select id="expensePaymentMethod">
-                    <option value="">Sin especificar</option>
-                    <option value="Tarjeta de crédito">Tarjeta de crédito</option>
-                    <option value="Tarjeta de débito">Tarjeta de débito</option>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                  </select>
-                </label>
-                <label class="wide">
-                  Descripción
-                  <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
-                </label>
+                <div class="field-row">
+                  <label>
+                    Fecha
+                    <input id="expenseDate" type="date" required />
+                  </label>
+                  <label class="payer-override">
+                    Pagó
+                    <select id="expensePayer" required></select>
+                  </label>
+                </div>
+                <p class="form-context-note">
+                  Este gasto se carga como <strong id="commonPayerLabel">Persona 1</strong>
+                </p>
+                <details class="more-details">
+                  <summary>+ Más detalles (forma de pago, descripción)</summary>
+                  <div class="more-details-body">
+                    <label>
+                      Forma de pago
+                      <select id="expensePaymentMethod">
+                        <option value="">Sin especificar</option>
+                        <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                        <option value="Tarjeta de débito">Tarjeta de débito</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                      </select>
+                    </label>
+                    <label>
+                      Descripción
+                      <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
+                    </label>
+                  </div>
+                </details>
               </form>
             </section>
 
             <section id="personalExpenseSection" class="expense-mode-panel is-hidden">
               <form id="personalExpenseForm" class="expense-form">
-                <div class="form-context wide">
-                  <span>Este gasto personal se carga para</span>
-                  <strong id="personalOwnerLabel">Persona 1</strong>
+                <div class="amount-hero">
+                  <span class="amount-hero-label">Monto</span>
+                  <div class="amount-hero-field">
+                    <span class="amount-hero-currency">$</span>
+                    <input id="personalExpenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                  </div>
                 </div>
-                <label>
-                  Fecha
-                  <input id="personalExpenseDate" type="date" required />
-                </label>
-                <label class="payer-override">
-                  Cambiar persona
-                  <input id="personalExpenseOwner" type="text" maxlength="50" required />
-                </label>
-                <label>
+                <label class="field-block">
                   Categoría
                   <select id="personalExpenseCategory" required>
                     <option value="Farmacia">Farmacia</option>
@@ -206,40 +210,54 @@
                     <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
-                <label>
-                  Monto
-                  <input id="personalExpenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
-                </label>
-                <label>
-                  Forma de pago
-                  <select id="personalExpensePaymentMethod">
-                    <option value="">Sin especificar</option>
-                    <option value="Tarjeta de crédito">Tarjeta de crédito</option>
-                    <option value="Tarjeta de débito">Tarjeta de débito</option>
-                    <option value="Efectivo">Efectivo</option>
-                    <option value="Transferencia">Transferencia</option>
-                  </select>
-                </label>
-                <div id="personalCardFields" class="card-fields is-hidden">
+                <div class="field-row">
                   <label>
-                    Tarjeta
-                    <select id="personalExpenseCard">
-                      <option value="">Elegí una tarjeta</option>
-                      <option value="Visa Banco Galicia">Visa Banco Galicia</option>
-                      <option value="Mastercard Banco Galicia">Mastercard Banco Galicia</option>
-                      <option value="Mastercard Mercado Pago">Mastercard Mercado Pago</option>
-                      <option value="Mastercard Banco Nación">Mastercard Banco Nación</option>
-                    </select>
+                    Fecha
+                    <input id="personalExpenseDate" type="date" required />
                   </label>
-                  <label>
-                    Cantidad de cuotas
-                    <input id="personalExpenseInstallments" type="number" min="1" max="60" value="1" />
+                  <label class="payer-override">
+                    Persona
+                    <input id="personalExpenseOwner" type="text" maxlength="50" required />
                   </label>
                 </div>
-                <label class="wide">
-                  Descripción
-                  <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
-                </label>
+                <p class="form-context-note">
+                  Este gasto personal se carga para <strong id="personalOwnerLabel">Persona 1</strong>
+                </p>
+                <details class="more-details">
+                  <summary>+ Más detalles (forma de pago, cuotas, descripción)</summary>
+                  <div class="more-details-body">
+                    <label>
+                      Forma de pago
+                      <select id="personalExpensePaymentMethod">
+                        <option value="">Sin especificar</option>
+                        <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                        <option value="Tarjeta de débito">Tarjeta de débito</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Transferencia">Transferencia</option>
+                      </select>
+                    </label>
+                    <div id="personalCardFields" class="card-fields is-hidden">
+                      <label>
+                        Tarjeta
+                        <select id="personalExpenseCard">
+                          <option value="">Elegí una tarjeta</option>
+                          <option value="Visa Banco Galicia">Visa Banco Galicia</option>
+                          <option value="Mastercard Banco Galicia">Mastercard Banco Galicia</option>
+                          <option value="Mastercard Mercado Pago">Mastercard Mercado Pago</option>
+                          <option value="Mastercard Banco Nación">Mastercard Banco Nación</option>
+                        </select>
+                      </label>
+                      <label>
+                        Cantidad de cuotas
+                        <input id="personalExpenseInstallments" type="number" min="1" max="60" value="1" />
+                      </label>
+                    </div>
+                    <label>
+                      Descripción
+                      <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
+                    </label>
+                  </div>
+                </details>
               </form>
             </section>
 

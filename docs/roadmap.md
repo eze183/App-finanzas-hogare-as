@@ -11,9 +11,9 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 **Hecho hasta ahora** (commiteado y pusheado):
 1. Capa visual: se remapearon los tokens de `styles.css` (colores/tipografía/espaciado/radios) al sistema Modernist, sin reescribir la CSS ni tocar la estructura. Commit `8ff3789`.
 2. Barra de navegación inferior fija en móvil (<=700px) con íconos, item activo en rojo; en escritorio se mantienen las pestañas de arriba. Commit `e809554`.
+3. Pantalla Cargar reestructurada: monto como campo protagonista arriba (input grande sin borde en caja propia), categoría, Fecha+Pagó en 2 columnas, y forma de pago/descripción/cuotas colapsadas en un `<details>` "+ Más detalles". Íconos de carga rápida en grilla de 3 también en móvil. Aplica a ambos formularios (común y personal). Sin tocar `app.js` (todos los IDs se mantuvieron). La categoría quedó como `<select>` estilizado, no chips (los chips requerían wiring en JS con la carga por voz/OCR; se dejó para más adelante si el usuario lo pide).
 
 **Falta** (reestructuración mobile-first pantalla por pantalla, decisiones de diseño ya tomadas — switch Comunes/Personales queda global, Configuración queda como panel único):
-- Cargar: monto como campo protagonista arriba, categorías como chips scrolleables, forma de pago/descripción colapsadas en "+ Más detalles".
 - Resumen: total semanal como número hero, bloque rojo "Para emparejar", barras por categoría.
 - Movimientos: lista agrupada por día con tag de persona (hoy es tabla/columnas).
 - Configuración: reorganización visual en secciones (sin drill-down).

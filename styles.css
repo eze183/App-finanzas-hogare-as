@@ -684,9 +684,108 @@ label {
 
 .expense-form {
   display: grid;
-  grid-template-columns: repeat(5, minmax(118px, 1fr));
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* — Monto como campo protagonista — */
+.amount-hero {
+  border: 2px solid var(--line-strong);
+  background: var(--surface);
+  padding: 14px 16px;
+}
+
+.amount-hero-label {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.amount-hero-field {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.amount-hero-currency {
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 1.7rem;
+  color: var(--muted);
+}
+
+.amount-hero-field input {
+  flex: 1;
+  min-height: 0;
+  height: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  font-family: var(--font-heading);
+  font-weight: 800;
+  font-size: 2.6rem;
+  line-height: 1.05;
+  color: var(--ink);
+}
+
+.amount-hero-field input:focus {
+  box-shadow: none;
+  outline: 0;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
-  align-items: end;
+}
+
+.form-context-note {
+  margin: -4px 0 0;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.form-context-note strong {
+  color: var(--accent-deep);
+  font-weight: 800;
+}
+
+/* — Sección colapsable de detalles — */
+.more-details {
+  border-top: 2px solid var(--line-strong);
+  padding-top: 14px;
+}
+
+.more-details > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--accent-deep);
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.more-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more-details > summary:hover {
+  color: var(--accent);
+}
+
+.more-details[open] > summary {
+  margin-bottom: 14px;
+}
+
+.more-details-body {
+  display: grid;
+  gap: 14px;
 }
 
 .submit-actions {
@@ -1605,14 +1704,9 @@ td {
     grid-template-columns: 1fr;
   }
 
-  .expense-form,
   .compact-form,
   .filter-bar {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .expense-form .wide {
-    grid-column: span 2;
   }
 
   .filter-bar button {
@@ -1758,8 +1852,10 @@ td {
     width: 100%;
   }
 
-  .quick-actions {
-    grid-template-columns: 1fr;
+  .quick-action {
+    min-height: 68px;
+    font-size: 0.76rem;
+    padding: 8px 4px;
   }
 
   .history-item {
