@@ -50,9 +50,10 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 - Exportación CSV y backup/restore JSON.
 - PWA instalable en Android, con service worker robusto ante actualizaciones.
 - Sincronización opcional con Supabase entre dispositivos.
-- Rediseño visual completo (paleta, tipografía, layout responsive).
+- Rediseño visual "grafito moderno" (paleta oscura, tipografía Manrope+Inter), 2026-07-10 — reemplazado por el rediseño Modernist (ver más arriba).
+- Rediseño visual completo al sistema Modernist (paleta clara, acento rojo, tipografía Archivo, sin bordes redondeados), las 5 pantallas — ver detalle arriba.
 - Navegación en 4 pestañas (Cargar/Resumen/Movimientos/Historial) + switch global Comunes/Personales.
-- Vista de "Gastos comunes" en dos columnas (una por persona), reemplazando la tabla única.
+- Movimientos: lista agrupada por día con tag de persona (reemplazó primero a la tabla única por "Gastos comunes en dos columnas", y luego esa vista de dos columnas también fue reemplazada por el agrupado por día del rediseño Modernist).
 
 ## Convención de esta sección
 
