@@ -1641,14 +1641,27 @@ html.personal-mode #commonTabButton,
   padding: 14px;
 }
 
+.history-kicker {
+  color: var(--muted);
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
 .history-item strong {
   display: block;
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 800;
   margin-bottom: 4px;
 }
 
-.history-item span {
+.history-item span:not(.history-kicker) {
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.86rem;
 }
 
 .history-item .history-total {

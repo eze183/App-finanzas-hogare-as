@@ -14,7 +14,17 @@ Se continuó el rediseño Modernist retomando el punto donde había quedado la s
 
 **Se reforzó la advertencia en `CLAUDE.md`** con este hallazgo específico (antes solo advertía sobre el botón de sync explícito, no sobre el push automático de cualquier cambio de estado) y se recomienda para la próxima sesión mockear `window.SUPABASE_CONFIG` antes de cualquier prueba en el navegador que agregue/borre datos, no solo al probar sync explícitamente.
 
-Cambios pendientes de commitear al cierre de esta sesión: `index.html`, `app.js`, `styles.css`, `CLAUDE.md`, `docs/roadmap.md`, `docs/session-summary.md`.
+Commiteado y pusheado en `ac076b8`.
+
+## 2026-07-22 (continuación) — Rediseño Modernist: Historial
+
+Se restyleó la pantalla Historial (semanas saldadas), siguiendo el mockup de `design-export/Gastos del Hogar - Rediseño.dc.html` (screen 4). A diferencia de Movimientos, acá alcanzó con un cambio liviano: dentro de cada card se invirtió qué dato es el título y cuál es el kicker — antes el rango de semana (`weekLabel`) era el texto en negrita y "quién le paga a quién" quedaba como subtítulo gris; ahora el rango de semana es un kicker chico en mayúsculas (clase nueva `.history-kicker`, mismo tratamiento visual que `.movement-day-heading` de Movimientos) y el resultado del cierre pasa a ser el título en negrita, que es el dato que más le importa al usuario de un vistazo. El total semanal se mantuvo como número grande a la derecha de la card (patrón ya usado en Movimientos, aunque el mockup lo ponía inline en el cuerpo). Cambio acotado a la plantilla dentro de `renderSettlementHistory` en `app.js` y estilos nuevos en `styles.css`; no se tocó el modelo de datos de `settlements` ni el flujo de `handleSettleWeek`.
+
+Se probó en el navegador con Supabase mockeado (`window.SUPABASE_CONFIG` con `url`/`anonKey` placeholder en `supabase-config.js`, revertido antes de commitear, siguiendo la recomendación agregada a `CLAUDE.md` en la entrada anterior) e inyectando semanas saldadas de prueba directamente en `localStorage` (nunca vía la UI real, para no arriesgar datos de producción).
+
+**Hallazgo de infraestructura, no del código de la app**: en este entorno de pruebas (Browser pane sobre `python -m http.server`), la carga de `app.js` a veces se aborta (`net::ERR_ABORTED` en la consola de red) porque queda encolada detrás de los `<script>` externos de CDN (`pdfjs`, `tesseract.js`, `@supabase/supabase-js`) cuando esos recursos externos tardan o no resuelven en el sandbox del navegador. El síntoma es que la página carga pero ningún campo se inicializa (`weekStart` vacío, sync status vacío, nada reacciona) sin ningún error en consola. Se resuelve solo reintentando la navegación o esperando más tiempo — no es un bug de la app, es una limitación del entorno de pruebas. Si una sesión futura ve la app "muerta" al probarla en el Browser pane sin errores de consola, primero revisar `read_network_requests` buscando `ERR_ABORTED` en `app.js` antes de asumir que el código se rompió.
+
+Commiteado y pusheado.
 
 ## 2026-07-21 — Rediseño visual Modernist traído de Claude Design (en curso, pausado para retomar mañana)
 

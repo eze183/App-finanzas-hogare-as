@@ -1224,8 +1224,9 @@ function renderSettlementHistory() {
       return `
         <article class="history-item">
           <div>
-            <strong>${escapeHtml(settlement.weekLabel)}</strong>
-            <span>Saldada el ${dateFormatter.format(parseISODate(settlement.settledAt))} · ${escapeHtml(movement)}</span>
+            <span class="history-kicker">${escapeHtml(settlement.weekLabel)}</span>
+            <strong>${escapeHtml(movement)}</strong>
+            <span>Saldada el ${dateFormatter.format(parseISODate(settlement.settledAt))}</span>
           </div>
           <div class="history-total">${formatMoney(settlement.total)}</div>
         </article>
