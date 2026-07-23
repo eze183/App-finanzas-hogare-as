@@ -206,15 +206,6 @@ h2 {
   box-shadow: var(--shadow-soft);
 }
 
-.data-panel {
-  background: var(--surface-tint);
-  box-shadow: var(--shadow-soft);
-}
-
-.data-panel .panel-heading {
-  margin-bottom: 0;
-}
-
 .inline-status {
   min-height: 22px;
   color: var(--muted);
@@ -325,16 +316,6 @@ label {
   line-height: 1.1;
 }
 
-.summary-card.highlight {
-  background: var(--blue-soft);
-  border-color: var(--line);
-}
-
-.summary-card.highlight strong {
-  color: var(--blue);
-  font-size: clamp(1.05rem, 2.2vw, 1.55rem);
-}
-
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
@@ -404,7 +385,6 @@ label {
   margin-bottom: 18px;
 }
 
-.settings-panel,
 .category-panel {
   align-self: start;
   box-shadow: var(--shadow-soft);
@@ -521,32 +501,73 @@ label {
   font-size: 1.6rem;
 }
 
-.settings-header + .settings-grid {
-  grid-template-columns: 1fr;
-}
-
-.settings-panel {
-  box-shadow: none;
-}
-
-.settings-panel,
-.data-panel {
-  background: var(--surface-tint);
-}
-
 .main-view {
   display: flex;
   flex-direction: column;
 }
 
-.settings-grid {
+.settings-sections {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 10px;
 }
 
-.wide-panel {
-  grid-column: 1 / -1;
+.settings-section {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-tint);
+}
+
+.settings-section-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  cursor: pointer;
+  list-style: none;
+  padding: 16px;
+}
+
+.settings-section-summary::-webkit-details-marker {
+  display: none;
+}
+
+.settings-section-summary:hover {
+  color: var(--accent-strong);
+}
+
+.settings-section-heading {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-section-heading strong {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.settings-section-heading span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.4;
+}
+
+.settings-section-chevron {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  color: var(--muted);
+  transition: transform 160ms ease;
+}
+
+.settings-section[open] .settings-section-chevron {
+  transform: rotate(180deg);
+}
+
+.settings-section-body {
+  border-top: 1px solid var(--line);
+  padding: 16px;
 }
 
 .side-note {
@@ -854,28 +875,6 @@ label {
   width: 100%;
 }
 
-.form-context {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--accent-soft);
-  padding: 10px 12px;
-}
-
-.form-context span {
-  color: var(--muted);
-  font-size: 0.86rem;
-  font-weight: 800;
-}
-
-.form-context strong {
-  color: var(--accent-strong);
-  font-size: 0.96rem;
-}
-
 .payer-override {
   opacity: 0.82;
 }
@@ -1063,15 +1062,6 @@ body.personal-mode #commonTabButton {
 
 .expense-mode-panel {
   display: block;
-}
-
-#personalExpenseSection .form-context {
-  border-color: var(--line);
-  background: var(--personal-soft);
-}
-
-#personalExpenseSection .form-context strong {
-  color: var(--personal-strong);
 }
 
 .statement-review {
@@ -1315,11 +1305,9 @@ body.personal-mode .statement-review,
 html.personal-mode .quick-add,
 html.personal-mode .statement-review,
 html.personal-mode .filter-bar,
-html.personal-mode .form-context,
 .app-shell.personal-mode .quick-add,
 .app-shell.personal-mode .statement-review,
-.app-shell.personal-mode .filter-bar,
-.app-shell.personal-mode .form-context {
+.app-shell.personal-mode .filter-bar {
   border-color: var(--line);
   background: var(--surface-tint);
 }
@@ -1443,11 +1431,9 @@ html.personal-mode .eyebrow,
   color: var(--personal-strong);
 }
 
-html.personal-mode .data-panel,
-html.personal-mode .settings-panel,
+html.personal-mode .settings-section,
 html.personal-mode .category-panel,
-.app-shell.personal-mode .data-panel,
-.app-shell.personal-mode .settings-panel,
+.app-shell.personal-mode .settings-section,
 .app-shell.personal-mode .category-panel {
   background: var(--surface-tint);
 }
@@ -1727,7 +1713,6 @@ html.personal-mode #commonTabButton,
 @media (max-width: 900px) {
   .hero,
   .workspace,
-  .settings-grid,
   .summary-grid,
   .detail-grid,
   .chart-layout {

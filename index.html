@@ -411,106 +411,126 @@
             </button>
           </div>
 
-          <section class="settings-grid">
-          <article class="panel settings-panel">
-            <h2>Hogar y dispositivo</h2>
-            <p class="side-note">Definí las personas del hogar y quién usa este celular o navegador.</p>
-            <form id="peopleForm" class="stacked-form">
-              <label>
-                Persona 1
-                <input id="personAInput" type="text" maxlength="30" required />
-              </label>
-              <label>
-                Persona 2
-                <input id="personBInput" type="text" maxlength="30" required />
-              </label>
-              <label>
-                Este dispositivo es de
-                <select id="deviceOwnerSelect"></select>
-              </label>
-              <button type="submit">Guardar configuración</button>
-            </form>
-          </article>
-
-          <article class="panel settings-panel">
-            <h2>Presupuestos</h2>
-            <p class="side-note">Definí límites semanales por categoría para controlar desvíos.</p>
-            <form id="budgetForm" class="stacked-form">
-              <label>
-                Categoría
-                <select id="budgetCategory">
-                  <option value="Farmacia">Farmacia</option>
-                  <option value="Supermercado">Supermercado</option>
-                  <option value="Verduleria">Verduleria</option>
-                  <option value="Carniceria">Carniceria</option>
-                  <option value="Polleria/Pescaderia">Polleria/Pescaderia</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Tarjeta de credito">Tarjeta de credito</option>
-                  <option value="Combustible">Combustible</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </label>
-              <label>
-                Límite semanal
-                <input id="budgetAmount" type="text" inputmode="decimal" placeholder="0,00" />
-              </label>
-              <button type="submit">Guardar presupuesto</button>
-            </form>
-            <div id="budgetList" class="budget-list"></div>
-          </article>
-
-          <article class="panel settings-panel wide-panel">
-            <div class="panel-heading">
-              <div>
-                <h2>Gastos recurrentes</h2>
-                <p>Guardá alquiler, servicios u otros gastos que se repiten.</p>
-              </div>
+          <div class="settings-sections">
+          <details class="settings-section">
+            <summary class="settings-section-summary">
+              <span class="settings-section-heading">
+                <strong>Hogar y dispositivo</strong>
+                <span>Definí las personas del hogar y quién usa este celular o navegador.</span>
+              </span>
+              <svg class="settings-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="settings-section-body">
+              <form id="peopleForm" class="stacked-form">
+                <label>
+                  Persona 1
+                  <input id="personAInput" type="text" maxlength="30" required />
+                </label>
+                <label>
+                  Persona 2
+                  <input id="personBInput" type="text" maxlength="30" required />
+                </label>
+                <label>
+                  Este dispositivo es de
+                  <select id="deviceOwnerSelect"></select>
+                </label>
+                <button type="submit">Guardar configuración</button>
+              </form>
             </div>
-            <form id="recurringForm" class="expense-form compact-form">
-              <label>
-                Descripción
-                <input id="recurringNote" type="text" maxlength="80" placeholder="Ej: internet" required />
-              </label>
-              <label>
-                Pagó
-                <select id="recurringPayer" required></select>
-              </label>
-              <label>
-                Categoría
-                <select id="recurringCategory" required>
-                  <option value="Farmacia">Farmacia</option>
-                  <option value="Supermercado">Supermercado</option>
-                  <option value="Verduleria">Verduleria</option>
-                  <option value="Carniceria">Carniceria</option>
-                  <option value="Polleria/Pescaderia">Polleria/Pescaderia</option>
-                  <option value="Servicios">Servicios</option>
-                  <option value="Tarjeta de credito">Tarjeta de credito</option>
-                  <option value="Combustible">Combustible</option>
-                  <option value="Otros">Otros</option>
-                </select>
-              </label>
-              <label>
-                Monto
-                <input id="recurringAmount" type="text" inputmode="decimal" placeholder="0,00" required />
-              </label>
-              <label>
-                Frecuencia
-                <select id="recurringFrequency">
-                  <option value="weekly">Semanal</option>
-                  <option value="monthly">Mensual</option>
-                </select>
-              </label>
-              <button type="submit">Guardar recurrente</button>
-            </form>
-            <div id="recurringList" class="recurring-list"></div>
-          </article>
+          </details>
 
-          <article class="panel data-panel wide-panel" aria-label="Respaldo de datos">
-            <div class="panel-heading">
-              <div>
-                <h2>Datos y respaldo</h2>
-                <p>Guardá una copia o sincronizá los gastos entre celulares con Supabase.</p>
-              </div>
+          <details class="settings-section">
+            <summary class="settings-section-summary">
+              <span class="settings-section-heading">
+                <strong>Presupuestos</strong>
+                <span>Definí límites semanales por categoría para controlar desvíos.</span>
+              </span>
+              <svg class="settings-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="settings-section-body">
+              <form id="budgetForm" class="stacked-form">
+                <label>
+                  Categoría
+                  <select id="budgetCategory">
+                    <option value="Farmacia">Farmacia</option>
+                    <option value="Supermercado">Supermercado</option>
+                    <option value="Verduleria">Verduleria</option>
+                    <option value="Carniceria">Carniceria</option>
+                    <option value="Polleria/Pescaderia">Polleria/Pescaderia</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Tarjeta de credito">Tarjeta de credito</option>
+                    <option value="Combustible">Combustible</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </label>
+                <label>
+                  Límite semanal
+                  <input id="budgetAmount" type="text" inputmode="decimal" placeholder="0,00" />
+                </label>
+                <button type="submit">Guardar presupuesto</button>
+              </form>
+              <div id="budgetList" class="budget-list"></div>
+            </div>
+          </details>
+
+          <details class="settings-section">
+            <summary class="settings-section-summary">
+              <span class="settings-section-heading">
+                <strong>Gastos recurrentes</strong>
+                <span>Guardá alquiler, servicios u otros gastos que se repiten.</span>
+              </span>
+              <svg class="settings-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="settings-section-body">
+              <form id="recurringForm" class="expense-form compact-form">
+                <label>
+                  Descripción
+                  <input id="recurringNote" type="text" maxlength="80" placeholder="Ej: internet" required />
+                </label>
+                <label>
+                  Pagó
+                  <select id="recurringPayer" required></select>
+                </label>
+                <label>
+                  Categoría
+                  <select id="recurringCategory" required>
+                    <option value="Farmacia">Farmacia</option>
+                    <option value="Supermercado">Supermercado</option>
+                    <option value="Verduleria">Verduleria</option>
+                    <option value="Carniceria">Carniceria</option>
+                    <option value="Polleria/Pescaderia">Polleria/Pescaderia</option>
+                    <option value="Servicios">Servicios</option>
+                    <option value="Tarjeta de credito">Tarjeta de credito</option>
+                    <option value="Combustible">Combustible</option>
+                    <option value="Otros">Otros</option>
+                  </select>
+                </label>
+                <label>
+                  Monto
+                  <input id="recurringAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                </label>
+                <label>
+                  Frecuencia
+                  <select id="recurringFrequency">
+                    <option value="weekly">Semanal</option>
+                    <option value="monthly">Mensual</option>
+                  </select>
+                </label>
+                <button type="submit">Guardar recurrente</button>
+              </form>
+              <div id="recurringList" class="recurring-list"></div>
+            </div>
+          </details>
+
+          <details class="settings-section" aria-label="Respaldo de datos">
+            <summary class="settings-section-summary">
+              <span class="settings-section-heading">
+                <strong>Datos y respaldo</strong>
+                <span>Guardá una copia o sincronizá los gastos entre celulares con Supabase.</span>
+              </span>
+              <svg class="settings-section-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+            </summary>
+            <div class="settings-section-body">
               <div class="table-actions">
                 <button id="syncPullButton" type="button">Traer de Supabase</button>
                 <button id="syncPushButton" type="button">Subir a Supabase</button>
@@ -520,11 +540,11 @@
                   <input id="importBackupInput" type="file" accept="application/json,.json" />
                 </label>
               </div>
+              <p id="syncStatus" class="inline-status" aria-live="polite"></p>
+              <p id="backupStatus" class="inline-status" aria-live="polite"></p>
             </div>
-            <p id="syncStatus" class="inline-status" aria-live="polite"></p>
-            <p id="backupStatus" class="inline-status" aria-live="polite"></p>
-          </article>
-        </section>
+          </details>
+        </div>
         </div>
       </section>
     </main>

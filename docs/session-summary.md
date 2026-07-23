@@ -24,6 +24,20 @@ Se probó en el navegador con Supabase mockeado (`window.SUPABASE_CONFIG` con `u
 
 **Hallazgo de infraestructura, no del código de la app**: en este entorno de pruebas (Browser pane sobre `python -m http.server`), la carga de `app.js` a veces se aborta (`net::ERR_ABORTED` en la consola de red) porque queda encolada detrás de los `<script>` externos de CDN (`pdfjs`, `tesseract.js`, `@supabase/supabase-js`) cuando esos recursos externos tardan o no resuelven en el sandbox del navegador. El síntoma es que la página carga pero ningún campo se inicializa (`weekStart` vacío, sync status vacío, nada reacciona) sin ningún error en consola. Se resuelve solo reintentando la navegación o esperando más tiempo — no es un bug de la app, es una limitación del entorno de pruebas. Si una sesión futura ve la app "muerta" al probarla en el Browser pane sin errores de consola, primero revisar `read_network_requests` buscando `ERR_ABORTED` en `app.js` antes de asumir que el código se rompió.
 
+Commiteado y pusheado en `d66fb41`.
+
+## 2026-07-22 (continuación) — Rediseño Modernist: Configuración, cierra el rediseño completo
+
+Se reorganizó la pantalla Configuración, último paso pendiente del roadmap del rediseño Modernist. Las 4 tarjetas que antes se mostraban siempre expandidas en una grilla de 2 columnas (Hogar y dispositivo, Presupuestos, Gastos recurrentes, Datos y respaldo) pasan a ser secciones `<details>` colapsadas por defecto: cada una muestra su título y descripción en el `<summary>` (con un chevron SVG que rota al abrir, mismo patrón visual que `.movement-day-heading`/`.history-kicker`) y el formulario o lista real queda adentro, oculto hasta que se toca. Reutiliza el mecanismo nativo `<details>`/`<summary>` que ya existía para "+ Más detalles" en Cargar (`.more-details`), así que fue un cambio puramente de HTML/CSS: no hizo falta tocar `app.js` porque `openSettings()`/`populateSettingsForm()`/`closeSettings()` ya operaban sobre ids de campos individuales, no sobre la estructura de las tarjetas contenedoras.
+
+Se resolvió así la decisión de alcance ya tomada en sesiones anteriores ("Configuración queda como panel único, sin drill-down a sub-páginas"): el mockup mostraba filas con flecha que sugerían navegar a una sub-pantalla por sección, pero acá se logra el mismo efecto de "declutter" con expansión in-place, sin agregar una nueva vista ni romper la regla.
+
+Aprovechando el cambio, se hizo una pasada de limpieza de CSS que había quedado huérfano de pasos anteriores del rediseño (ya no se usaba en ningún HTML): `.settings-panel`, `.settings-grid`, `.wide-panel`, `.data-panel` (y su variante `.data-panel .panel-heading`), `.summary-card.highlight`, `.form-context` con todas sus variantes (`#personalExpenseSection .form-context`, overrides de modo personal). Esto cierra el punto "repaso final" que quedaba anotado en `roadmap.md`.
+
+Probado en el navegador con Supabase mockeado (mismo procedimiento que la entrada anterior: `url`/`anonKey` placeholder en `supabase-config.js`, revertido antes de commitear) en mobile, desktop y modo personal — las 4 secciones abren y cierran bien, `populateSettingsForm()` sigue completando los campos correctamente al abrir Configuración, y no quedó ningún selector CSS apuntando a clases que ya no existen en el HTML.
+
+**Con este paso se cierra el roadmap completo del rediseño visual Modernist** (`roadmap.md` movió la sección de "en curso" a "completo").
+
 Commiteado y pusheado.
 
 ## 2026-07-21 — Rediseño visual Modernist traído de Claude Design (en curso, pausado para retomar mañana)
