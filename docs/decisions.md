@@ -28,6 +28,8 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 - Merge aditivo puro (unión de arrays sin tombstones): descartado porque no respeta los borrados — un dispositivo que borra algo localmente vería "resucitar" el registro en el próximo sync si el otro dispositivo todavía tenía la versión vieja.
 - Base de 3 vías persistida (como `git merge-base`): descartada por complejidad innecesaria — dado que la app solo tiene operaciones de alta y baja (no hay edición de gastos, excepto el caso especial de renombrar personas), un tombstone simple por registro alcanza sin necesitar guardar un snapshot base separado.
 
+**Efecto secundario descubierto en la práctica (2026-07-22)**: en `mergeRecordLists`, `deletedAt = record.deletedAt || existing.deletedAt || null` hace que un borrado sea irreversible por diseño — si cualquiera de las dos copias (local o remota) tiene `deletedAt`, el registro combinado queda borrado, sin importar cuál de las dos tiene el `updatedAt` más nuevo. No existe un camino para "des-borrar" un registro una vez que el tombstone se propagó; la única forma de recuperar un dato borrado por error es volver a cargarlo como un gasto nuevo (con otro `id`, sin el `createdAt` original). Tenerlo en cuenta antes de probar el flujo de borrado contra la base real de Supabase (ver advertencia de `CLAUDE.md` sobre `queueCloudSave`) y al considerar la idea pendiente de "editar un gasto ya cargado" — un borrado accidental durante esa función tendría el mismo problema.
+
 **Detalle técnico**: ver `architecture.md` → sección de sincronización.
 
 ## `people`/`budgets` usan last-write-wins de campo completo, no merge granular

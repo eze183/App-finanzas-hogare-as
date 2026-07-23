@@ -360,22 +360,7 @@
             <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
           </form>
 
-          <div id="commonExpenseColumns" class="person-columns">
-            <div class="person-column">
-              <div class="person-column-heading">
-                <strong id="commonColumnAName">Persona 1</strong>
-                <span id="commonColumnATotal">$0</span>
-              </div>
-              <div id="commonColumnAList" class="person-expense-list"></div>
-            </div>
-            <div class="person-column">
-              <div class="person-column-heading">
-                <strong id="commonColumnBName">Persona 2</strong>
-                <span id="commonColumnBTotal">$0</span>
-              </div>
-              <div id="commonColumnBList" class="person-expense-list"></div>
-            </div>
-          </div>
+          <div id="commonExpenseColumns" class="movement-list"></div>
           <p id="emptyState" class="empty-state">Todavía no hay gastos cargados para esta semana.</p>
         </section>
 
@@ -399,23 +384,8 @@
             <div id="pendingInstallmentsList" class="pending-installments-list"></div>
           </div>
 
-          <div class="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Persona</th>
-                  <th>Categoría</th>
-                  <th>Forma de pago</th>
-                  <th>Descripción</th>
-                  <th class="amount-cell">Monto</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="personalExpensesTable"></tbody>
-            </table>
-            <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales para esta semana.</p>
-          </div>
+          <div id="personalExpensesTable" class="movement-list"></div>
+          <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales para esta semana.</p>
         </section>
 
         <section class="panel history-panel history-view-section app-view-hidden">

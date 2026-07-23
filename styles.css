@@ -1306,10 +1306,8 @@ html.personal-mode .summary-card,
   background: var(--surface);
 }
 
-body.personal-mode .table-wrap,
 body.personal-mode .filter-bar,
 body.personal-mode .quick-add,
-.app-shell.personal-mode .table-wrap,
 .app-shell.personal-mode .filter-bar,
 .app-shell.personal-mode .quick-add,
 body.personal-mode .statement-review,
@@ -1317,12 +1315,10 @@ body.personal-mode .statement-review,
 html.personal-mode .quick-add,
 html.personal-mode .statement-review,
 html.personal-mode .filter-bar,
-html.personal-mode .table-wrap,
 html.personal-mode .form-context,
 .app-shell.personal-mode .quick-add,
 .app-shell.personal-mode .statement-review,
 .app-shell.personal-mode .filter-bar,
-.app-shell.personal-mode .table-wrap,
 .app-shell.personal-mode .form-context {
   border-color: var(--line);
   background: var(--surface-tint);
@@ -1504,45 +1500,6 @@ html.personal-mode #commonTabButton,
   padding: 12px;
 }
 
-.table-wrap {
-  position: relative;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  min-width: 900px;
-}
-
-th,
-td {
-  border-bottom: 1px solid var(--line);
-  padding: 11px 10px;
-  text-align: left;
-  vertical-align: middle;
-}
-
-th {
-  background: var(--surface-tint);
-  color: var(--muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-td {
-  font-size: 0.95rem;
-}
-
-.amount-cell {
-  text-align: right;
-  white-space: nowrap;
-}
-
 .delete-row {
   min-height: 36px;
   padding: 0 12px;
@@ -1555,39 +1512,34 @@ td {
   background: var(--danger-soft);
 }
 
-.person-columns {
+.movement-list {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
+  gap: 4px;
 }
 
-.person-column {
+.movement-day-group + .movement-day-group {
+  margin-top: 10px;
+}
+
+.movement-day-heading {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.movement-tag {
   border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  padding: 14px;
-}
-
-.person-column-heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  border-bottom: 1px solid var(--line);
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-}
-
-.person-column-heading strong {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  font-size: 1rem;
-}
-
-.person-column-heading span {
-  font-family: var(--font-heading);
-  font-weight: 800;
-  color: var(--accent-strong);
+  color: var(--muted);
+  flex: none;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .person-expense-list {
@@ -1604,6 +1556,14 @@ td {
   border-radius: var(--radius-sm);
   background: var(--surface-tint);
   padding: 10px 12px;
+}
+
+.person-expense-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
 }
 
 .person-expense-info {
@@ -1757,8 +1717,7 @@ td {
   .settings-grid,
   .summary-grid,
   .detail-grid,
-  .chart-layout,
-  .person-columns {
+  .chart-layout {
     grid-template-columns: 1fr;
   }
 
@@ -1827,87 +1786,13 @@ td {
     flex: 1 1 150px;
   }
 
-  .table-wrap {
-    overflow: visible;
-    border: 0;
-    background: transparent;
+  .person-expense-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
   }
 
-  table {
-    min-width: 0;
-  }
-
-  thead {
-    display: none;
-  }
-
-  tbody {
-    display: grid;
-    gap: 10px;
-  }
-
-  tr {
-    display: grid;
-    gap: 8px;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    background: var(--surface);
-    padding: 12px;
-    box-shadow: var(--shadow-soft);
-  }
-
-  td {
-    display: grid;
-    grid-template-columns: 110px minmax(0, 1fr);
-    gap: 10px;
-    border-bottom: 0;
-    padding: 0;
-    font-size: 0.92rem;
-  }
-
-  td::before {
-    color: var(--muted);
-    content: "";
-    font-size: 0.72rem;
-    font-weight: 900;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-  }
-
-  td:nth-child(1)::before {
-    content: "Fecha";
-  }
-
-  td:nth-child(2)::before {
-    content: "Persona";
-  }
-
-  td:nth-child(3)::before {
-    content: "Categoría";
-  }
-
-  td:nth-child(4)::before {
-    content: "Pago";
-  }
-
-  td:nth-child(5)::before {
-    content: "Descripción";
-  }
-
-  td:nth-child(6)::before {
-    content: "Monto";
-  }
-
-  td.amount-cell {
-    text-align: left;
-  }
-
-  td:last-child {
-    display: block;
-  }
-
-  td:last-child .delete-row {
-    width: 100%;
+  .person-expense-actions {
+    margin-left: auto;
   }
 
   .quick-action {

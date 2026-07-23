@@ -12,6 +12,11 @@ const dateFormatter = new Intl.DateTimeFormat("es-AR", {
   month: "2-digit",
   year: "numeric",
 });
+const dayHeadingFormatter = new Intl.DateTimeFormat("es-AR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+});
 const chartColors = ["#ec3013", "#7d7979", "#ff9783", "#201e1d", "#dd2b0f", "#bab6b6"];
 const categories = [
   "Farmacia",
@@ -183,12 +188,6 @@ const elements = {
   voiceStatus: document.querySelector("#voiceStatus"),
   categoryList: document.querySelector("#categoryList"),
   commonExpenseColumns: document.querySelector("#commonExpenseColumns"),
-  commonColumnAName: document.querySelector("#commonColumnAName"),
-  commonColumnBName: document.querySelector("#commonColumnBName"),
-  commonColumnATotal: document.querySelector("#commonColumnATotal"),
-  commonColumnBTotal: document.querySelector("#commonColumnBTotal"),
-  commonColumnAList: document.querySelector("#commonColumnAList"),
-  commonColumnBList: document.querySelector("#commonColumnBList"),
   emptyState: document.querySelector("#emptyState"),
   weekRangeLabel: document.querySelector("#weekRangeLabel"),
   exportButton: document.querySelector("#exportButton"),
@@ -1089,38 +1088,38 @@ function shortenLabel(label, maxLength) {
 }
 
 function renderTable(expenses) {
-  const [personA, personB] = state.people;
-  elements.commonColumnAName.textContent = personA;
-  elements.commonColumnBName.textContent = personB;
-
-  const expensesA = expenses.filter((expense) => expense.payer === personA);
-  const expensesB = expenses.filter((expense) => expense.payer === personB);
-
-  elements.commonColumnATotal.textContent = formatMoney(expensesA.reduce((sum, expense) => sum + expense.amount, 0));
-  elements.commonColumnBTotal.textContent = formatMoney(expensesB.reduce((sum, expense) => sum + expense.amount, 0));
-
-  elements.commonColumnAList.innerHTML = renderPersonExpenseRows(expensesA);
-  elements.commonColumnBList.innerHTML = renderPersonExpenseRows(expensesB);
-
+  elements.commonExpenseColumns.innerHTML = renderMovementGroups(expenses, (expense) => expense.payer, "data-id");
   elements.emptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
-function renderPersonExpenseRows(expenses) {
-  if (!expenses.length) {
-    return `<p class="person-expense-empty">Sin gastos.</p>`;
+function groupExpensesByDay(expenses) {
+  const groups = [];
+  let currentGroup = null;
+  for (const expense of expenses) {
+    if (!currentGroup || currentGroup.date !== expense.date) {
+      currentGroup = { date: expense.date, expenses: [] };
+      groups.push(currentGroup);
+    }
+    currentGroup.expenses.push(expense);
   }
+  return groups;
+}
 
-  return expenses
+function formatDayHeading(isoDate) {
+  const label = dayHeadingFormatter.format(parseISODate(isoDate));
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function renderMovementGroups(expenses, getTag, idAttribute) {
+  if (!expenses.length) return "";
+
+  return groupExpensesByDay(expenses)
     .map(
-      (expense) => `
-        <div class="person-expense-row">
-          <div class="person-expense-info">
-            <strong>${escapeHtml(expense.note || expense.category)}</strong>
-            <small>${dateFormatter.format(parseISODate(expense.date))} · ${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}</small>
-          </div>
-          <div class="person-expense-actions">
-            <span class="person-expense-amount">${formatMoney(expense.amount)}</span>
-            <button class="delete-row" type="button" data-id="${expense.id}" aria-label="Borrar gasto">×</button>
+      (group) => `
+        <div class="movement-day-group">
+          <div class="movement-day-heading">${formatDayHeading(group.date)}</div>
+          <div class="person-expense-list">
+            ${group.expenses.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute)).join("")}
           </div>
         </div>
       `,
@@ -1128,27 +1127,29 @@ function renderPersonExpenseRows(expenses) {
     .join("");
 }
 
+function renderMovementRow(expense, tag, idAttribute) {
+  return `
+    <div class="person-expense-row">
+      <div class="person-expense-main">
+        <span class="movement-tag">${escapeHtml(tag)}</span>
+        <div class="person-expense-info">
+          <strong>${escapeHtml(expense.note || expense.category)}</strong>
+          <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}</small>
+        </div>
+      </div>
+      <div class="person-expense-actions">
+        <span class="person-expense-amount">${formatMoney(expense.amount)}</span>
+        <button class="delete-row" type="button" ${idAttribute}="${expense.id}" aria-label="Borrar gasto">×</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderPersonalExpenses(expenses) {
   const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   elements.personalWeekLabel.textContent = elements.weekRangeLabel.textContent;
   elements.personalWeekTotal.textContent = formatMoney(total);
-  elements.personalExpensesTable.innerHTML = expenses
-    .map(
-      (expense) => `
-        <tr>
-          <td>${dateFormatter.format(parseISODate(expense.date))}</td>
-          <td>${escapeHtml(expense.owner)}</td>
-          <td>${escapeHtml(expense.category)}</td>
-          <td>${escapeHtml(expense.paymentMethod || "Sin especificar")}</td>
-          <td>${escapeHtml(expense.note || "-")}</td>
-          <td class="amount-cell">${formatMoney(expense.amount)}</td>
-          <td class="amount-cell">
-            <button class="delete-row" type="button" data-personal-id="${expense.id}">Borrar</button>
-          </td>
-        </tr>
-      `,
-    )
-    .join("");
+  elements.personalExpensesTable.innerHTML = renderMovementGroups(expenses, (expense) => expense.owner, "data-personal-id");
   elements.personalEmptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
