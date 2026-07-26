@@ -1,10 +1,21 @@
 # Roadmap
 
-Estado real al 2026-07-22, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-07-26, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
 Nada en curso.
+
+## Ícono PWA + animación de confirmación al cargar un gasto — completo, 2026-07-26
+
+Pedido del usuario: el ícono instalado en Android no coincidía con la paleta Modernist (se había quedado con los colores del rediseño oscuro anterior), y quería una animación simple al cargar un gasto para confirmar que se guardó.
+
+**Hecho**:
+- `icon.svg` rediseñado con la paleta Modernist (fondo `#f3f2f2`, recibo blanco con borde de tinta, insignia roja con check), formas dentro de la zona segura maskable de Android. `manifest.json` (`background_color`/`theme_color`) actualizado de `#0b0d10` a `#f3f2f2` para que coincida con `index.html`.
+- Toast de confirmación (`#expenseToast`) con animación CSS al agregar un gasto común o personal, disparado por `showExpenseToast()` en `app.js`. Respeta `prefers-reduced-motion`.
+- `service-worker.js` (`CACHE_NAME` v15→v16) y `APP_VERSION` en `app.js` actualizados para forzar que los celulares con la PWA instalada bajen los archivos nuevos.
+
+**Nota para el usuario**: el ícono de la pantalla de inicio en Android puede quedar cacheado por el sistema operativo desde el momento en que se instaló la PWA — si no se ve el ícono nuevo después de este deploy, probablemente haga falta desinstalar y reinstalar la app.
 
 ## Rediseño visual Modernist (traído de Claude Design) — completo, 2026-07-22
 
@@ -54,6 +65,7 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 - Rediseño visual completo al sistema Modernist (paleta clara, acento rojo, tipografía Archivo, sin bordes redondeados), las 5 pantallas — ver detalle arriba.
 - Navegación en 4 pestañas (Cargar/Resumen/Movimientos/Historial) + switch global Comunes/Personales.
 - Movimientos: lista agrupada por día con tag de persona (reemplazó primero a la tabla única por "Gastos comunes en dos columnas", y luego esa vista de dos columnas también fue reemplazada por el agrupado por día del rediseño Modernist).
+- Ícono de instalación (`icon.svg`) y colores de `manifest.json` actualizados al sistema Modernist; toast animado de confirmación al cargar un gasto (común o personal). 2026-07-26 (ver detalle arriba).
 
 ## Convención de esta sección
 

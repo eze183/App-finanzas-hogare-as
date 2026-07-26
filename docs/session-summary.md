@@ -6,6 +6,18 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-26 — Ícono PWA rediseñado a Modernist + animación de confirmación al cargar un gasto
+
+Pedido del usuario: el ícono que queda instalado en Android todavía usaba la paleta oscura "grafito moderno" (fondo casi negro, acento esmeralda) de antes del rediseño Modernist, sin relación visual con la app actual; y pidió alguna animación simple al cargar un gasto para saber que quedó guardado.
+
+**Ícono** (`icon.svg`): rediseñado con la paleta Modernist — fondo `#f3f2f2`, una tarjeta/recibo blanco con borde de tinta (`#201e1d`, sin bordes redondeados) y 3 líneas dentro simulando ítems de un gasto, con una insignia circular roja (`#ec3013`) con un check blanco superpuesta en la esquina inferior derecha (mantiene el concepto del ícono anterior — recibo + confirmación — pero recoloreado). Las formas se ubicaron a propósito dentro de la zona segura del 80% central que usan los íconos "maskable" de Android, para que no se recorten con las máscaras circulares/squircle de los lanzadores. `manifest.json` también tenía `background_color`/`theme_color` hardcodeados en el negro viejo (`#0b0d10`) — quedaron en `#f3f2f2`, iguales al `<meta name="theme-color">` de `index.html` que ya estaba actualizado desde el rediseño.
+
+**Animación de confirmación**: toast simple (`#expenseToast` en `index.html`) que aparece arriba de la pantalla con un ícono de check y "Gasto agregado", con una animación CSS de aparecer/pausar/desaparecer (~1.8s, `@keyframes expense-toast-pop`) al confirmar la carga — tanto en el formulario común como en el personal. Se dispara con una función chica (`showExpenseToast()` en `app.js`) que remueve y vuelve a agregar la clase `is-visible` forzando un reflow, así se puede re-disparar aunque el usuario cargue varios gastos seguidos sin esperar a que termine la animación anterior. Respeta `prefers-reduced-motion` (mismo timing, sin el movimiento de escala/traslado). No reemplaza el texto de estado que ya existía (`setReceiptStatus`) en el formulario común, es un refuerzo visual además de eso.
+
+**Cache de la PWA**: se subió `CACHE_NAME` en `service-worker.js` de `v15` a `v16` (y `APP_VERSION` en `app.js` a juego) para que los celulares con la PWA ya instalada bajen los archivos nuevos en vez de servir versiones cacheadas. Aclaración para el usuario: el ícono del ícono de la app en la pantalla de inicio de Android suele quedar cacheado por el propio sistema operativo al momento de instalar la PWA — es posible que haga falta desinstalar y reinstalar la app (o esperar a que Android la actualice) para ver el ícono nuevo, no solo actualizar la página.
+
+Probado en el navegador con Supabase mockeado (mismo procedimiento de sesiones anteriores: placeholder en `supabase-config.js`, revertido antes de commitear): se disparó el toast en ambos formularios, dos veces seguidas para confirmar que se puede re-disparar, sin errores de consola.
+
 ## 2026-07-22 — Rediseño Modernist: Movimientos, Historial y Configuración (cierra el rediseño completo)
 
 Se retomó el rediseño Modernist donde había quedado pausado la sesión anterior (`roadmap.md`) y se terminaron las 3 pantallas que faltaban, cerrando el roadmap completo de los 5 mockups traídos de Claude Design.

@@ -117,3 +117,19 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 - El gráfico de categorías (barras/torta, dibujado en `<canvas>`) se mantuvo tal cual, solo recoloreado a la rampa roja/gris de Modernist — el mockup mostraba barras de progreso HTML simples en vez de canvas, pero reemplazar el canvas hubiera sido un cambio de `app.js` mucho más grande que un ajuste de paleta.
 
 **Regla seguida en cada paso**: nunca tocar los `id` que usa `app.js` al reestructurar HTML — se reordenan/envuelven nodos pero los ids se preservan. La mayoría de los pasos (Cargar, Resumen, Historial, Configuración) no requirieron ningún cambio de lógica, solo HTML/CSS. Las excepciones: mover el botón `#settleWeekButton` de Movimientos a Resumen (relocalización del mismo elemento, no una copia) y actualizar el array `chartColors` en `app.js` (una constante de colores, no lógica); y Movimientos, donde sí hubo lógica nueva (`groupExpensesByDay`/`renderMovementGroups`) porque pasar de "dos columnas por persona" y "tabla" a "lista agrupada por día" no era solo un reacomodo visual — ver el paso 5 en `roadmap.md`.
+
+## Ícono PWA recoloreado a Modernist, mismo concepto (recibo + check)
+
+**Decisión** (2026-07-26): en vez de diseñar un ícono nuevo desde cero, se mantuvo el concepto del ícono anterior (una tarjeta/recibo con líneas de ítems y una insignia de confirmación en la esquina) y se recoloreó a la paleta Modernist (`#f3f2f2` de fondo, tarjeta blanca con borde de tinta `#201e1d`, insignia roja `#ec3013` con check blanco).
+
+**Por qué**: el pedido del usuario fue puntual — "los colores no tienen nada que ver con el diseño de la app" — no pidió un concepto nuevo. Mantener la composición y solo cambiar la paleta es el cambio más chico que resuelve el problema real, y conserva algo de continuidad visual con versiones anteriores de la app.
+
+**Restricción técnica a respetar en cualquier edición futura de `icon.svg`**: el `manifest.json` declara el ícono con `"purpose": "any maskable"`. Android (y otros launchers) recortan un ícono maskable con máscaras propias (círculo, squircle, etc.) que en el peor caso solo garantizan visible el 80% central del canvas — un círculo de radio `0.4 × ancho` centrado. Todas las formas del ícono actual (la tarjeta de 200×280, sus líneas internas, la insignia circular) se ubicaron a propósito dentro de ese círculo de seguridad (radio ~205px sobre un canvas de 512×512) para que no queden recortadas en ningún lanzador. Si se vuelve a tocar el ícono, mantener ese margen o volver a calcularlo.
+
+**Limitación conocida, no resuelta**: Android suele cachear el ícono de una PWA instalada al momento de instalarla, independientemente del service worker. Es posible que el usuario necesite desinstalar y reinstalar la app (o esperar a que el sistema la actualice por su cuenta) para ver el ícono nuevo en la pantalla de inicio — no hay forma de forzarlo desde el código de la app.
+
+## Confirmación visual de "gasto cargado" con un toast animado, no con una notificación push
+
+**Decisión** (2026-07-26): pedido del usuario de "alguna animación muy simple" al cargar un gasto, para confirmar que quedó guardado. Se implementó como un toast (`#expenseToast`) con una animación CSS corta (~1.8s) que aparece arriba de la pantalla con un check y desaparece sola.
+
+**Por qué esta forma y no otra**: no se evaluaron alternativas más pesadas (notificaciones del sistema, vibración, sonido) porque el pedido fue explícitamente "muy simple" y la app ya tenía un patrón de mensajes de estado con texto (`setReceiptStatus`) que no cumplía el pedido por sí solo (es un párrafo de texto fijo en la pantalla, no algo que capture la atención como una confirmación). El toast es puramente CSS (una sola clase `is-visible` con `@keyframes`), sin dependencias nuevas, y funciona igual en el formulario común y el personal. Respeta `prefers-reduced-motion` con un fundido simple en vez de la animación de escala/traslado.

@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-13-sw-cache-reload-v15";
+const APP_VERSION = "2026-07-22-icon-modernist-v16";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -102,6 +102,8 @@ const defaultState = {
 const TOMBSTONE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 const elements = {
+  expenseToast: document.querySelector("#expenseToast"),
+  expenseToastText: document.querySelector("#expenseToastText"),
   weekStart: document.querySelector("#weekStart"),
   currentWeekButton: document.querySelector("#currentWeekButton"),
   settingsOpenButton: document.querySelector("#settingsOpenButton"),
@@ -1264,6 +1266,13 @@ function escapeHtml(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+function showExpenseToast(message) {
+  elements.expenseToastText.textContent = message;
+  elements.expenseToast.classList.remove("is-visible");
+  void elements.expenseToast.offsetWidth;
+  elements.expenseToast.classList.add("is-visible");
 }
 
 function setReceiptStatus(message, tone = "") {
@@ -2440,6 +2449,7 @@ function handleExpenseSubmit(event) {
   elements.expensePayer.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
+  showExpenseToast("Gasto agregado");
   setRecordsMode("common");
   render();
   elements.expenseAmount.focus();
@@ -2485,6 +2495,7 @@ function handlePersonalExpenseSubmit(event) {
   elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   updatePersonalCardFieldsVisibility();
+  showExpenseToast("Gasto agregado");
   setRecordsMode("personal");
   render();
   elements.personalExpenseAmount.focus();
