@@ -6,6 +6,16 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-29 — Fix: la foto/OCR no autocompletaba el gasto personal, y "Por categoría" ignoraba el modo
+
+Dos problemas reportados por el usuario usando la app en su celular, ambos en la pestaña Personales.
+
+**1. El OCR leía bien la factura pero no autocompletaba el formulario personal.** El usuario sacó foto a una factura estando en Personales; el texto se leyó correctamente, pero al tocar "Agregar personal" la app lo mandaba al campo de monto vacío, obligándolo a tipearlo a mano — justo lo que la foto venía a evitar. Causa: `fillExpenseFromReceipt()` escribía **siempre** en los campos del formulario común (`#expenseAmount`/`#expenseDate`/`#expenseNote`), sin mirar `currentEntryMode`. En modo personal llenaba el formulario oculto, y el personal quedaba vacío: el `required` del monto rebotaba el submit y el navegador enfocaba ese campo. Fix: la función ahora elige los campos destino según el modo activo, y además completa `#personalExpenseOwner` con el dueño del dispositivo si estaba vacío (ese campo también es `required` y hubiera causado el mismo rebote). El flujo de voz ya hacía esto bien pero con otra lógica — decide el modo según lo dictado, no según el modo activo; ver `decisions.md` para no confundirlos al tocar esto.
+
+**2. El panel "Por categoría" del tab Cargar mostraba datos comunes en modo personal**, con la leyenda hardcodeada "Resumen de los gastos comunes de esta semana" incluso estando en Personales. Fix: `renderCategories(summaryExpenses, isPersonal)` ahora recibe los gastos del modo activo, y la leyenda se escribe desde JS (`#categoryPanelNote`). Esto revierte explícitamente una decisión del 2026-07-20 que había dejado ese panel sin tocar por no estar mencionado entonces — ahora el usuario lo pidió, así que quedó anotado en `decisions.md`. **Los presupuestos siguen sobre gastos comunes únicamente** (no se tocaron: el usuario no los mencionó y viven en Configuración, no en Cargar).
+
+Probado en el navegador con Supabase mockeado (mismo procedimiento de siempre, revertido antes de commitear), simulando la salida del OCR con `fillExpenseFromReceipt()` desde la consola en vez de subir una imagen real: en modo personal el monto/fecha/descripción van al formulario personal, el común queda vacío, el submit pasa sin campos inválidos y el gasto se guarda con los datos correctos; en modo común el comportamiento anterior quedó intacto. El panel "Por categoría" se verificó en los dos modos (leyenda y totales correctos en cada uno), sin errores de consola.
+
 ## 2026-07-26 — Ícono PWA rediseñado a Modernist + animación de confirmación al cargar un gasto
 
 Pedido del usuario: el ícono que queda instalado en Android todavía usaba la paleta oscura "grafito moderno" (fondo casi negro, acento esmeralda) de antes del rediseño Modernist, sin relación visual con la app actual; y pidió alguna animación simple al cargar un gasto para saber que quedó guardado.

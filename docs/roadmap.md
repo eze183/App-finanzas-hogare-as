@@ -1,10 +1,21 @@
 # Roadmap
 
-Estado real al 2026-07-26, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-07-29, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
 Nada en curso.
+
+## Fixes del modo Personales (foto/OCR y panel "Por categoría") — completo, 2026-07-29
+
+Dos bugs reportados por el usuario usando la app en el celular, ambos en la pestaña Personales:
+
+- **La foto/OCR no autocompletaba el formulario personal**: `fillExpenseFromReceipt()` escribía siempre en los campos del formulario común, así que en modo personal el monto quedaba vacío y "Agregar personal" rebotaba pidiendo tipearlo a mano. Ahora respeta el modo activo y completa el dueño si estaba vacío.
+- **El panel "Por categoría" del tab Cargar mostraba gastos comunes en modo personal**, con la leyenda fija "Resumen de los gastos comunes de esta semana". Ahora usa los gastos del modo activo y la leyenda cambia según corresponda.
+
+Detalle y contexto en `session-summary.md` y `decisions.md`.
+
+**Anotado, no hecho** (no fue pedido): los presupuestos por categoría siguen calculándose solo sobre gastos comunes. Si en algún momento se quiere presupuestar gastos personales, ese es el próximo lugar a revisar.
 
 ## Ícono PWA + animación de confirmación al cargar un gasto — completo, 2026-07-26
 

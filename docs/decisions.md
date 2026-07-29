@@ -98,6 +98,8 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué no se tocó el panel "Por categoría"/presupuestos del tab Cargar**: el usuario no lo mencionó y sigue siendo información de contexto mientras se carga un gasto, no una duplicación confusa como sí lo eran los campos de reparto en Resumen.
 
+**Actualización (2026-07-29): el panel "Por categoría" sí pasó a respetar el modo.** El usuario lo señaló explícitamente ("hay una leyenda que dice resumen de los gastos comunes de esta semana, siendo que yo estoy en la pestaña personal"): mostraba totales de gastos comunes con una leyenda hardcodeada incluso en modo personal. Ahora `renderCategories(summaryExpenses, isPersonal)` recibe los gastos del modo activo y la leyenda se escribe desde JS (`#categoryPanelNote`). **Los presupuestos siguen calculándose solo sobre gastos comunes** — no se cambiaron porque el usuario no los mencionó y viven en Configuración (no en el tab Cargar), pero queda anotado como posible inconsistencia a revisar si en algún momento se quiere presupuestar gastos personales.
+
 ## Historial de cuentas saldadas es una pestaña propia, no parte de Movimientos
 
 **Decisión** (2026-07-13): pedido explícito del usuario, sin motivo adicional registrado más allá de preferencia de navegación.
@@ -133,3 +135,13 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 **Decisión** (2026-07-26): pedido del usuario de "alguna animación muy simple" al cargar un gasto, para confirmar que quedó guardado. Se implementó como un toast (`#expenseToast`) con una animación CSS corta (~1.8s) que aparece arriba de la pantalla con un check y desaparece sola.
 
 **Por qué esta forma y no otra**: no se evaluaron alternativas más pesadas (notificaciones del sistema, vibración, sonido) porque el pedido fue explícitamente "muy simple" y la app ya tenía un patrón de mensajes de estado con texto (`setReceiptStatus`) que no cumplía el pedido por sí solo (es un párrafo de texto fijo en la pantalla, no algo que capture la atención como una confirmación). El toast es puramente CSS (una sola clase `is-visible` con `@keyframes`), sin dependencias nuevas, y funciona igual en el formulario común y el personal. Respeta `prefers-reduced-motion` con un fundido simple en vez de la animación de escala/traslado.
+
+## El autocompletado por foto/OCR escribe en el formulario del modo activo, no siempre en el común
+
+**Decisión** (2026-07-29): `fillExpenseFromReceipt()` pasa a elegir los campos destino según `currentEntryMode` — si el usuario está en la pestaña Personales cuando saca la foto, el monto/fecha/descripción extraídos van al formulario personal; si está en Comunes, al común (comportamiento anterior).
+
+**Por qué**: era un bug reportado por el usuario. `fillExpenseFromReceipt` escribía **siempre** en `#expenseAmount`/`#expenseDate`/`#expenseNote` (los campos del formulario común), sin mirar el modo. Estando en Personales, el OCR leía la factura correctamente pero llenaba el formulario oculto: el formulario personal quedaba vacío, así que al tocar "Agregar personal" el navegador rebotaba el submit por el `required` del monto y enfocaba ese campo. Desde afuera parecía que la app "pedía tipear el monto a mano", anulando el sentido de sacar la foto.
+
+**Detalle relevante**: el flujo de dictado por voz (`fillExpenseFromVoice`) ya hacía esto bien, pero al revés — decide el modo a partir de lo que se dictó (`parsed.isPersonal`, por ejemplo si el usuario dice "personal"). Para el OCR no existe esa señal en el texto de un ticket, así que la única fuente de verdad razonable es el modo en el que el usuario ya está. **No confundir los dos flujos**: voz *cambia* el modo según el dictado, foto *respeta* el modo activo. Además, en modo personal se completa `#personalExpenseOwner` con el dueño del dispositivo si estaba vacío, porque ese campo también es `required` y hubiera producido el mismo rebote de submit.
+
+**Nota sobre resúmenes de tarjeta**: esto no aplica al flujo de resúmenes (`detectDocumentType === "statement"`), que tiene su propia pantalla de revisión con tildes de común/personal por línea y no pasa por `fillExpenseFromReceipt`.

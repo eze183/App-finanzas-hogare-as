@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-22-icon-modernist-v16";
+const APP_VERSION = "2026-07-29-ocr-personal-fix-v17";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -189,6 +189,7 @@ const elements = {
   voiceExpenseButton: document.querySelector("#voiceExpenseButton"),
   voiceStatus: document.querySelector("#voiceStatus"),
   categoryList: document.querySelector("#categoryList"),
+  categoryPanelNote: document.querySelector("#categoryPanelNote"),
   commonExpenseColumns: document.querySelector("#commonExpenseColumns"),
   emptyState: document.querySelector("#emptyState"),
   weekRangeLabel: document.querySelector("#weekRangeLabel"),
@@ -849,8 +850,12 @@ function calculateSettlement(expenses) {
   return { total, totals, amount: difference, debtor, creditor };
 }
 
-function renderCategories(expenses) {
+function renderCategories(expenses, isPersonal) {
   const categories = getCategoryTotals(expenses);
+
+  elements.categoryPanelNote.textContent = isPersonal
+    ? "Resumen de tus gastos personales de esta semana."
+    : "Resumen de los gastos comunes de esta semana.";
 
   const rows = Object.entries(categories)
     .sort((a, b) => b[1] - a[1])
@@ -1249,7 +1254,7 @@ function render() {
   renderSummary(summaryExpenses, isPersonal);
   renderSettlementDetail(expenses, isPersonal);
   renderMonthlySummary(isPersonal);
-  renderCategories(expenses);
+  renderCategories(summaryExpenses, isPersonal);
   renderBudgets(expenses);
   renderRecurringExpenses();
   renderChart(summaryExpenses);
@@ -2350,21 +2355,37 @@ function escapeRegExp(value) {
 }
 
 function fillExpenseFromReceipt({ amount, date, note }) {
+  const isPersonal = currentEntryMode === "personal";
+  const targetFields = isPersonal
+    ? {
+        date: elements.personalExpenseDate,
+        amount: elements.personalExpenseAmount,
+        note: elements.personalExpenseNote,
+      }
+    : {
+        date: elements.expenseDate,
+        amount: elements.expenseAmount,
+        note: elements.expenseNote,
+      };
   const filledFields = [];
 
   if (date) {
-    elements.expenseDate.value = date;
+    targetFields.date.value = date;
     filledFields.push("fecha");
   }
 
   if (amount) {
-    elements.expenseAmount.value = amount.toFixed(2);
+    targetFields.amount.value = amount.toFixed(2);
     filledFields.push("monto");
   }
 
   if (note) {
-    elements.expenseNote.value = note;
+    targetFields.note.value = note;
     filledFields.push("descripción");
+  }
+
+  if (isPersonal && !elements.personalExpenseOwner.value.trim()) {
+    elements.personalExpenseOwner.value = getDeviceOwner();
   }
 
   if (!filledFields.length) {
@@ -2372,8 +2393,9 @@ function fillExpenseFromReceipt({ amount, date, note }) {
     return;
   }
 
-  setReceiptStatus(`Completé ${filledFields.join(", ")}. Revisá los datos antes de agregar el gasto.`, "success");
-  elements.expenseAmount.focus();
+  const expenseLabel = isPersonal ? "el gasto personal" : "el gasto";
+  setReceiptStatus(`Completé ${filledFields.join(", ")}. Revisá los datos antes de agregar ${expenseLabel}.`, "success");
+  targetFields.amount.focus();
 }
 
 function handlePeopleSubmit(event) {
