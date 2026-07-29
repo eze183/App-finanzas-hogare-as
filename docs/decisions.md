@@ -146,6 +146,24 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Nota sobre resúmenes de tarjeta**: esto no aplica al flujo de resúmenes (`detectDocumentType === "statement"`), que tiene su propia pantalla de revisión con tildes de común/personal por línea y no pasa por `fillExpenseFromReceipt`.
 
+**Complemento imprescindible (2026-07-29, mismo día)**: respetar el modo activo **no alcanzaba**, porque el flujo natural del usuario es sacar la foto primero y decidir después si el gasto es común o personal. Ver la decisión siguiente.
+
+## Al cambiar de pestaña Comunes/Personales, el gasto en progreso se traslada de formulario
+
+**Decisión** (2026-07-29): cuando el usuario cambia de pestaña con un monto ya cargado en el formulario, los datos (monto, fecha, categoría, forma de pago, descripción y persona) se **mueven** al formulario del otro modo, y el de origen se limpia.
+
+**Por qué**: el fix anterior (que el OCR escriba en el formulario del modo activo) no resolvió el problema real que reportó el usuario. La app arranca siempre en Comunes, así que la secuencia natural es: sacar la foto → el monto se carga en el formulario común → recién entonces darse cuenta de que es un gasto personal → cambiar de pestaña → **el formulario personal está vacío** y "Agregar personal" rebota pidiendo el monto a mano. Exactamente el mismo síntoma que el bug anterior, por una causa distinta. Se reprodujo con la factura real del usuario antes de tocar nada.
+
+**Por qué mover y no copiar**: el gasto es uno solo; la pestaña define de qué *tipo* es, no crea un gasto nuevo. Si se copiara, quedarían los datos en los dos formularios y el usuario podría cargar el mismo gasto dos veces sin darse cuenta.
+
+**Condición de disparo**: solo se traslada si el formulario de origen tiene un monto cargado (indicador de "hay un borrador en progreso"). Sin eso, cambiar de pestaña no toca nada — importante para no pisar los valores por defecto (por ejemplo la fecha) al navegar entre pestañas sin estar cargando nada.
+
+**Detalles de implementación que no hay que romper**:
+- El traslado corre **después** de `render()` dentro de `setEntryMode`. Es obligatorio en ese orden: `renderPeople()` resetea el pagador al dueño del dispositivo y `renderWeekLabel()` puede reescribir la fecha del formulario personal si cae fuera de la semana seleccionada. Si el traslado corriera antes (como en el primer intento), esos dos renders le pisarían la persona y potencialmente la fecha.
+- Solo se traslada cuando el cambio de modo viene de un **click del usuario** en las pestañas (`setEntryMode(mode, { carryOverDraft: true })`). Los cambios de modo programáticos no trasladan: `fillExpenseFromVoice` llama `setEntryMode` sin el flag porque decide el modo según lo dictado y llena el formulario destino inmediatamente después; trasladar ahí arrastraría restos del otro formulario.
+- `card`/`installments` no se trasladan porque solo existen en el formulario personal. Al pasar a personal se llama `updatePersonalCardFieldsVisibility()` por si la forma de pago trasladada es "Tarjeta de crédito".
+- La persona se traslada entre un `<select>` (pagador común) y un `<input type="text">` (dueño personal); `setFieldValue` distingue el tipo y, para el select, solo asigna si el nombre existe como opción.
+
 ## Presupuestos separados por modo (`budgets` + `personalBudgets`), no un set compartido
 
 **Decisión** (2026-07-29): los presupuestos por categoría pasan a ser **dos sets independientes** — `state.budgets` para gastos comunes y `state.personalBudgets` para personales — cada uno con su propio timestamp de sincronización (`budgetsUpdatedAt`/`personalBudgetsUpdatedAt`). La pestaña activa determina cuál se muestra y cuál se edita.

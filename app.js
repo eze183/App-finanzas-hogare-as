@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-29-presupuestos-por-modo-v18";
+const APP_VERSION = "2026-07-29-traslado-borrador-v19";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -2546,8 +2546,58 @@ function handlePersonalExpenseSubmit(event) {
   elements.personalExpenseAmount.focus();
 }
 
-function setEntryMode(mode) {
+function getExpenseDraftFields(isPersonal) {
+  return isPersonal
+    ? {
+        amount: elements.personalExpenseAmount,
+        date: elements.personalExpenseDate,
+        category: elements.personalExpenseCategory,
+        paymentMethod: elements.personalExpensePaymentMethod,
+        note: elements.personalExpenseNote,
+        person: elements.personalExpenseOwner,
+      }
+    : {
+        amount: elements.expenseAmount,
+        date: elements.expenseDate,
+        category: elements.expenseCategory,
+        paymentMethod: elements.expensePaymentMethod,
+        note: elements.expenseNote,
+        person: elements.expensePayer,
+      };
+}
+
+function setFieldValue(field, value) {
+  if (!value) return;
+  if (field.tagName === "SELECT") {
+    setSelectValueIfAvailable(field, value);
+    return;
+  }
+  field.value = value;
+}
+
+function carryOverExpenseDraft(toPersonal) {
+  const source = getExpenseDraftFields(!toPersonal);
+  const target = getExpenseDraftFields(toPersonal);
+
+  // Solo hay algo que trasladar si el usuario (o el OCR/voz) ya cargó un monto.
+  if (!source.amount.value.trim()) return;
+
+  target.amount.value = source.amount.value;
+  setFieldValue(target.date, source.date.value);
+  setFieldValue(target.category, source.category.value);
+  setFieldValue(target.paymentMethod, source.paymentMethod.value);
+  setFieldValue(target.note, source.note.value);
+  setFieldValue(target.person, source.person.value);
+
+  source.amount.value = "";
+  source.note.value = "";
+
+  if (toPersonal) updatePersonalCardFieldsVisibility();
+}
+
+function setEntryMode(mode, { carryOverDraft = false } = {}) {
   const isPersonal = mode === "personal";
+  const modeChanged = isPersonal !== (currentEntryMode === "personal");
   elements.commonTabButton.classList.toggle("is-active", !isPersonal);
   elements.personalTabButton.classList.toggle("is-active", isPersonal);
   elements.commonExpenseSection.classList.toggle("is-hidden", isPersonal);
@@ -2560,6 +2610,13 @@ function setEntryMode(mode) {
   }
   setRecordsMode(isPersonal ? "personal" : "common");
   render();
+
+  // Después de render(): renderPeople() resetea el pagador al dueño del dispositivo y
+  // renderWeekLabel() puede reescribir la fecha, así que el traslado tiene que ir al final
+  // para que no le pisen los datos.
+  if (carryOverDraft && modeChanged) {
+    carryOverExpenseDraft(isPersonal);
+  }
 }
 
 function setRecordsMode(mode) {
@@ -2922,8 +2979,8 @@ async function init() {
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
   elements.personalExpensePaymentMethod.addEventListener("change", updatePersonalCardFieldsVisibility);
-  elements.commonTabButton.addEventListener("click", () => setEntryMode("common"));
-  elements.personalTabButton.addEventListener("click", () => setEntryMode("personal"));
+  elements.commonTabButton.addEventListener("click", () => setEntryMode("common", { carryOverDraft: true }));
+  elements.personalTabButton.addEventListener("click", () => setEntryMode("personal", { carryOverDraft: true }));
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);
   elements.budgetForm.addEventListener("submit", handleBudgetSubmit);
   elements.budgetList.addEventListener("click", handleBudgetListClick);

@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-29 (continuación) — El gasto en progreso ahora se traslada al cambiar de pestaña (cierra el bug del OCR personal)
+
+El usuario reportó que el fix del OCR **seguía sin funcionar**: sacó foto a una factura real (Colorshop, $70.719,29) y el monto no se autocompletaba. Se diagnosticó en capas antes de tocar código, y la causa real era distinta a la que se había arreglado.
+
+**Diagnóstico** (el usuario dejó la foto en el proyecto para poder probar con el caso real):
+1. Se descartó el parser de montos: la factura usa coma para miles y punto para decimales (`70,719.29`, formato inglés en vez del argentino), pero `parseReceiptAmount` ya lo manejaba bien.
+2. Se corrió el **OCR real de Tesseract sobre la foto del usuario** y se inspeccionó el texto crudo. Salió bastante sucio (`"me"`, `"<> ho,"`, `"Efvo $ 7071929"` sin separadores), pero la línea del total se leyó perfecta: `"ora Venc. CAE: 7/08/2026 TOTAL 70,719.29"`. Con ese texto, `extractExpenseFromReceiptText` devolvía correctamente monto `70719.29` y fecha `2026-07-28`.
+3. Se verificó que producción (GitHub Pages) ya tenía la v18 con el fix del modo — no era cache viejo.
+4. **Se reprodujo el bug**: la app arranca siempre en Comunes, así que la secuencia real del usuario es sacar la foto (el monto se carga en el formulario **común**) y *después* darse cuenta de que es personal y cambiar de pestaña, donde el formulario está vacío. El fix anterior solo cubría "ya estoy en Personales antes de sacar la foto".
+
+**Solución**: al cambiar de pestaña con un monto ya cargado, el borrador se **mueve** al formulario del otro modo (monto, fecha, categoría, forma de pago, descripción y persona) y el de origen se limpia. Se mueve en vez de copiarse para que el usuario no pueda cargar el mismo gasto dos veces. Solo se dispara si hay un monto cargado, así navegar entre pestañas sin estar cargando nada no toca los valores por defecto. Y solo con clicks del usuario en las pestañas: el dictado por voz sigue llamando `setEntryMode` sin el flag, porque él decide el modo según lo dictado.
+
+**Detalle no obvio que costó un intento**: el traslado tiene que correr **después** de `render()` dentro de `setEntryMode`. En el primer intento corría antes y `renderPeople()` le pisaba la persona trasladada (resetea el pagador al dueño del dispositivo) — se detectó en la prueba porque al pasar un gasto de Tami de personal a común el pagador volvía a Eze.
+
+**Verificado en el navegador con Supabase mockeado** (revertido antes de commitear), con el texto OCR real de la factura del usuario: el escenario completo (foto en Comunes → cambiar a Personales → guardar) deja el monto correcto, cero campos inválidos en el submit y el formulario común limpio; el caso inverso también traslada bien incluida la persona; cambiar de pestaña sin datos no altera nada; y los dos flujos de dictado por voz (común y personal) siguen intactos. Sin errores de consola.
+
+**Nota**: la factura de prueba quedó en la carpeta del proyecto pero **no se commiteó** — es un documento fiscal real (CUIT, CAE, número de comprobante) y el repo de GitHub es público.
+
 ## 2026-07-29 (continuación) — Presupuestos separados por modo (comunes vs. personales)
 
 Siguiendo el fix anterior, el usuario pidió "hacé lo mismo con los presupuestos". A diferencia del panel "Por categoría" (que era solo lectura y se resolvió con un cambio de una línea), los presupuestos son **datos persistidos y sincronizados**, así que había dos caminos con consecuencias distintas y **se le preguntó al usuario** antes de tocar el modelo: (a) un solo set de límites con el consumo calculado según el modo, o (b) dos sets separados. Eligió (b), límites separados.
