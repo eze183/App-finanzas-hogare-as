@@ -98,7 +98,7 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué no se tocó el panel "Por categoría"/presupuestos del tab Cargar**: el usuario no lo mencionó y sigue siendo información de contexto mientras se carga un gasto, no una duplicación confusa como sí lo eran los campos de reparto en Resumen.
 
-**Actualización (2026-07-29): el panel "Por categoría" sí pasó a respetar el modo.** El usuario lo señaló explícitamente ("hay una leyenda que dice resumen de los gastos comunes de esta semana, siendo que yo estoy en la pestaña personal"): mostraba totales de gastos comunes con una leyenda hardcodeada incluso en modo personal. Ahora `renderCategories(summaryExpenses, isPersonal)` recibe los gastos del modo activo y la leyenda se escribe desde JS (`#categoryPanelNote`). **Los presupuestos siguen calculándose solo sobre gastos comunes** — no se cambiaron porque el usuario no los mencionó y viven en Configuración (no en el tab Cargar), pero queda anotado como posible inconsistencia a revisar si en algún momento se quiere presupuestar gastos personales.
+**Actualización (2026-07-29): el panel "Por categoría" sí pasó a respetar el modo.** El usuario lo señaló explícitamente ("hay una leyenda que dice resumen de los gastos comunes de esta semana, siendo que yo estoy en la pestaña personal"): mostraba totales de gastos comunes con una leyenda hardcodeada incluso en modo personal. Ahora `renderCategories(summaryExpenses, isPersonal)` recibe los gastos del modo activo y la leyenda se escribe desde JS (`#categoryPanelNote`). Los presupuestos se resolvieron por separado el mismo día — ver la decisión "Presupuestos separados por modo" más abajo.
 
 ## Historial de cuentas saldadas es una pestaña propia, no parte de Movimientos
 
@@ -145,3 +145,19 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 **Detalle relevante**: el flujo de dictado por voz (`fillExpenseFromVoice`) ya hacía esto bien, pero al revés — decide el modo a partir de lo que se dictó (`parsed.isPersonal`, por ejemplo si el usuario dice "personal"). Para el OCR no existe esa señal en el texto de un ticket, así que la única fuente de verdad razonable es el modo en el que el usuario ya está. **No confundir los dos flujos**: voz *cambia* el modo según el dictado, foto *respeta* el modo activo. Además, en modo personal se completa `#personalExpenseOwner` con el dueño del dispositivo si estaba vacío, porque ese campo también es `required` y hubiera producido el mismo rebote de submit.
 
 **Nota sobre resúmenes de tarjeta**: esto no aplica al flujo de resúmenes (`detectDocumentType === "statement"`), que tiene su propia pantalla de revisión con tildes de común/personal por línea y no pasa por `fillExpenseFromReceipt`.
+
+## Presupuestos separados por modo (`budgets` + `personalBudgets`), no un set compartido
+
+**Decisión** (2026-07-29): los presupuestos por categoría pasan a ser **dos sets independientes** — `state.budgets` para gastos comunes y `state.personalBudgets` para personales — cada uno con su propio timestamp de sincronización (`budgetsUpdatedAt`/`personalBudgetsUpdatedAt`). La pestaña activa determina cuál se muestra y cuál se edita.
+
+**Por qué esta forma y no la alternativa más chica**: el usuario pidió "hacé lo mismo con los presupuestos" después de que el panel "Por categoría" pasara a respetar el modo. Había dos caminos y **se le preguntó explícitamente** porque este toca datos persistidos y sincronizados:
+- *Mismo límite, consumo por modo* (cambio de una línea, sin tocar el modelo): descartada por el usuario. El problema conceptual es que un solo límite de, por ejemplo, $50.000 en Farmacia se compararía contra dos consumos distintos según la pestaña, sin que quede claro si el límite es para comunes, para personales o para la suma.
+- *Límites separados* (elegida): un presupuesto de Farmacia para gastos comunes del hogar y otro distinto para gastos personales son conceptos genuinamente distintos, y es la separación real que el usuario venía pidiendo.
+
+**Migración**: ninguna necesaria. `budgets` sigue significando lo mismo que antes (comunes), así que los presupuestos que el usuario ya tenía cargados quedan como los comunes; `personalBudgets` arranca vacío.
+
+**Compatibilidad con un dispositivo que todavía tenga la versión vieja** (importante, ya verificado): un celular con código previo a este cambio no incluye `personalBudgets` en el payload que sube a Supabase. Cuando el dispositivo actualizado hace pull de ese estado, `remote.personalBudgetsUpdatedAt` vale `0`, así que **gana el local** y los presupuestos personales no se pierden; en el siguiente push vuelven a subir. No hace falta coordinar que los dos celulares se actualicen al mismo tiempo. Es el mismo comportamiento auto-recuperable que ya tenía `budgets`.
+
+**Dónde se lee el modo**: `getActiveBudgets(isPersonal)` centraliza la elección del set. `handleBudgetSubmit`/`handleBudgetListClick` deciden por `currentEntryMode` (no reciben el flag) porque son handlers de eventos, no parte del pipeline de render. Si se agrega otro lugar que toque presupuestos, usar `getActiveBudgets()` y no leer `state.budgets` directo.
+
+**Detalle de UX a no perder**: el panel de Presupuestos vive en Configuración, que es un overlay que tapa el switch Comunes/Personales. Sin una indicación explícita, el usuario no sabría de qué modo son los límites que está editando. Por eso la leyenda `#budgetPanelNote` se escribe desde JS diciendo "para los gastos comunes" / "para tus gastos personales", y el estado vacío también distingue ("Sin presupuestos comunes cargados." / "Sin presupuestos personales cargados."). Si en algún momento se rediseña Configuración, mantener esa señal.

@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-29-ocr-personal-fix-v17";
+const APP_VERSION = "2026-07-29-presupuestos-por-modo-v18";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -98,6 +98,8 @@ const defaultState = {
   recurringExpenses: [],
   budgets: {},
   budgetsUpdatedAt: 0,
+  personalBudgets: {},
+  personalBudgetsUpdatedAt: 0,
 };
 const TOMBSTONE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
@@ -172,6 +174,7 @@ const elements = {
   budgetCategory: document.querySelector("#budgetCategory"),
   budgetAmount: document.querySelector("#budgetAmount"),
   budgetList: document.querySelector("#budgetList"),
+  budgetPanelNote: document.querySelector("#budgetPanelNote"),
   recurringForm: document.querySelector("#recurringForm"),
   recurringNote: document.querySelector("#recurringNote"),
   recurringPayer: document.querySelector("#recurringPayer"),
@@ -254,6 +257,8 @@ function loadState() {
       recurringExpenses: Array.isArray(saved.recurringExpenses) ? saved.recurringExpenses : [],
       budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
       budgetsUpdatedAt: saved.budgetsUpdatedAt,
+      personalBudgets: saved.personalBudgets && typeof saved.personalBudgets === "object" ? saved.personalBudgets : {},
+      personalBudgetsUpdatedAt: saved.personalBudgetsUpdatedAt,
     });
   } catch {
     return structuredClone(defaultState);
@@ -276,6 +281,9 @@ function normalizeState(value) {
       : [],
     budgets: value.budgets && typeof value.budgets === "object" ? sanitizeBudgets(value.budgets) : {},
     budgetsUpdatedAt: Number(value.budgetsUpdatedAt) || 0,
+    personalBudgets:
+      value.personalBudgets && typeof value.personalBudgets === "object" ? sanitizeBudgets(value.personalBudgets) : {},
+    personalBudgetsUpdatedAt: Number(value.personalBudgetsUpdatedAt) || 0,
   };
 }
 
@@ -420,6 +428,8 @@ function mergeCloudState(remoteData) {
   const remote = normalizeState(remoteData || {});
   const peopleWinner = remote.peopleUpdatedAt > state.peopleUpdatedAt ? remote : state;
   const budgetsWinner = remote.budgetsUpdatedAt > state.budgetsUpdatedAt ? remote : state;
+  const personalBudgetsWinner =
+    remote.personalBudgetsUpdatedAt > state.personalBudgetsUpdatedAt ? remote : state;
 
   return normalizeState({
     people: peopleWinner.people,
@@ -431,6 +441,8 @@ function mergeCloudState(remoteData) {
     settlements: dedupeSettlementsByWeek(mergeRecordLists(state.settlements, remote.settlements)),
     budgets: budgetsWinner.budgets,
     budgetsUpdatedAt: budgetsWinner.budgetsUpdatedAt,
+    personalBudgets: personalBudgetsWinner.personalBudgets,
+    personalBudgetsUpdatedAt: personalBudgetsWinner.personalBudgetsUpdatedAt,
   });
 }
 
@@ -873,18 +885,29 @@ function renderCategories(expenses, isPersonal) {
     : `<p class="empty-state">Sin categorías todavía.</p>`;
 }
 
-function renderBudgets(expenses) {
+function getActiveBudgets(isPersonal = currentEntryMode === "personal") {
+  return isPersonal ? state.personalBudgets : state.budgets;
+}
+
+function renderBudgets(expenses, isPersonal) {
   const weeklyTotals = getCategoryTotals(expenses, { groupFood: false });
-  const budgetEntries = categories.filter((category) => state.budgets[category]);
+  const activeBudgets = getActiveBudgets(isPersonal);
+  const budgetEntries = categories.filter((category) => activeBudgets[category]);
+
+  elements.budgetPanelNote.textContent = isPersonal
+    ? "Límites semanales por categoría para tus gastos personales."
+    : "Límites semanales por categoría para los gastos comunes.";
 
   if (!budgetEntries.length) {
-    elements.budgetList.innerHTML = `<p class="empty-state">Sin presupuestos cargados.</p>`;
+    elements.budgetList.innerHTML = `<p class="empty-state">${
+      isPersonal ? "Sin presupuestos personales cargados." : "Sin presupuestos comunes cargados."
+    }</p>`;
     return;
   }
 
   elements.budgetList.innerHTML = budgetEntries
     .map((category) => {
-      const budget = state.budgets[category];
+      const budget = activeBudgets[category];
       const spent = weeklyTotals[category] || 0;
       const percent = Math.min(100, Math.round((spent / budget) * 100));
       const isOver = spent > budget;
@@ -1255,7 +1278,7 @@ function render() {
   renderSettlementDetail(expenses, isPersonal);
   renderMonthlySummary(isPersonal);
   renderCategories(summaryExpenses, isPersonal);
-  renderBudgets(expenses);
+  renderBudgets(summaryExpenses, isPersonal);
   renderRecurringExpenses();
   renderChart(summaryExpenses);
   renderTable(filteredExpenses);
@@ -2605,8 +2628,14 @@ function handleBudgetSubmit(event) {
     return;
   }
 
-  state.budgets[elements.budgetCategory.value] = amount;
-  state.budgetsUpdatedAt = Date.now();
+  if (currentEntryMode === "personal") {
+    state.personalBudgets[elements.budgetCategory.value] = amount;
+    state.personalBudgetsUpdatedAt = Date.now();
+  } else {
+    state.budgets[elements.budgetCategory.value] = amount;
+    state.budgetsUpdatedAt = Date.now();
+  }
+
   saveState();
   elements.budgetForm.reset();
   render();
@@ -2814,8 +2843,14 @@ function handleBudgetListClick(event) {
   const button = event.target.closest("button[data-budget-category]");
   if (!button) return;
 
-  delete state.budgets[button.dataset.budgetCategory];
-  state.budgetsUpdatedAt = Date.now();
+  if (currentEntryMode === "personal") {
+    delete state.personalBudgets[button.dataset.budgetCategory];
+    state.personalBudgetsUpdatedAt = Date.now();
+  } else {
+    delete state.budgets[button.dataset.budgetCategory];
+    state.budgetsUpdatedAt = Date.now();
+  }
+
   saveState();
   render();
 }

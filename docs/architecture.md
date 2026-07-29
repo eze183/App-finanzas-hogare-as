@@ -45,8 +45,10 @@ El estado completo de la app es un único objeto JS (variable `state` en `app.js
   personalExpenses: [],           // gastos personales (no se reparten)
   settlements: [],                // historial de semanas saldadas
   recurringExpenses: [],          // plantillas de gastos recurrentes
-  budgets: {},                    // { categoria: montoLimite }
-  budgetsUpdatedAt: 0,            // timestamp del último cambio de presupuestos (para sync)
+  budgets: {},                    // { categoria: montoLimite } — límites de gastos COMUNES
+  budgetsUpdatedAt: 0,            // timestamp del último cambio de presupuestos comunes (para sync)
+  personalBudgets: {},            // { categoria: montoLimite } — límites de gastos PERSONALES (separados)
+  personalBudgetsUpdatedAt: 0,    // timestamp del último cambio de presupuestos personales (para sync)
 }
 ```
 
@@ -133,7 +135,7 @@ Diseño (antes del merge, y el problema que resolvió):
   - `mergeRecordLists(local, remote)` hace unión por `id`: un id nuevo en cualquiera de los dos lados sobrevive; un id en ambos lados se resuelve por `updatedAt` más reciente, y si cualquiera de los dos lo tiene tombstoneado, el resultado queda tombstoneado (el borrado gana).
   - `pruneTombstones()` descarta tombstones de más de 90 días (`TOMBSTONE_RETENTION_MS`) para no crecer indefinidamente. Nunca poda registros vivos.
   - `settlements` se mezclan igual por id y además se deduplican por `weekKey` (`dedupeSettlementsByWeek`) por si dos dispositivos saldan la misma semana antes de sincronizar.
-  - `people` y `budgets` (que no son arrays con id, son un array de 2 nombres y un objeto plano) se resuelven por last-write-wins de todo el campo, comparando `peopleUpdatedAt`/`budgetsUpdatedAt` — **no** hacen merge granular. Es una simplificación consciente (ver `decisions.md`), no un merge tan fino como el de los gastos.
+  - `people`, `budgets` y `personalBudgets` (que no son arrays con id, son un array de 2 nombres y objetos planos) se resuelven por last-write-wins de todo el campo, comparando `peopleUpdatedAt`/`budgetsUpdatedAt`/`personalBudgetsUpdatedAt` — **no** hacen merge granular. Es una simplificación consciente (ver `decisions.md`), no un merge tan fino como el de los gastos. Los dos sets de presupuestos tienen su propio timestamp, así que editar los comunes no pisa los personales ni al revés.
   - `pushStateToSupabase` ahora primero trae el estado remoto actual, lo mezcla con el local (`mergeCloudState`), guarda el resultado localmente, y recién ahí sube. `pullStateFromSupabase`/`applyCloudState` hacen lo mismo pero sin subir.
 
 - Disparadores de sincronización: `saveState()` dispara `queueCloudSave()` (debounce de 900ms → push silencioso). Pull automático cada 15s mientras la pestaña está visible (`startCloudAutoPull`), más pull al recuperar foco/visibilidad. Los botones de Configuración ("Subir"/"Traer") son solo para forzarlo, no son necesarios en el uso normal.

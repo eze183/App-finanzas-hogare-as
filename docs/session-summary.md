@@ -6,6 +6,25 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-29 (continuación) — Presupuestos separados por modo (comunes vs. personales)
+
+Siguiendo el fix anterior, el usuario pidió "hacé lo mismo con los presupuestos". A diferencia del panel "Por categoría" (que era solo lectura y se resolvió con un cambio de una línea), los presupuestos son **datos persistidos y sincronizados**, así que había dos caminos con consecuencias distintas y **se le preguntó al usuario** antes de tocar el modelo: (a) un solo set de límites con el consumo calculado según el modo, o (b) dos sets separados. Eligió (b), límites separados.
+
+**Cambio de modelo de datos**: se agregó `state.personalBudgets` (objeto `{ categoría: monto }`) y `state.personalBudgetsUpdatedAt`, en paralelo a los `budgets`/`budgetsUpdatedAt` que ya existían y que ahora significan explícitamente "presupuestos comunes". Tocó `defaultState`, `loadState`, `normalizeState` (con `sanitizeBudgets` reutilizado) y `mergeCloudState` (un `personalBudgetsWinner` propio con last-write-wins independiente, así editar los comunes no pisa los personales ni al revés). No hizo falta migración: los presupuestos que el usuario ya tenía cargados siguen siendo los comunes, y `personalBudgets` arranca vacío.
+
+**UI**: `renderBudgets(summaryExpenses, isPersonal)` ahora muestra el set del modo activo con el consumo del modo activo; `handleBudgetSubmit`/`handleBudgetListClick` escriben y borran en el set correcto según `currentEntryMode`; y se centralizó la elección en `getActiveBudgets()`. Se agregó la leyenda `#budgetPanelNote` porque el panel de Presupuestos vive en Configuración, que es un overlay que tapa el switch Comunes/Personales — sin eso el usuario no sabría de qué modo son los límites que está editando. El estado vacío también distingue entre "Sin presupuestos comunes cargados." y "Sin presupuestos personales cargados.".
+
+**Verificado en el navegador con Supabase mockeado** (revertido antes de commitear), simulando el escenario real del preview que eligió el usuario (Farmacia con límite común de $50.000 y personal de $30.000, con gastos en ambos modos):
+- Cada modo muestra su propio límite y su propio consumo, con la leyenda correcta.
+- Cargar un presupuesto personal desde el formulario real no toca los comunes.
+- **Borrar en un modo no afecta al otro** (probado en ambas direcciones) — era el riesgo principal del cambio.
+- Round-trip por `localStorage` y por backup JSON preserva `personalBudgets` y su timestamp.
+- **Merge contra un remoto de la versión vieja** (sin el campo): los presupuestos personales locales sobreviven, porque `remote.personalBudgetsUpdatedAt` vale 0 y gana el local. No hace falta que los dos celulares se actualicen al mismo tiempo.
+- Merge contra un remoto más nuevo: gana el remoto, como corresponde.
+- El payload de sincronización incluye los 4 campos de presupuestos. Sin errores de consola.
+
+Los presupuestos siguen sin agrupar categorías de comida (`groupFood: false`), igual que antes — no se cambió.
+
 ## 2026-07-29 — Fix: la foto/OCR no autocompletaba el gasto personal, y "Por categoría" ignoraba el modo
 
 Dos problemas reportados por el usuario usando la app en su celular, ambos en la pestaña Personales.
