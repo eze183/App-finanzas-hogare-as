@@ -21,7 +21,7 @@ El usuario sugirió usar algún tipo de IA para leer la imagen. Se le explicó e
 - Simulando el caso real: se escaló esa misma imagen a 3000×4000 (resolución típica de cámara) y se corrió el pipeline completo (`processDocumentFile`) de punta a punta — preprocesar tardó ~300ms, y terminó completando monto y fecha correctos en el formulario personal.
 - Sin errores de consola.
 
-**Lo que no se pudo verificar**: el caso exacto que falló en el celular, porque no se consiguió la foto real que produjo `$88.00` (se guardó por error la misma de antes). Si este fix no alcanza, el próximo paso es conseguir esa foto puntual en vez de seguir infiriendo la causa — ya se falló dos veces asumiendo sin la imagen real.
+**Lo que no se pudo verificar en el momento**: el caso exacto que había fallado en el celular, porque no se consiguió la foto real que produjo `$88.00` (se guardó por error la misma de antes). **Confirmado por el usuario después**: probó de nuevo en el celular real y esta vez funcionó — el preprocesamiento resolvió el problema real, no solo el simulado.
 
 ## 2026-07-29 (continuación) — El gasto en progreso ahora se traslada al cambiar de pestaña (cierra el bug del OCR personal)
 
