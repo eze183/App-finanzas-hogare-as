@@ -56,6 +56,7 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 ## Ideas mencionadas, no iniciadas
 
 - **Editar un gasto ya cargado** (hoy solo se puede borrar y volver a cargar). Se conversó como mejora de calidad de vida, no se empezó. Si se hace, revisar el impacto en el merge de sincronización (ver `decisions.md`).
+- **Leer tickets/facturas con una IA con visión en vez de Tesseract** (2026-07-29). Surgió cuando el OCR local fallaba con una foto real; se resolvió mejorando el preprocesamiento de imagen antes de Tesseract (gratis, sin backend — ver `decisions.md`), pero si en algún momento Tesseract sigue quedando corto, esta es la alternativa de fondo. Implica un cambio de arquitectura real: la app no tiene backend, así que una API de IA necesitaría exponer una key en el repo público (como ya pasa con Supabase, pero con costo por uso) o un servidor intermedio nuevo. No evaluar a la ligera.
 
 ## Hecho (funcionalidades grandes, resumen — el detalle día a día está en `session-summary.md` y `CODEX_CONTEXT.md`)
 

@@ -6,6 +6,20 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-29 — Cierre de sesión: modo Personales de punta a punta (foto, categorías, presupuestos)
+
+Sesión larga con varias vueltas de ida y vuelta con el usuario, todas alrededor del mismo eje: **el modo Personales tenía huecos donde se colaban datos o comportamiento de Comunes**. Resumen de las 5 entradas de hoy (detalle completo abajo, en orden cronológico inverso):
+
+1. **Fix inicial**: la foto/OCR completaba siempre el formulario común, y el panel "Por categoría" mostraba datos comunes con leyenda fija incluso en modo personal. Commit `efbee55`.
+2. **Presupuestos separados por modo**: a pedido explícito del usuario, `state.budgets` (comunes) y `state.personalBudgets` (personales) pasan a ser dos sets independientes con su propio timestamp de sync — el único cambio de la sesión que tocó el modelo de datos sincronizado, y se le preguntó al usuario entre dos alternativas antes de implementarlo. Commit `ebeb92c`.
+3. **El fix de la foto no alcanzaba**: el usuario probó con una factura real y seguía sin funcionar. Se diagnosticó con la imagen real (no adivinando) y la causa era otra: la app arranca en Comunes, así que sacar la foto y *después* cambiar a Personales dejaba el formulario destino vacío. Se agregó que el borrador se traslade de formulario al cambiar de pestaña. Commit `085d75a`.
+4. **Tampoco alcanzaba**: con el traslado ya funcionando, el celular real seguía sin poder leer el monto (`$88.00` sin relación con el ticket). Causa: la imagen de la cámara se le pasaba a Tesseract sin ningún preprocesamiento (resolución altísima, orientación EXIF sin aplicar, contraste disparejo). Se agregó `prepareImageForOcr()` — reorienta, redimensiona y sube contraste con `<canvas>` antes del OCR. El usuario sugirió resolverlo con una API de IA con visión; se le explicó el trade-off (expondría una key en el repo público, o requeriría un backend que hoy no existe) y se acordó probar primero la mejora gratuita. Commit `ae2cfd7`.
+5. **Confirmado por el usuario en su celular real** que el preprocesamiento resolvió el problema. Commit `811932b`.
+
+**Patrón que vale la pena recordar para la próxima vez que se reporte "esto no anda"**: acá hicieron falta *tres* fixes encadenados para un solo síntoma reportado ("la foto no completa el gasto personal"), cada uno descubierto porque el anterior no alcanzaba. Ninguno de los tres se adivinó — los dos últimos se diagnosticaron corriendo el código real (`extractExpenseFromReceiptText`, `Tesseract.recognize`) contra la foto real que el usuario dejó en el proyecto para ese fin, no contra suposiciones. Cuando el síntoma es "no funciona" sin mensaje de error claro, conseguir el archivo/dato real antes de tocar código ahorró varias vueltas en falso.
+
+La factura de prueba (documento fiscal real, con CUIT y CAE) nunca se commiteó y se borró al cierre de la sesión.
+
 ## 2026-07-29 (continuación) — Preprocesar la foto antes de Tesseract (el fix del traslado no alcanzaba)
 
 Después del fix anterior (traslado de formulario al cambiar de pestaña), el usuario probó de nuevo **con la misma factura real** en su celular: esta vez sí lo llevó al formulario personal correcto, pero el monto que completó fue **`$88.00`**, sin ninguna relación con el ticket ($70.719,29 real). El status decía "Completé descripción" — el monto y la fecha no se habían podido extraer en absoluto, y lo que apareció como "$88.00" probablemente era ruido de OCR mal interpretado como número.
@@ -39,7 +53,7 @@ El usuario reportó que el fix del OCR **seguía sin funcionar**: sacó foto a u
 
 **Verificado en el navegador con Supabase mockeado** (revertido antes de commitear), con el texto OCR real de la factura del usuario: el escenario completo (foto en Comunes → cambiar a Personales → guardar) deja el monto correcto, cero campos inválidos en el submit y el formulario común limpio; el caso inverso también traslada bien incluida la persona; cambiar de pestaña sin datos no altera nada; y los dos flujos de dictado por voz (común y personal) siguen intactos. Sin errores de consola.
 
-**Nota**: la factura de prueba quedó en la carpeta del proyecto pero **no se commiteó** — es un documento fiscal real (CUIT, CAE, número de comprobante) y el repo de GitHub es público.
+**Nota**: la factura de prueba quedó en la carpeta del proyecto pero **no se commiteó** — es un documento fiscal real (CUIT, CAE, número de comprobante) y el repo de GitHub es público. Se usó para diagnosticar el fix siguiente y se borró al cierre de la sesión, a pedido del usuario.
 
 ## 2026-07-29 (continuación) — Presupuestos separados por modo (comunes vs. personales)
 
