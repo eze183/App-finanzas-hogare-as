@@ -164,6 +164,20 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 - `card`/`installments` no se trasladan porque solo existen en el formulario personal. Al pasar a personal se llama `updatePersonalCardFieldsVisibility()` por si la forma de pago trasladada es "Tarjeta de crédito".
 - La persona se traslada entre un `<select>` (pagador común) y un `<input type="text">` (dueño personal); `setFieldValue` distingue el tipo y, para el select, solo asigna si el nombre existe como opción.
 
+## Preprocesar la imagen en `<canvas>` antes de Tesseract, no delegar el OCR a una IA
+
+**Decisión** (2026-07-29, mismo día): después del fix del traslado de formulario, el usuario probó de nuevo con la misma factura real y el monto extraído fue `$88.00` — sin relación con el ticket. Sugirió usar algún tipo de IA para leer mejor la imagen.
+
+**Diagnóstico antes de decidir**: la imagen se le pasaba a Tesseract **sin ningún preprocesamiento** — el `File` crudo de `<input type="file" capture="environment">` (la cámara del celular) directo a `Tesseract.recognize()`. Eso es conocido por degradar mucho la precisión: fotos de cámara vienen en resoluciones muy altas (3000-4000px+), con orientación EXIF que no se aplica a los píxeles si nadie la lee, y contraste disparejo por luz ambiente — nada de eso pasa con una imagen ya recortada/limpia como con la que se había probado la sesión anterior, que por eso funcionó en la prueba de escritorio pero no en el celular real.
+
+**Se evaluaron dos caminos**:
+- *Delegar el OCR a un modelo de IA con visión* (lo que sugirió el usuario): más preciso en teoría, pero es un cambio de arquitectura real — la app no tiene backend, así que usar una API de IA implica exponer una API key en el código público del repo (mismo riesgo que ya existe con Supabase, pero acá con costo por uso en vez de gratis) o armar un servidor intermedio que hoy no existe. Se le explicó el trade-off al usuario antes de avanzar.
+- *Preprocesar la imagen con `<canvas>` antes de Tesseract* (elegida): reorientar según EXIF (`createImageBitmap(file, { imageOrientation: "from-image" })`, soportado en Chrome/Android), redimensionar al lado largo a 2000px si es más grande, pasar a escala de grises y subir contraste (`prepareImageForOcr()` en `app.js`). Es la mejora estándar y documentada para precisión de Tesseract con fotos (no con escaneos), no agrega dependencias ni backend, y ataca directamente las tres causas identificadas.
+
+**Se probó primero lo más simple porque es gratis y no compromete arquitectura**; si no alcanza, la conversación sobre usar IA con visión queda para retomar con los trade-offs ya explicados.
+
+**Verificado**: con la factura real del usuario (ya en el proyecto, sin commitear) el monto se sigue extrayendo bien después del preprocesamiento (no hubo regresión). Con una versión de esa misma imagen escalada a 3000×4000 (resolución típica de cámara) para simular el caso real, el pipeline completo (redimensionar → escala de grises/contraste → Tesseract → extracción → formulario personal) funciona de punta a punta en ~300ms de preprocesamiento. **Lo que no se pudo verificar**: el caso exacto que falló en el celular del usuario, porque no hay forma de acceder a esa foto ni de reproducir con certeza qué la hizo fallar tan mal (`$88.00` sin relación con el ticket sugiere una imagen mucho más degradada que cualquiera de las probadas acá). Si el preprocesamiento no alcanza, el próximo paso es conseguir esa foto puntual para diagnosticar con datos reales en vez de suponer.
+
 ## Presupuestos separados por modo (`budgets` + `personalBudgets`), no un set compartido
 
 **Decisión** (2026-07-29): los presupuestos por categoría pasan a ser **dos sets independientes** — `state.budgets` para gastos comunes y `state.personalBudgets` para personales — cada uno con su propio timestamp de sincronización (`budgetsUpdatedAt`/`personalBudgetsUpdatedAt`). La pestaña activa determina cuál se muestra y cuál se edita.

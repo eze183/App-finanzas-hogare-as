@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-29-traslado-borrador-v19";
+const APP_VERSION = "2026-07-29-preprocesar-imagen-ocr-v20";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -1363,7 +1363,8 @@ async function extractTextFromDocument(file) {
       throw new Error("Tesseract no disponible");
     }
 
-    const result = await Tesseract.recognize(file, "spa+eng", {
+    const preparedImage = await prepareImageForOcr(file);
+    const result = await Tesseract.recognize(preparedImage, "spa+eng", {
       logger: (progress) => {
         if (progress.status === "recognizing text") {
           const percent = Math.round((progress.progress || 0) * 100);
@@ -1379,6 +1380,43 @@ async function extractTextFromDocument(file) {
   }
 
   return file.text();
+}
+
+async function prepareImageForOcr(file) {
+  try {
+    // Las fotos de cámara (sobre todo con capture="environment") vienen con
+    // resolución muy alta, orientación EXIF sin aplicar a los píxeles, y
+    // contraste disparejo por la luz ambiente — todo eso degrada mucho la
+    // precisión de Tesseract. Normalizamos acá antes de pasarle la imagen.
+    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    const maxDimension = 2000;
+    const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+    const width = Math.max(1, Math.round(bitmap.width * scale));
+    const height = Math.max(1, Math.round(bitmap.height * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext("2d");
+    context.drawImage(bitmap, 0, 0, width, height);
+    bitmap.close();
+
+    const imageData = context.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+    const contrastFactor = 1.4;
+    for (let i = 0; i < pixels.length; i += 4) {
+      const gray = pixels[i] * 0.299 + pixels[i + 1] * 0.587 + pixels[i + 2] * 0.114;
+      const contrasted = Math.min(255, Math.max(0, (gray - 128) * contrastFactor + 128));
+      pixels[i] = pixels[i + 1] = pixels[i + 2] = contrasted;
+    }
+    context.putImageData(imageData, 0, 0);
+
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    return blob || file;
+  } catch (error) {
+    console.error(error);
+    return file;
+  }
 }
 
 async function extractTextFromPdf(file) {

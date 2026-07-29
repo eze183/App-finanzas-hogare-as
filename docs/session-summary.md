@@ -6,6 +6,23 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-07-29 (continuación) — Preprocesar la foto antes de Tesseract (el fix del traslado no alcanzaba)
+
+Después del fix anterior (traslado de formulario al cambiar de pestaña), el usuario probó de nuevo **con la misma factura real** en su celular: esta vez sí lo llevó al formulario personal correcto, pero el monto que completó fue **`$88.00`**, sin ninguna relación con el ticket ($70.719,29 real). El status decía "Completé descripción" — el monto y la fecha no se habían podido extraer en absoluto, y lo que apareció como "$88.00" probablemente era ruido de OCR mal interpretado como número.
+
+Se pidió al usuario que guardara la foto que había fallado para diagnosticar con datos reales (había fallado dos veces ya asumiendo cosas sin la imagen real). Guardó sin querer la misma factura de antes (mismo tamaño de archivo, misma fecha de modificación) — quedó pendiente conseguir la foto puntual que produjo el `$88.00`, pero mientras tanto se identificó una causa raíz real y comprobable revisando el código: **la imagen se le pasaba a Tesseract completamente cruda**, tal cual sale de `<input capture="environment">` (la cámara del celular), sin ningún preprocesamiento. Eso es una causa conocida de mala precisión de OCR: fotos de cámara vienen en resoluciones muy altas (3000-4000px+), con orientación EXIF sin aplicar a los píxeles, y contraste disparejo por luz ambiente. Nada de eso pasaba con el archivo ya recortado/limpio con el que se había probado la sesión anterior en escritorio — por eso esa prueba funcionó pero el celular real no.
+
+El usuario sugirió usar algún tipo de IA para leer la imagen. Se le explicó el trade-off antes de avanzar por ahí: la app no tiene backend, así que una API de visión implicaría exponer una key en el repo público (como ya pasa con Supabase, pero con costo por uso) o construir un servidor que hoy no existe — un cambio de arquitectura real, no algo para decidir a la ligera. Se acordó probar primero la mejora estándar y gratuita (mejor preprocesamiento de imagen) antes de considerar ese camino.
+
+**Fix**: `prepareImageForOcr()` en `app.js` — antes de pasarle la imagen a Tesseract, se la dibuja en un `<canvas>` respetando la orientación EXIF (`createImageBitmap(file, { imageOrientation: "from-image" })`, bien soportado en Chrome/Android), se la redimensiona si el lado largo supera 2000px, y se la pasa a escala de grises con contraste aumentado (factor 1.4). `extractTextFromDocument` ahora llama a esto antes de `Tesseract.recognize`.
+
+**Verificado en el navegador con Supabase mockeado** (revertido antes de commitear):
+- Con la factura real del usuario: el monto sigue extrayéndose bien después del preprocesamiento (`70719.29`), sin regresión.
+- Simulando el caso real: se escaló esa misma imagen a 3000×4000 (resolución típica de cámara) y se corrió el pipeline completo (`processDocumentFile`) de punta a punta — preprocesar tardó ~300ms, y terminó completando monto y fecha correctos en el formulario personal.
+- Sin errores de consola.
+
+**Lo que no se pudo verificar**: el caso exacto que falló en el celular, porque no se consiguió la foto real que produjo `$88.00` (se guardó por error la misma de antes). Si este fix no alcanza, el próximo paso es conseguir esa foto puntual en vez de seguir infiriendo la causa — ya se falló dos veces asumiendo sin la imagen real.
+
 ## 2026-07-29 (continuación) — El gasto en progreso ahora se traslada al cambiar de pestaña (cierra el bug del OCR personal)
 
 El usuario reportó que el fix del OCR **seguía sin funcionar**: sacó foto a una factura real (Colorshop, $70.719,29) y el monto no se autocompletaba. Se diagnosticó en capas antes de tocar código, y la causa real era distinta a la que se había arreglado.
