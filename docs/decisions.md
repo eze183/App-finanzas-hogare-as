@@ -64,6 +64,8 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario después de ver que el comportamiento por defecto (solo seguros/streaming/servicios como comunes) no coincidía con cómo reparten los gastos reales del hogar.
 
+**Actualización (2026-07-30)**: al agregar las categorías "Despensa", "Dietetica" y "Fiambreria" (pedido del usuario, sin más contexto que el nombre), se las sumó también acá y a `foodCategories` (que agrupa como "Comida" en el gráfico de Resumen) — es una inferencia del agente, no algo que el usuario haya pedido explícitamente, pero son gastos de uso diario del mismo tipo que Supermercado/Verdulería/Carnicería/Pollería, que ya estaban en ambos sets. Si alguna de las tres no debería agruparse como "Comida" en el gráfico (por ejemplo si "Dietetica" se usa para compras que no son de comida), avisar para sacarla de `foodCategories` sin tocar `householdCommonCategories`.
+
 ## Sin edición de gastos, solo alta y baja
 
 **Decisión implícita** (desde el origen del proyecto, nunca cambiada): la app no tiene UI para editar un gasto ya cargado. Si te equivocaste, hay que borrarlo y cargarlo de nuevo.

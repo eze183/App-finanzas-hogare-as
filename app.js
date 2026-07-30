@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-29-preprocesar-imagen-ocr-v20";
+const APP_VERSION = "2026-07-30-nuevas-categorias-v21";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -24,12 +24,24 @@ const categories = [
   "Verduleria",
   "Carniceria",
   "Polleria/Pescaderia",
+  "Despensa",
+  "Dietetica",
+  "Fiambreria",
   "Servicios",
   "Tarjeta de credito",
   "Combustible",
   "Otros",
 ];
-const foodCategories = new Set(["Supermercado", "Verduleria", "Carniceria", "Polleria/Pescaderia", "Comida"]);
+const foodCategories = new Set([
+  "Supermercado",
+  "Verduleria",
+  "Carniceria",
+  "Polleria/Pescaderia",
+  "Despensa",
+  "Dietetica",
+  "Fiambreria",
+  "Comida",
+]);
 const sharedExpenseKeywords = [
   "seguro",
   "integrity",
@@ -72,7 +84,17 @@ const ignoredStatementKeywords = [
   "vencimiento",
   "debito automatico pago",
 ];
-const householdCommonCategories = new Set(["Farmacia", "Supermercado", "Verduleria", "Carniceria", "Polleria/Pescaderia", "Combustible"]);
+const householdCommonCategories = new Set([
+  "Farmacia",
+  "Supermercado",
+  "Verduleria",
+  "Carniceria",
+  "Polleria/Pescaderia",
+  "Despensa",
+  "Dietetica",
+  "Fiambreria",
+  "Combustible",
+]);
 const spanishMonthAbbreviations = {
   ene: 1,
   feb: 2,
