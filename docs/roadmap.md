@@ -16,6 +16,8 @@ Arrancó con dos bugs que reportó el usuario usando la app en el celular, y ter
 
 Detalle y contexto en `session-summary.md`, `decisions.md` y `architecture.md` (modelo de datos).
 
+**Seguimiento post-fix (2026-07-30)**: el usuario probó con otra factura real y el monto extraído volvió a salir mal (por varias cifras de diferencia). No se investigó porque no conservó esa foto ni el monto real para comparar, y confirmó que con otras facturas (descargadas de internet) el OCR funciona bien — sugiere un caso puntual de esa imagen (mala luz, foto de costado, etc.), no una regresión general. Queda desestimado hasta que aparezca un caso reproducible con la imagen a mano; ver la nota sobre diagnosticar con datos reales antes de tocar código en `session-summary.md`.
+
 ## Ícono PWA + animación de confirmación al cargar un gasto — completo, 2026-07-26
 
 Pedido del usuario: el ícono instalado en Android no coincidía con la paleta Modernist (se había quedado con los colores del rediseño oscuro anterior), y quería una animación simple al cargar un gasto para confirmar que se guardó.
