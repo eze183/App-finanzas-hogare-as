@@ -96,7 +96,26 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué esta forma y no la entidad separada**: pedido explícito de simplicidad del usuario, y alcance reducido a gastos personales únicamente (no gastos comunes) — también pedido explícito. Al ser campos de un registro existente, no hace falta tocar el modelo de sync (ya mergea `personalExpenses` por id) ni generar gastos nuevos cada mes (que hubiera requerido lógica de "aplicar cuotas" como los recurrentes, con su propio riesgo de duplicados). El "en qué cuota estoy" se calcula al vuelo comparando la fecha de compra con la fecha actual (`getPendingInstallments()` en `app.js`), no se guarda como número en el estado.
 
-**Trade-off aceptado**: si el usuario carga la compra con la fecha real de la compra (no la del primer débito), el cálculo de "cuota N/M" puede correrse un mes respecto al resumen real de la tarjeta. No se resolvió porque no se pidió, y es un caso borde poco frecuente.
+**Trade-off aceptado**: si el usuario carga la compra con la fecha real de la compra (no la del primer débito), el cálculo de "cuota N/M" puede correrse un mes respecto al resumen real de la tarjeta. No se resolvió porque no se pidió, y es un caso borde poco frecuente. **Resuelto el 2026-08-06** con el campo `firstInstallmentMonth` (ver abajo).
+
+## Las cuotas necesitan una vista propia, no un panel: el recordatorio tiene que buscar al usuario
+
+**Decisión** (2026-08-06): el panel del 2026-07-20 se reemplazó por una pestaña "Cuotas" completa más una tira recordatoria permanente en Cargar y Resumen. Se mantuvo el modelo de datos derivado (nada de generar gastos mensuales), pero se agregó `firstInstallmentMonth`.
+
+**Por qué**: el usuario volvió con el mismo problema de fondo ("me olvido de que todavía tengo cuotas pendientes") aunque el panel ya existía y funcionaba bien. Las tres causas reales eran de diseño de producto, no de cálculo: (1) el panel vivía dentro de Movimientos → Personales, así que había que acordarse de ir a buscarlo — y si te acordás de ir a buscarlo, ya no te olvidaste; (2) solo mostraba el mes actual, nunca la **deuda total pendiente** ni el mes en que termina, que es exactamente el dato que se olvida; (3) el campo de cuotas estaba detrás del `<details>` "+ Más detalles", así que era fácil cargar la compra sin marcarla y perder el rastro desde el día uno.
+
+**Consecuencias de diseño que conviene no deshacer sin pensarlo:**
+
+- La tira recordatoria **se muestra también en modo Comunes**. Es deliberado y puede parecer una inconsistencia: la información es de gastos personales pero aparece con la pestaña Comunes activa. El objetivo del pedido es que no se olvide, y esconderla en el modo donde el usuario pasa la mitad del tiempo la vuelve a hacer inútil.
+- **Historial y Cuotas se turnan en la misma ranura de la nav** (Historial es solo de comunes, Cuotas solo de personales). Así la barra sigue teniendo 4 botones y no se aprieta en el celular.
+- Se **descartó** el badge en el ícono de la PWA (`navigator.setAppBadge`): se le ofreció explícitamente al usuario y eligió la opción sin eso. Vale recordar que sin backend **no existe push real con la app cerrada**; cualquier recordatorio vive dentro de la app.
+- Las cuotas siguen siendo **fijas** (`amount / installments`), confirmado con el usuario. Si algún día hay compras con interés donde la cuota real no es el total dividido, hay que decidir si se carga la cuota en vez del total — se evaluó y se descartó por ahora.
+
+## `firstInstallmentMonth`: el mes del primer vencimiento se guarda, no se infiere
+
+**Decisión** (2026-08-06): `personalExpenses` ganó `firstInstallmentMonth` ("YYYY-MM"), autocompletado con el mes de la fecha de compra y editable a mano.
+
+**Por qué**: es la corrección del trade-off que había quedado abierto arriba. La fecha en que comprás y el período del resumen que te la cobra no siempre coinciden (depende de cuándo cierra la tarjeta), y cuando se corren, "cuota 3/6" muestra un número que no coincide con el resumen real — justo el dato que tiene que ser confiable para que el usuario le crea a la app. Los datos viejos sin el campo siguen funcionando: `normalizePersonalExpense()` cae al mes de `date`, que es exactamente el comportamiento anterior.
 
 ## Resumen e Historial se ocultan/adaptan en modo personal
 

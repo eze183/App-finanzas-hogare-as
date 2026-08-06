@@ -1275,72 +1275,467 @@ body.personal-mode #commonTabButton {
   font-weight: 800;
 }
 
+/* --- Compras en cuotas ---------------------------------------------------- */
+
 #personalCardFields {
-  display: contents;
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--personal);
+  background: var(--personal-soft);
+  padding: 14px;
 }
 
 #personalCardFields.is-hidden {
   display: none;
 }
 
-.pending-installments {
-  display: grid;
-  gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  background: var(--personal-soft);
-  padding: 14px;
-  margin-bottom: 18px;
-}
-
-.pending-installments-heading {
+.installments-toggle {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
   gap: 12px;
+  width: 100%;
+  border: 1px solid var(--line);
+  background: var(--surface-tint);
+  color: var(--ink);
+  text-align: left;
+  padding: 12px 14px;
+  min-height: 60px;
 }
 
-.pending-installments-heading h3 {
-  margin: 0;
+.installments-toggle:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.installments-toggle.is-on {
+  border-color: var(--personal);
+  background: var(--personal-soft);
+  color: var(--personal-strong);
+}
+
+.installments-toggle-icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+.installments-toggle-text {
+  display: grid;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.installments-toggle-text strong {
   font-size: 0.95rem;
 }
 
-.pending-installments-heading strong {
+.installments-toggle-text small {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.installments-toggle.is-on .installments-toggle-text small {
+  color: var(--personal-strong);
+}
+
+.installments-toggle-state {
+  flex: none;
+  width: 42px;
+  height: 24px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  position: relative;
+}
+
+.installments-toggle-state::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: var(--muted);
+  transition: transform 140ms ease;
+}
+
+.installments-toggle.is-on .installments-toggle-state::after {
+  background: var(--personal);
+  transform: translateX(18px);
+}
+
+.field-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.installment-chips {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.installment-chips button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 0;
+}
+
+.installment-chips button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.installment-chips button.is-active {
+  border-color: var(--personal);
+  background: var(--personal);
+  color: var(--on-accent);
+}
+
+.installment-preview {
+  margin: 0;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  color: var(--personal-strong);
+  font-size: 0.88rem;
+}
+
+.installment-preview.is-hidden {
+  display: none;
+}
+
+/* Tira recordatoria: aparece en Cargar y Resumen para que las cuotas no se olviden. */
+.installments-reminder {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 12px;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--personal);
+  background: var(--personal-soft);
+  color: var(--ink);
+  text-align: left;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+  min-height: 62px;
+}
+
+.installments-reminder:hover {
+  background: var(--personal-soft);
+  color: var(--ink);
+  filter: brightness(0.98);
+}
+
+.installments-reminder-label {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.installments-reminder strong {
+  grid-column: 1;
   color: var(--personal-strong);
   font-family: var(--font-heading);
+  font-size: 1.25rem;
   font-weight: 800;
 }
 
-.pending-installments-list {
+.installments-reminder-meta {
+  grid-column: 1;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.installments-reminder-arrow {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  color: var(--personal-strong);
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.tab-badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--personal);
+  color: var(--on-accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 0 5px;
+}
+
+.app-tabs button.is-active .tab-badge {
+  background: var(--surface);
+  color: var(--personal-strong);
+}
+
+.installments-view {
+  display: grid;
+  gap: 18px;
+}
+
+.installments-content {
+  display: grid;
+  gap: 18px;
+}
+
+.installments-content.is-hidden {
+  display: none;
+}
+
+.empty-installments h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.empty-installments p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.installments-headline {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.installments-headline-card {
+  display: grid;
+  gap: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 16px;
+}
+
+.installments-headline-card.is-primary {
+  border-left: 3px solid var(--personal);
+  background: var(--personal-soft);
+}
+
+.installments-headline-card span {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.installments-headline-card strong {
+  color: var(--personal-strong);
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.installments-headline-card small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.installments-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.installments-cards,
+.installments-list {
   display: grid;
   gap: 8px;
 }
 
-.pending-installment-item {
+.installments-card-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
   background: var(--surface-tint);
-  padding: 10px 12px;
+  padding: 12px;
 }
 
-.pending-installment-item strong {
+.installments-card-row strong {
   display: block;
 }
 
-.pending-installment-meta {
+.installments-card-row span {
   color: var(--muted);
-  font-size: 0.82rem;
+  font-size: 0.8rem;
 }
 
-.pending-installment-amount {
+.installments-card-amount {
   color: var(--personal-strong);
   font-family: var(--font-heading);
   font-weight: 800;
   white-space: nowrap;
+}
+
+.installments-projection {
+  display: grid;
+  gap: 6px;
+}
+
+.projection-row {
+  display: grid;
+  grid-template-columns: 84px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.projection-month {
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.projection-bar {
+  display: block;
+  height: 18px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.projection-bar-fill {
+  display: block;
+  height: 100%;
+  background: color-mix(in srgb, var(--personal) 45%, transparent);
+}
+
+.projection-row.is-current .projection-bar-fill {
+  background: var(--personal);
+}
+
+.projection-row.is-current .projection-month,
+.projection-row.is-current .projection-amount {
+  color: var(--personal-strong);
+  font-weight: 800;
+}
+
+.projection-amount {
+  font-size: 0.84rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.projection-row.is-empty .projection-amount {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.installment-plan {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--personal);
+  background: var(--surface-tint);
+  padding: 14px;
+}
+
+.installment-plan.is-finished {
+  border-left-color: var(--line);
+  opacity: 0.75;
+}
+
+.installment-plan-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.installment-plan-head strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.installment-plan-meta {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.installment-plan-amount {
+  color: var(--personal-strong);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.installment-plan-amount small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.installment-plan-progress {
+  display: grid;
+  gap: 5px;
+}
+
+.installment-plan-progress-bar {
+  display: block;
+  height: 8px;
+  background: var(--surface-soft);
+  border: 1px solid var(--line);
+}
+
+.installment-plan-progress-bar span {
+  display: block;
+  height: 100%;
+  background: var(--personal);
+}
+
+.installment-plan-progress-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.installment-plan-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.installment-plan-footer strong {
+  color: var(--personal-strong);
+}
+
+@media (max-width: 640px) {
+  .projection-row {
+    grid-template-columns: 70px 1fr auto;
+    gap: 8px;
+  }
+
+  .installments-headline-card strong {
+    font-size: 1.6rem;
+  }
+
+  /* En 375px, 6 columnas dejan chips de 43px: muy chicos para el dedo. */
+  .installment-chips {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 #personalRecordsSection {

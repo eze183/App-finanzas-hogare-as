@@ -6,6 +6,30 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-06 — Vista "Cuotas": rediseño completo del seguimiento de compras en cuotas
+
+Pedido del usuario: "cada consumo de tarjeta en cuotas, pasadas unas semanas me olvido que lo hice, o pasados unos meses me olvido que todavía tengo cuotas pendientes de ese gasto. El método que existe hoy no me funciona."
+
+**Diagnóstico de por qué fallaba el panel del 2026-07-20** (era correcto pero insuficiente): (1) vivía dentro de Movimientos → Personales, o sea había que ir a buscarlo; (2) solo mostraba el mes actual — nunca decía cuánto faltaba pagar en total ni hasta cuándo, que es justo el olvido que describía el usuario; (3) no proyectaba a futuro; (4) el campo de cuotas estaba escondido detrás del `<details>` "+ Más detalles", así que era fácil cargar la compra sin marcarla y perder el rastro desde el minuto cero.
+
+**Decisiones tomadas con el usuario antes de codear**: cuotas fijas (total ÷ cantidad, como ya era); vista completa nueva en vez de parchear el panel; no hay compras viejas que migrar (arranca de cero). Se descartó el badge en el ícono de la PWA (`setAppBadge`) — se le ofreció y eligió la opción sin eso.
+
+**Lo que se hizo:**
+
+1. **Pestaña "Cuotas" nueva** que ocupa la misma ranura que "Historial" (Historial es solo de gastos comunes, Cuotas solo de personales, así que se turnan y la nav sigue teniendo 4 botones). Contiene: cuánto se paga este mes, **cuánto falta pagar en total y en qué mes termina** (el número que antes no existía), desglose por tarjeta, **proyección de los próximos 12 meses** con barras, lista de compras activas con barra de progreso "cuota N/M" + pagado/restante + mes de fin, y un panel de "recién terminadas" (últimos 3 meses) para ver qué plata se liberó.
+2. **Tira recordatoria** arriba de todo en Cargar y Resumen ("Cuotas de este mes: $X · N compras activas · te falta pagar $Y"), que lleva a la vista. Es lo que hace que la info te encuentre a vos en vez de al revés. Se muestra también en modo Comunes a propósito: el objetivo es que no se olvide, no que sea coherente con la pestaña activa.
+3. **Badge numérico** con la cantidad de compras activas en la pestaña Cuotas.
+4. **Carga imposible de pasar por alto**: las cuotas salieron del `<details>` y ahora hay un toggle grande "Compra en cuotas con tarjeta" en el formulario personal, que al activarse setea la forma de pago sola, arranca en 3 cuotas y despliega tarjeta + chips (1/3/6/9/12/18) + "otra cantidad". Preview en vivo mientras se carga ("6 cuotas de $20.000 · de May 2026 a Oct 2026") y el toast de confirmación repite ese dato.
+5. **`firstInstallmentMonth` nuevo** (mes del primer vencimiento, "YYYY-MM"): arregla el desfase que quedó anotado como trade-off el 2026-07-20 entre la fecha de compra y el resumen real de la tarjeta. Se autocompleta con el mes de la compra y queda editable; si el usuario lo toca a mano, cambiar la fecha ya no se lo pisa.
+
+Se sacó el panel viejo `#pendingInstallmentsPanel` de Movimientos (lo reemplaza la vista nueva, no tenía sentido duplicarlo). Service worker v22→v23.
+
+**Probado en el navegador con `supabase-config.js` stubeado** (backup + restaurado exacto al final, verificado con `git status`), y con el `localStorage` del pane limpiado antes de restaurar las credenciales para que no quedaran datos de prueba que después se sincronizaran solos. Casos verificados: carga de una compra con fecha 3 meses atrás → "cuota 4/6", $20.000/mes, faltan $60.000; una segunda compra de 12 cuotas arrancando este mes → totales agregados correctos ($50.000 este mes, $420.000 de deuda, termina julio 2027) y la proyección baja de $50.000 a $30.000 justo cuando termina la primera; una compra ya terminada aparece en "recién terminadas" con los $10.000/mes liberados; editar desde la vista Cuotas prellena bien todo; cambiar a Comunes oculta la pestaña y cierra la vista; estado vacío correcto; a 375px no hay overflow horizontal y los chips quedan de 91×44px (en mobile pasan a 3 columnas, con 6 quedaban de 43px, muy chicos para el dedo).
+
+**Nota de entorno**: el Browser pane corta las respuestas grandes sin comprimir — `app.js` (129 KB) fallaba sistemáticamente con `ERR_CONNECTION_RESET` mientras `styles.css` (42 KB) e `index.html` (36 KB) cargaban bien, y `curl` bajaba el archivo entero sin problema. Es el mismo síntoma que se anotó el 2026-08-03 y se atacó comentando los scripts externos; **la solución real es servir todo gzippeado**. Queda un `scratchpad/gzserver.py` de referencia (server estático mínimo con `gzip.compress` + `Content-Encoding: gzip`); con eso la app cargó a la primera. También conviene desregistrar el service worker en el pane, que compite por el server single-threaded.
+
+---
+
 ## 2026-08-03 — Editar gastos desde Movimientos + fix de configuración de dispositivo
 
 Dos pedidos del usuario en la misma sesión.

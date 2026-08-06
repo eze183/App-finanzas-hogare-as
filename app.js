@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-03-editar-gastos-v22";
+const APP_VERSION = "2026-08-06-vista-cuotas-v23";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -192,9 +192,28 @@ const elements = {
   personalCardFields: document.querySelector("#personalCardFields"),
   personalExpenseCard: document.querySelector("#personalExpenseCard"),
   personalExpenseInstallments: document.querySelector("#personalExpenseInstallments"),
-  pendingInstallmentsPanel: document.querySelector("#pendingInstallmentsPanel"),
-  pendingInstallmentsList: document.querySelector("#pendingInstallmentsList"),
-  pendingInstallmentsTotal: document.querySelector("#pendingInstallmentsTotal"),
+  personalExpenseFirstInstallment: document.querySelector("#personalExpenseFirstInstallment"),
+  personalInstallmentsToggle: document.querySelector("#personalInstallmentsToggle"),
+  installmentChips: document.querySelector("#installmentChips"),
+  installmentPreview: document.querySelector("#installmentPreview"),
+  installmentsViewButton: document.querySelector("#installmentsViewButton"),
+  installmentsTabBadge: document.querySelector("#installmentsTabBadge"),
+  installmentsReminder: document.querySelector("#installmentsReminder"),
+  installmentsReminderAmount: document.querySelector("#installmentsReminderAmount"),
+  installmentsReminderMeta: document.querySelector("#installmentsReminderMeta"),
+  installmentsEmptyState: document.querySelector("#installmentsEmptyState"),
+  installmentsContent: document.querySelector("#installmentsContent"),
+  installmentsMonthTotal: document.querySelector("#installmentsMonthTotal"),
+  installmentsMonthMeta: document.querySelector("#installmentsMonthMeta"),
+  installmentsMonthLabel: document.querySelector("#installmentsMonthLabel"),
+  installmentsDebtTotal: document.querySelector("#installmentsDebtTotal"),
+  installmentsDebtMeta: document.querySelector("#installmentsDebtMeta"),
+  installmentsByCard: document.querySelector("#installmentsByCard"),
+  installmentsProjection: document.querySelector("#installmentsProjection"),
+  installmentsActiveCount: document.querySelector("#installmentsActiveCount"),
+  installmentsActiveList: document.querySelector("#installmentsActiveList"),
+  installmentsFinishedPanel: document.querySelector("#installmentsFinishedPanel"),
+  installmentsFinishedList: document.querySelector("#installmentsFinishedList"),
   budgetForm: document.querySelector("#budgetForm"),
   budgetCategory: document.querySelector("#budgetCategory"),
   budgetAmount: document.querySelector("#budgetAmount"),
@@ -244,6 +263,7 @@ const elements = {
   summaryViewSections: document.querySelectorAll(".summary-view-section"),
   movementsViewSections: document.querySelectorAll(".movements-view-section"),
   historyViewSections: document.querySelectorAll(".history-view-section"),
+  installmentsViewSections: document.querySelectorAll(".installments-view-section"),
 };
 
 let state = loadState();
@@ -251,6 +271,7 @@ let chartType = "bar";
 let currentAppView = "load";
 let currentEntryMode = "common";
 let editingExpense = null;
+let firstInstallmentTouched = false;
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -329,6 +350,10 @@ function normalizePersonalExpense(expense) {
     note: expense.note || "",
     card: expense.card || "",
     installments: Number(expense.installments) > 1 ? Math.floor(Number(expense.installments)) : 1,
+    // Mes del primer vencimiento ("YYYY-MM"). Si falta (datos viejos), se asume el mes de la compra.
+    firstInstallmentMonth: /^\d{4}-\d{2}$/.test(expense.firstInstallmentMonth || "")
+      ? expense.firstInstallmentMonth
+      : expense.date.slice(0, 7),
     createdAt,
     updatedAt: Number(expense.updatedAt) || createdAt,
     deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
@@ -1213,40 +1238,287 @@ function renderPersonalExpenses(expenses) {
 function updatePersonalCardFieldsVisibility() {
   const isCard = elements.personalExpensePaymentMethod.value === "Tarjeta de crédito";
   elements.personalCardFields.classList.toggle("is-hidden", !isCard);
-}
-
-function getPendingInstallments(referenceDate = new Date()) {
-  const pending = [];
-  for (const expense of state.personalExpenses) {
-    if (expense.deletedAt || expense.installments <= 1) continue;
-    const purchaseDate = parseISODate(expense.date);
-    const monthsElapsed =
-      (referenceDate.getFullYear() - purchaseDate.getFullYear()) * 12 + (referenceDate.getMonth() - purchaseDate.getMonth());
-    const currentInstallment = monthsElapsed + 1;
-    if (currentInstallment < 1 || currentInstallment > expense.installments) continue;
-    pending.push({ expense, currentInstallment, installmentAmount: expense.amount / expense.installments });
+  elements.personalInstallmentsToggle.setAttribute("aria-pressed", String(isCard));
+  elements.personalInstallmentsToggle.classList.toggle("is-on", isCard);
+  if (isCard && !elements.personalExpenseFirstInstallment.value) {
+    syncFirstInstallmentWithDate();
   }
-  return pending.sort((a, b) => parseISODate(a.expense.date) - parseISODate(b.expense.date));
+  updateInstallmentChips();
+  updateInstallmentPreview();
 }
 
-function renderPendingInstallments() {
-  const pending = getPendingInstallments();
-  elements.pendingInstallmentsPanel.classList.toggle("is-hidden", pending.length === 0);
-  elements.pendingInstallmentsList.innerHTML = pending
+function togglePersonalInstallments() {
+  const isCard = elements.personalExpensePaymentMethod.value === "Tarjeta de crédito";
+  elements.personalExpensePaymentMethod.value = isCard ? "" : "Tarjeta de crédito";
+  if (!isCard) {
+    // Al activarlo, lo más común es una compra en cuotas: arrancar en 3 evita el paso extra.
+    if (Number(elements.personalExpenseInstallments.value) <= 1) elements.personalExpenseInstallments.value = "3";
+    syncFirstInstallmentWithDate();
+  }
+  updatePersonalCardFieldsVisibility();
+}
+
+// El primer resumen suele ser el del mes de la compra; queda editable por si cerró antes.
+function syncFirstInstallmentWithDate() {
+  const date = elements.personalExpenseDate.value;
+  if (date) elements.personalExpenseFirstInstallment.value = date.slice(0, 7);
+}
+
+function getInstallmentsFieldValue() {
+  return Math.min(60, Math.max(1, parseInt(elements.personalExpenseInstallments.value, 10) || 1));
+}
+
+function updateInstallmentChips() {
+  const current = getInstallmentsFieldValue();
+  elements.installmentChips.querySelectorAll("button").forEach((chip) => {
+    chip.classList.toggle("is-active", Number(chip.dataset.installments) === current);
+  });
+}
+
+function updateInstallmentPreview() {
+  const isCard = elements.personalExpensePaymentMethod.value === "Tarjeta de crédito";
+  const installments = getInstallmentsFieldValue();
+  const amount = parseAmountInput(elements.personalExpenseAmount.value);
+  const firstMonth = monthIndexFromKey(elements.personalExpenseFirstInstallment.value || elements.personalExpenseDate.value.slice(0, 7));
+
+  if (!isCard || installments <= 1 || !Number.isFinite(amount) || amount <= 0 || firstMonth === null) {
+    elements.installmentPreview.classList.add("is-hidden");
+    return;
+  }
+
+  const lastMonth = firstMonth + installments - 1;
+  elements.installmentPreview.classList.remove("is-hidden");
+  elements.installmentPreview.innerHTML = `<strong>${installments} cuotas de ${formatMoney(amount / installments)}</strong> · de ${escapeHtml(monthLabelFromIndex(firstMonth))} a ${escapeHtml(monthLabelFromIndex(lastMonth))}`;
+}
+
+// --- Compras en cuotas -------------------------------------------------------
+// Nada de esto se guarda en el estado: los planes se derivan de `personalExpenses`
+// cada vez que se rendereza. El único dato nuevo persistido es `firstInstallmentMonth`.
+
+function monthIndex(year, month) {
+  return year * 12 + month;
+}
+
+function monthIndexFromKey(key) {
+  const [year, month] = String(key).split("-").map(Number);
+  if (!year || !month) return null;
+  return monthIndex(year, month - 1);
+}
+
+function monthKeyFromIndex(index) {
+  const year = Math.floor(index / 12);
+  const month = (index % 12) + 1;
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
+function monthLabelFromIndex(index, { long = false } = {}) {
+  const date = new Date(Math.floor(index / 12), index % 12, 1);
+  const label = new Intl.DateTimeFormat("es-AR", { month: long ? "long" : "short", year: "numeric" }).format(date);
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function currentMonthIndex(referenceDate = new Date()) {
+  return monthIndex(referenceDate.getFullYear(), referenceDate.getMonth());
+}
+
+function getInstallmentPlans() {
+  return state.personalExpenses
+    .filter((expense) => !expense.deletedAt && expense.installments > 1)
+    .map((expense) => {
+      const firstMonth =
+        monthIndexFromKey(expense.firstInstallmentMonth) ?? monthIndexFromKey(expense.date.slice(0, 7));
+      const lastMonth = firstMonth + expense.installments - 1;
+      return {
+        expense,
+        card: expense.card || "Tarjeta sin especificar",
+        title: expense.note || expense.category,
+        total: expense.amount,
+        installments: expense.installments,
+        monthlyAmount: expense.amount / expense.installments,
+        firstMonth,
+        lastMonth,
+      };
+    })
+    .sort((a, b) => a.lastMonth - b.lastMonth || b.monthlyAmount - a.monthlyAmount);
+}
+
+// Cuota que corresponde pagar en `monthIdx` (1..N), o 0 si la compra no está activa ese mes.
+function installmentNumberAt(plan, monthIdx) {
+  const number = monthIdx - plan.firstMonth + 1;
+  return number >= 1 && number <= plan.installments ? number : 0;
+}
+
+function getInstallmentsSnapshot(referenceDate = new Date()) {
+  const plans = getInstallmentPlans();
+  const thisMonth = currentMonthIndex(referenceDate);
+
+  const active = [];
+  const finished = [];
+  for (const plan of plans) {
+    const number = installmentNumberAt(plan, thisMonth);
+    if (number) {
+      // "Restante" incluye la cuota de este mes: es lo que todavía no pagaste.
+      const remainingInstallments = plan.installments - number + 1;
+      active.push({
+        ...plan,
+        currentInstallment: number,
+        remainingInstallments,
+        remainingAmount: plan.monthlyAmount * remainingInstallments,
+      });
+    } else if (plan.lastMonth < thisMonth) {
+      finished.push(plan);
+    }
+  }
+
+  const monthTotal = active.reduce((sum, plan) => sum + plan.monthlyAmount, 0);
+  const debtTotal = active.reduce((sum, plan) => sum + plan.remainingAmount, 0);
+
+  const byCard = new Map();
+  for (const plan of active) {
+    const entry = byCard.get(plan.card) || { card: plan.card, amount: 0, count: 0 };
+    entry.amount += plan.monthlyAmount;
+    entry.count += 1;
+    byCard.set(plan.card, entry);
+  }
+
+  const projection = [];
+  for (let offset = 0; offset < 12; offset += 1) {
+    const monthIdx = thisMonth + offset;
+    const amount = plans.reduce((sum, plan) => (installmentNumberAt(plan, monthIdx) ? sum + plan.monthlyAmount : sum), 0);
+    const count = plans.reduce((sum, plan) => (installmentNumberAt(plan, monthIdx) ? sum + 1 : sum), 0);
+    projection.push({ monthIdx, amount, count, isCurrent: offset === 0 });
+  }
+
+  return {
+    plans,
+    thisMonth,
+    active: active.sort((a, b) => b.monthlyAmount - a.monthlyAmount),
+    // Solo las que terminaron en los últimos 3 meses: sirve para ver qué plata se liberó.
+    finished: finished.filter((plan) => plan.lastMonth >= thisMonth - 3).sort((a, b) => b.lastMonth - a.lastMonth),
+    monthTotal,
+    debtTotal,
+    byCard: [...byCard.values()].sort((a, b) => b.amount - a.amount),
+    projection,
+    lastMonthWithDebt: active.reduce((last, plan) => Math.max(last, plan.lastMonth), 0),
+  };
+}
+
+function renderInstallmentsView(snapshot) {
+  const hasPlans = snapshot.plans.length > 0;
+  elements.installmentsEmptyState.classList.toggle("is-hidden", hasPlans);
+  elements.installmentsContent.classList.toggle("is-hidden", !hasPlans);
+  if (!hasPlans) return;
+
+  elements.installmentsMonthTotal.textContent = formatMoney(snapshot.monthTotal);
+  elements.installmentsMonthMeta.textContent = snapshot.active.length
+    ? `${snapshot.active.length} ${snapshot.active.length === 1 ? "compra activa" : "compras activas"} en ${monthLabelFromIndex(snapshot.thisMonth, { long: true })}`
+    : "Este mes no te vence ninguna cuota";
+  elements.installmentsMonthLabel.textContent = `Lo que te va a venir en cada resumen de ${monthLabelFromIndex(snapshot.thisMonth, { long: true })}.`;
+
+  elements.installmentsDebtTotal.textContent = formatMoney(snapshot.debtTotal);
+  elements.installmentsDebtMeta.textContent = snapshot.debtTotal
+    ? `Terminás de pagar todo en ${monthLabelFromIndex(snapshot.lastMonthWithDebt, { long: true })}`
+    : "No te queda nada pendiente";
+
+  elements.installmentsByCard.innerHTML = snapshot.byCard.length
+    ? snapshot.byCard
+        .map(
+          (entry) => `
+            <div class="installments-card-row">
+              <div>
+                <strong>${escapeHtml(entry.card)}</strong>
+                <span>${entry.count} ${entry.count === 1 ? "compra" : "compras"}</span>
+              </div>
+              <span class="installments-card-amount">${formatMoney(entry.amount)}</span>
+            </div>
+          `,
+        )
+        .join("")
+    : `<p class="empty-state">Este mes no te vence ninguna cuota.</p>`;
+
+  const maxProjection = Math.max(...snapshot.projection.map((month) => month.amount), 1);
+  elements.installmentsProjection.innerHTML = snapshot.projection
     .map(
-      ({ expense, currentInstallment, installmentAmount }) => `
-        <div class="pending-installment-item">
-          <div>
-            <strong>${escapeHtml(expense.note || expense.category)}</strong>
-            <span class="pending-installment-meta">${escapeHtml(expense.card || "Tarjeta sin especificar")} · cuota ${currentInstallment}/${expense.installments} · total ${formatMoney(expense.amount)}</span>
-          </div>
-          <span class="pending-installment-amount">${formatMoney(installmentAmount)}</span>
+      (month) => `
+        <div class="projection-row${month.isCurrent ? " is-current" : ""}${month.amount ? "" : " is-empty"}">
+          <span class="projection-month">${escapeHtml(monthLabelFromIndex(month.monthIdx))}</span>
+          <span class="projection-bar" aria-hidden="true">
+            <span class="projection-bar-fill" style="width: ${((month.amount / maxProjection) * 100).toFixed(1)}%"></span>
+          </span>
+          <span class="projection-amount">${month.amount ? formatMoney(month.amount) : "libre"}</span>
         </div>
       `,
     )
     .join("");
-  const total = pending.reduce((sum, { installmentAmount }) => sum + installmentAmount, 0);
-  elements.pendingInstallmentsTotal.textContent = formatMoney(total);
+
+  elements.installmentsActiveCount.textContent = snapshot.active.length
+    ? `${snapshot.active.length} ${snapshot.active.length === 1 ? "compra en curso" : "compras en curso"}.`
+    : "Ninguna compra en curso.";
+  elements.installmentsActiveList.innerHTML = snapshot.active.length
+    ? snapshot.active.map(renderInstallmentPlanRow).join("")
+    : `<p class="empty-state">No tenés compras en cuotas activas este mes.</p>`;
+
+  elements.installmentsFinishedPanel.classList.toggle("is-hidden", snapshot.finished.length === 0);
+  elements.installmentsFinishedList.innerHTML = snapshot.finished
+    .map(
+      (plan) => `
+        <article class="installment-plan is-finished">
+          <div class="installment-plan-head">
+            <div>
+              <strong>${escapeHtml(plan.title)}</strong>
+              <span class="installment-plan-meta">${escapeHtml(plan.card)} · terminó en ${escapeHtml(monthLabelFromIndex(plan.lastMonth, { long: true }))}</span>
+            </div>
+            <span class="installment-plan-amount">${formatMoney(plan.monthlyAmount)}<small>/mes liberados</small></span>
+          </div>
+        </article>
+      `,
+    )
+    .join("");
+}
+
+function renderInstallmentPlanRow(plan) {
+  const progress = (plan.currentInstallment / plan.installments) * 100;
+  const paid = plan.total - plan.remainingAmount;
+  return `
+    <article class="installment-plan">
+      <div class="installment-plan-head">
+        <div>
+          <strong>${escapeHtml(plan.title)}</strong>
+          <span class="installment-plan-meta">${escapeHtml(plan.card)} · total ${formatMoney(plan.total)}</span>
+        </div>
+        <span class="installment-plan-amount">${formatMoney(plan.monthlyAmount)}<small>/mes</small></span>
+      </div>
+      <div class="installment-plan-progress">
+        <span class="installment-plan-progress-bar" aria-hidden="true">
+          <span style="width: ${progress.toFixed(1)}%"></span>
+        </span>
+        <span class="installment-plan-progress-label">Cuota ${plan.currentInstallment} de ${plan.installments}</span>
+      </div>
+      <div class="installment-plan-footer">
+        <span>Pagaste ${formatMoney(paid)}</span>
+        <span><strong>Te falta ${formatMoney(plan.remainingAmount)}</strong> · hasta ${escapeHtml(monthLabelFromIndex(plan.lastMonth, { long: true }))}</span>
+        <button class="edit-row" type="button" data-edit-personal-id="${plan.expense.id}" aria-label="Editar compra en cuotas">✎</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderInstallmentsReminder(snapshot) {
+  const hasActive = snapshot.active.length > 0;
+  const showReminder = hasActive && (currentAppView === "load" || currentAppView === "summary");
+  elements.installmentsReminder.classList.toggle("is-hidden", !showReminder);
+  elements.installmentsTabBadge.classList.toggle("is-hidden", !hasActive);
+  elements.installmentsTabBadge.textContent = String(snapshot.active.length);
+  if (!hasActive) return;
+
+  elements.installmentsReminderAmount.textContent = formatMoney(snapshot.monthTotal);
+  elements.installmentsReminderMeta.textContent = `${snapshot.active.length} ${snapshot.active.length === 1 ? "compra activa" : "compras activas"} · te falta pagar ${formatMoney(snapshot.debtTotal)}`;
+}
+
+function renderInstallments() {
+  const snapshot = getInstallmentsSnapshot();
+  renderInstallmentsView(snapshot);
+  renderInstallmentsReminder(snapshot);
 }
 
 function renderFilterValues() {
@@ -1310,7 +1582,7 @@ function render() {
   renderChart(summaryExpenses);
   renderTable(filteredExpenses);
   renderPersonalExpenses(personalExpenses);
-  renderPendingInstallments();
+  renderInstallments();
   renderSettlementHistory();
 }
 
@@ -2614,8 +2886,12 @@ function handlePersonalExpenseSubmit(event) {
 
   const paymentMethod = elements.personalExpensePaymentMethod.value;
   const isCard = paymentMethod === "Tarjeta de crédito";
-  const installments = isCard ? Math.max(1, parseInt(elements.personalExpenseInstallments.value, 10) || 1) : 1;
+  const installments = isCard ? getInstallmentsFieldValue() : 1;
   const card = isCard ? elements.personalExpenseCard.value : "";
+  const firstInstallmentMonth =
+    isCard && installments > 1
+      ? elements.personalExpenseFirstInstallment.value || expenseDate.slice(0, 7)
+      : expenseDate.slice(0, 7);
   const isEditing = editingExpense && editingExpense.type === "personal";
 
   if (isEditing) {
@@ -2632,6 +2908,7 @@ function handlePersonalExpenseSubmit(event) {
             note: elements.personalExpenseNote.value.trim(),
             card,
             installments,
+            firstInstallmentMonth,
             updatedAt: Date.now(),
           }
         : expense,
@@ -2648,24 +2925,31 @@ function handlePersonalExpenseSubmit(event) {
       note: elements.personalExpenseNote.value.trim(),
       card,
       installments,
+      firstInstallmentMonth,
       createdAt: Date.now(),
     });
   }
 
   saveState();
   elements.personalExpenseForm.reset();
+  firstInstallmentTouched = false;
   elements.personalExpenseDate.value = getSelectedWeekKey();
   elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   updatePersonalCardFieldsVisibility();
   updateEditingUi();
 
+  const installmentsSummary =
+    installments > 1
+      ? `${installments} cuotas de ${formatMoney(amount / installments)} · hasta ${monthLabelFromIndex(monthIndexFromKey(firstInstallmentMonth) + installments - 1)}`
+      : "";
+
   if (isEditing) {
-    showExpenseToast("Gasto actualizado");
+    showExpenseToast(installmentsSummary ? `Actualizado: ${installmentsSummary}` : "Gasto actualizado");
     setRecordsMode("personal");
-    setAppView("movements");
+    setAppView(installments > 1 ? "installments" : "movements");
   } else {
-    showExpenseToast("Gasto agregado");
+    showExpenseToast(installmentsSummary ? `Cargado: ${installmentsSummary}` : "Gasto agregado");
     setRecordsMode("personal");
   }
 
@@ -2750,6 +3034,8 @@ function startEditingExpense(expense, type) {
   if (isPersonal) {
     elements.personalExpenseCard.value = expense.card || "";
     elements.personalExpenseInstallments.value = expense.installments || 1;
+    elements.personalExpenseFirstInstallment.value = expense.firstInstallmentMonth || expense.date.slice(0, 7);
+    firstInstallmentTouched = true;
     updatePersonalCardFieldsVisibility();
   }
 
@@ -2764,6 +3050,7 @@ function cancelEditingExpense() {
 
   if (wasPersonal) {
     elements.personalExpenseForm.reset();
+    firstInstallmentTouched = false;
     elements.personalExpenseDate.value = getSelectedWeekKey();
     elements.personalExpenseOwner.value = getDeviceOwner();
     updatePersonalCardFieldsVisibility();
@@ -2785,8 +3072,13 @@ function setEntryMode(mode, { carryOverDraft = false } = {}) {
   elements.personalExpenseSection.classList.toggle("is-hidden", !isPersonal);
   elements.commonSubmitButton.classList.toggle("is-hidden", isPersonal);
   elements.personalSubmitButton.classList.toggle("is-hidden", !isPersonal);
+  // Historial es solo de gastos comunes y Cuotas solo de personales: se turnan en la misma ranura.
   elements.historyViewButton.classList.toggle("is-hidden", isPersonal);
+  elements.installmentsViewButton.classList.toggle("is-hidden", !isPersonal);
   if (isPersonal && currentAppView === "history") {
+    setAppView("load");
+  }
+  if (!isPersonal && currentAppView === "installments") {
     setAppView("load");
   }
   setRecordsMode(isPersonal ? "personal" : "common");
@@ -2811,23 +3103,29 @@ function setRecordsMode(mode) {
 }
 
 function setAppView(view) {
-  currentAppView = ["load", "summary", "movements", "history"].includes(view) ? view : "load";
+  currentAppView = ["load", "summary", "movements", "history", "installments"].includes(view) ? view : "load";
   const isLoad = currentAppView === "load";
   const isSummary = currentAppView === "summary";
   const isMovements = currentAppView === "movements";
   const isHistory = currentAppView === "history";
+  const isInstallments = currentAppView === "installments";
 
   elements.loadViewButton.classList.toggle("is-active", isLoad);
   elements.summaryViewButton.classList.toggle("is-active", isSummary);
   elements.movementsViewButton.classList.toggle("is-active", isMovements);
   elements.historyViewButton.classList.toggle("is-active", isHistory);
+  elements.installmentsViewButton.classList.toggle("is-active", isInstallments);
   elements.loadViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isLoad));
   elements.summaryViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isSummary));
   elements.movementsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isMovements));
   elements.historyViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isHistory));
+  elements.installmentsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isInstallments));
 
-  if (isSummary) {
+  if (isSummary || isInstallments) {
     render();
+  } else {
+    // La tira recordatoria solo se muestra en Cargar y Resumen, así que hay que refrescarla al navegar.
+    renderInstallments();
   }
 }
 
@@ -3170,10 +3468,38 @@ async function init() {
   elements.summaryViewButton.addEventListener("click", () => setAppView("summary"));
   elements.movementsViewButton.addEventListener("click", () => setAppView("movements"));
   elements.historyViewButton.addEventListener("click", () => setAppView("history"));
+  elements.installmentsViewButton.addEventListener("click", () => setAppView("installments"));
+  elements.installmentsReminder.addEventListener("click", () => {
+    setEntryMode("personal");
+    setAppView("installments");
+  });
+  elements.installmentsActiveList.addEventListener("click", handlePersonalTableClick);
   elements.peopleForm.addEventListener("submit", handlePeopleSubmit);
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
   elements.personalExpensePaymentMethod.addEventListener("change", updatePersonalCardFieldsVisibility);
+  elements.personalInstallmentsToggle.addEventListener("click", togglePersonalInstallments);
+  elements.installmentChips.addEventListener("click", (event) => {
+    const chip = event.target.closest("button[data-installments]");
+    if (!chip) return;
+    elements.personalExpenseInstallments.value = chip.dataset.installments;
+    updateInstallmentChips();
+    updateInstallmentPreview();
+  });
+  elements.personalExpenseInstallments.addEventListener("input", () => {
+    updateInstallmentChips();
+    updateInstallmentPreview();
+  });
+  elements.personalExpenseAmount.addEventListener("input", updateInstallmentPreview);
+  elements.personalExpenseFirstInstallment.addEventListener("change", () => {
+    firstInstallmentTouched = true;
+    updateInstallmentPreview();
+  });
+  elements.personalExpenseDate.addEventListener("change", () => {
+    // Si el usuario ya eligió el mes del primer vencimiento a mano, no se lo pisamos.
+    if (!firstInstallmentTouched) syncFirstInstallmentWithDate();
+    updateInstallmentPreview();
+  });
   elements.commonTabButton.addEventListener("click", () => {
     if (editingExpense) cancelEditingExpense();
     setEntryMode("common", { carryOverDraft: true });

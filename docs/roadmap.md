@@ -1,10 +1,20 @@
 # Roadmap
 
-Estado real al 2026-08-03, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-08-06, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
 Nada en curso.
+
+## Pendiente de confirmación del usuario
+
+- **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
+
+## Vista "Cuotas" para compras con tarjeta — completo, 2026-08-06
+
+Reemplaza el panel de cuotas del 2026-07-20, que resolvía el cálculo pero no el olvido: vivía escondido en Movimientos → Personales, solo mostraba el mes actual (nunca la deuda total ni el mes de fin) y el campo para marcar la compra estaba detrás de "+ Más detalles".
+
+Ahora hay una pestaña "Cuotas" propia (se turna con Historial según el modo) con: total del mes, **deuda pendiente total y mes en que termina**, desglose por tarjeta, proyección de 12 meses, compras activas con progreso "cuota N/M" + pagado/restante, y compras recién terminadas. Más una tira recordatoria permanente en Cargar y Resumen, un badge con la cantidad de compras activas, y un toggle grande "Compra en cuotas con tarjeta" con chips de 1/3/6/9/12/18 y preview en vivo en el formulario. Se agregó `firstInstallmentMonth`, que cierra el desfase entre la fecha de compra y el resumen real de la tarjeta que había quedado como trade-off abierto. Detalle en `session-summary.md`, `decisions.md` y `architecture.md`.
 
 ## Editar un gasto desde Movimientos — completo, 2026-08-03
 

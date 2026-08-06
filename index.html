@@ -63,7 +63,19 @@
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
           <span>Historial</span>
         </button>
+        <button id="installmentsViewButton" class="is-hidden" type="button">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="1"/><path d="M2 10h20"/></svg>
+          <span>Cuotas</span>
+          <span id="installmentsTabBadge" class="tab-badge is-hidden">0</span>
+        </button>
       </nav>
+
+      <button id="installmentsReminder" class="installments-reminder is-hidden" type="button">
+        <span class="installments-reminder-label">Cuotas de este mes</span>
+        <strong id="installmentsReminderAmount">$0</strong>
+        <span id="installmentsReminderMeta" class="installments-reminder-meta">0 compras activas</span>
+        <span class="installments-reminder-arrow" aria-hidden="true">→</span>
+      </button>
 
       <section id="dailyView" class="main-view">
       <section class="summary-hero summary-view-section app-view-hidden" aria-label="Resumen semanal">
@@ -237,8 +249,55 @@
                 <p class="form-context-note">
                   Este gasto personal se carga para <strong id="personalOwnerLabel">Persona 1</strong>
                 </p>
+
+                <button id="personalInstallmentsToggle" class="installments-toggle" type="button" aria-pressed="false" aria-controls="personalCardFields">
+                  <span class="installments-toggle-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="1"/><path d="M2 10h20"/></svg>
+                  </span>
+                  <span class="installments-toggle-text">
+                    <strong>Compra en cuotas con tarjeta</strong>
+                    <small>Para no perderle el rastro los próximos meses</small>
+                  </span>
+                  <span class="installments-toggle-state" aria-hidden="true"></span>
+                </button>
+
+                <div id="personalCardFields" class="card-fields is-hidden">
+                  <label class="field-block">
+                    Tarjeta
+                    <select id="personalExpenseCard">
+                      <option value="">Elegí una tarjeta</option>
+                      <option value="Visa Banco Galicia">Visa Banco Galicia</option>
+                      <option value="Mastercard Banco Galicia">Mastercard Banco Galicia</option>
+                      <option value="Mastercard Mercado Pago">Mastercard Mercado Pago</option>
+                      <option value="Mastercard Banco Nación">Mastercard Banco Nación</option>
+                    </select>
+                  </label>
+                  <div class="field-block">
+                    <span class="field-label">Cantidad de cuotas</span>
+                    <div id="installmentChips" class="installment-chips" role="group" aria-label="Cantidad de cuotas">
+                      <button type="button" data-installments="1">1</button>
+                      <button type="button" data-installments="3">3</button>
+                      <button type="button" data-installments="6">6</button>
+                      <button type="button" data-installments="9">9</button>
+                      <button type="button" data-installments="12">12</button>
+                      <button type="button" data-installments="18">18</button>
+                    </div>
+                  </div>
+                  <div class="field-row">
+                    <label>
+                      Otra cantidad
+                      <input id="personalExpenseInstallments" type="number" min="1" max="60" value="1" />
+                    </label>
+                    <label>
+                      Primera cuota
+                      <input id="personalExpenseFirstInstallment" type="month" />
+                    </label>
+                  </div>
+                  <p id="installmentPreview" class="installment-preview is-hidden"></p>
+                </div>
+
                 <details class="more-details">
-                  <summary>+ Más detalles (forma de pago, cuotas, descripción)</summary>
+                  <summary>+ Más detalles (forma de pago, descripción)</summary>
                   <div class="more-details-body">
                     <label>
                       Forma de pago
@@ -250,22 +309,6 @@
                         <option value="Transferencia">Transferencia</option>
                       </select>
                     </label>
-                    <div id="personalCardFields" class="card-fields is-hidden">
-                      <label>
-                        Tarjeta
-                        <select id="personalExpenseCard">
-                          <option value="">Elegí una tarjeta</option>
-                          <option value="Visa Banco Galicia">Visa Banco Galicia</option>
-                          <option value="Mastercard Banco Galicia">Mastercard Banco Galicia</option>
-                          <option value="Mastercard Mercado Pago">Mastercard Mercado Pago</option>
-                          <option value="Mastercard Banco Nación">Mastercard Banco Nación</option>
-                        </select>
-                      </label>
-                      <label>
-                        Cantidad de cuotas
-                        <input id="personalExpenseInstallments" type="number" min="1" max="60" value="1" />
-                      </label>
-                    </div>
                     <label>
                       Descripción
                       <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
@@ -390,14 +433,6 @@
             </div>
           </div>
 
-          <div id="pendingInstallmentsPanel" class="pending-installments is-hidden">
-            <div class="pending-installments-heading">
-              <h3>Cuotas pendientes este mes</h3>
-              <strong id="pendingInstallmentsTotal">$0</strong>
-            </div>
-            <div id="pendingInstallmentsList" class="pending-installments-list"></div>
-          </div>
-
           <div id="personalExpensesTable" class="movement-list"></div>
           <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales para esta semana.</p>
         </section>
@@ -410,6 +445,71 @@
             </div>
           </div>
           <div id="settlementHistory" class="history-list"></div>
+        </section>
+
+        <section class="installments-view installments-view-section app-view-hidden" aria-label="Compras en cuotas">
+          <div id="installmentsEmptyState" class="panel empty-installments is-hidden">
+            <h2>Todavía no cargaste compras en cuotas</h2>
+            <p>
+              Cuando cargues un gasto personal, activá <strong>“Compra en cuotas con tarjeta”</strong> y elegí la tarjeta y
+              la cantidad de cuotas. Acá vas a ver siempre cuánto te queda por pagar y hasta cuándo.
+            </p>
+          </div>
+
+          <div id="installmentsContent" class="installments-content">
+            <section class="installments-headline" aria-label="Situación de cuotas">
+              <article class="installments-headline-card is-primary">
+                <span>Este mes pagás</span>
+                <strong id="installmentsMonthTotal">$0</strong>
+                <small id="installmentsMonthMeta">Sin cuotas activas</small>
+              </article>
+              <article class="installments-headline-card">
+                <span>Te falta pagar en total</span>
+                <strong id="installmentsDebtTotal">$0</strong>
+                <small id="installmentsDebtMeta">Sin deuda pendiente</small>
+              </article>
+            </section>
+
+            <section class="panel installments-panel" aria-label="Cuotas de este mes por tarjeta">
+              <div class="panel-heading">
+                <div>
+                  <h2>Este mes, por tarjeta</h2>
+                  <p id="installmentsMonthLabel">Lo que te va a venir en cada resumen.</p>
+                </div>
+              </div>
+              <div id="installmentsByCard" class="installments-cards"></div>
+            </section>
+
+            <section class="panel installments-panel" aria-label="Proyección de los próximos meses">
+              <div class="panel-heading">
+                <div>
+                  <h2>Próximos 12 meses</h2>
+                  <p>Lo que ya está comprometido antes de gastar un peso más.</p>
+                </div>
+              </div>
+              <div id="installmentsProjection" class="installments-projection"></div>
+            </section>
+
+            <section class="panel installments-panel" aria-label="Compras en cuotas activas">
+              <div class="panel-heading">
+                <div>
+                  <h2>Compras activas</h2>
+                  <p id="installmentsActiveCount">Ninguna compra en curso.</p>
+                </div>
+              </div>
+              <div id="installmentsActiveList" class="installments-list"></div>
+            </section>
+
+            <section id="installmentsFinishedPanel" class="panel installments-panel is-hidden" aria-label="Compras terminadas">
+              <div class="panel-heading">
+                <div>
+                  <h2>Recién terminadas</h2>
+                  <p>Cuotas que dejaste de pagar en los últimos meses.</p>
+                </div>
+              </div>
+              <div id="installmentsFinishedList" class="installments-list"></div>
+            </section>
+          </div>
         </section>
       </section>
 

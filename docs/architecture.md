@@ -61,6 +61,7 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
   recurringId,        // solo en expenses: referencia a la plantilla que lo generó, o ""
   card,               // solo en personalExpenses: tarjeta elegida si paymentMethod es "Tarjeta de crédito", o ""
   installments,       // solo en personalExpenses: cantidad de cuotas (1 si no es compra en cuotas)
+  firstInstallmentMonth, // solo en personalExpenses: mes del primer vencimiento, "YYYY-MM" (default: mes de date)
   createdAt,          // timestamp de creación, no cambia nunca
   updatedAt,          // timestamp de la última modificación de contenido (rename de persona, por ejemplo)
   deletedAt,          // null normalmente; timestamp si está "borrado" (tombstone, ver sync más abajo)
@@ -71,11 +72,19 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
 
 ### Compras en cuotas (solo gastos personales)
 
-**Decisión** (2026-07-20): en vez de una entidad nueva, `card`/`installments` son campos opcionales de `personalExpenses`. El monto cargado es el **total de la compra** (no la cuota mensual) — se registra una sola vez, no se generan gastos nuevos cada mes.
+**Decisión** (2026-07-20, ampliada el 2026-08-06): en vez de una entidad nueva, `card`/`installments`/`firstInstallmentMonth` son campos opcionales de `personalExpenses`. El monto cargado es el **total de la compra** (no la cuota mensual) — se registra una sola vez, no se generan gastos nuevos cada mes.
 
-`getPendingInstallments()` (`app.js`) calcula en qué cuota está cada compra comparando el mes de `date` contra el mes actual (`monthsElapsed + 1`), sin guardar ese número en el estado. Un panel en Movimientos → Personales (`renderPendingInstallments()`) muestra, para cada compra con `installments > 1` que todavía no terminó, el concepto, la tarjeta, "cuota N/M" y el monto de la cuota de este mes (`amount / installments`), más el total a pagar este mes sumando todas las compras activas.
+**Nada del seguimiento se persiste**: todo se deriva en cada `render()`. Las funciones viven juntas en `app.js` bajo el comentario `--- Compras en cuotas ---`:
 
-No hay generación automática de gastos ni de recordatorios push — es solo un panel informativo que se recalcula en cada `render()` a partir de la fecha real del dispositivo, así que no se puede "perder" un mes ni duplicar el conteo.
+- `getInstallmentPlans()` arma un plan por cada gasto personal con `installments > 1`: monto de cuota (`amount / installments`), mes del primer y último vencimiento. Los meses se manejan como enteros (`año * 12 + mes`) con los helpers `monthIndex`/`monthIndexFromKey`/`monthKeyFromIndex`/`monthLabelFromIndex`, lo que evita aritmética de fechas y problemas de fin de mes.
+- `installmentNumberAt(plan, monthIdx)` devuelve qué cuota (1..N) toca ese mes, o 0 si la compra no está activa.
+- `getInstallmentsSnapshot()` es el cálculo central: compras activas este mes (con cuota actual, cuotas restantes y monto restante), compras terminadas en los últimos 3 meses, total del mes, deuda total pendiente, desglose por tarjeta y proyección de los próximos 12 meses.
+
+`renderInstallments()` (llamado desde `render()`) pinta con eso la vista Cuotas (`renderInstallmentsView`) y la tira recordatoria de Cargar/Resumen (`renderInstallmentsReminder`).
+
+`firstInstallmentMonth` existe para que "cuota N/M" coincida con el resumen real de la tarjeta: la fecha de la compra no siempre cae en el mismo período que el primer débito. Se autocompleta desde `date` al cargar y queda editable; la variable `firstInstallmentTouched` evita que cambiar la fecha pise un valor elegido a mano.
+
+No hay generación automática de gastos ni notificaciones push (sin backend no hay push real con la app cerrada) — todo se recalcula a partir de la fecha real del dispositivo, así que no se puede "perder" un mes ni duplicar el conteo.
 
 Todo el estado pasa siempre por `normalizeState()`/`normalizeExpense()`/etc. al cargar (`loadState`), al mezclar con la nube (`mergeCloudState`), y al armar el payload de subida (`getCloudStatePayload`) — así que un registro con forma inválida o campos faltantes nunca llega a `render()`.
 
@@ -99,7 +108,9 @@ No hay memoización: cada `render()` reconstruye el `innerHTML` de cada sección
 
 ## Navegación y vistas
 
-No hay router. Cuatro pestañas principales (`#loadViewButton`, `#summaryViewButton`, `#movementsViewButton`, `#historyViewButton`) controladas por `setAppView()`, que alterna la clase `app-view-hidden` sobre secciones marcadas con `.load-view-section`, `.summary-view-section`, `.movements-view-section`, `.history-view-section`.
+No hay router. Cinco vistas (`#loadViewButton`, `#summaryViewButton`, `#movementsViewButton`, `#historyViewButton`, `#installmentsViewButton`) controladas por `setAppView()`, que alterna la clase `app-view-hidden` sobre secciones marcadas con `.load-view-section`, `.summary-view-section`, `.movements-view-section`, `.history-view-section`, `.installments-view-section`.
+
+Se ven **cuatro botones a la vez**: Historial (solo gastos comunes) y Cuotas (solo gastos personales) se turnan en la misma ranura según el modo activo — lo maneja `setEntryMode()`, que además saca al usuario de la vista que acaba de ocultarse.
 
 Aparte, un switch global "Comunes/Personales" (`#commonTabButton`/`#personalTabButton`, arriba de todo en la app, fuera de las 4 pestañas) controlado por `setEntryMode()`. Este switch:
 - decide qué formulario de carga se muestra (común vs. personal),
