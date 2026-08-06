@@ -1570,6 +1570,19 @@ html.personal-mode #commonTabButton,
   background: var(--danger-soft);
 }
 
+.edit-row {
+  min-height: 36px;
+  padding: 0 12px;
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+.edit-row:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
 .movement-list {
   display: grid;
   gap: 4px;
@@ -1656,13 +1669,18 @@ html.personal-mode #commonTabButton,
   white-space: nowrap;
 }
 
-.person-expense-actions .delete-row {
+.person-expense-actions .delete-row,
+.person-expense-actions .edit-row {
   min-height: 28px;
   width: 28px;
   padding: 0;
   border-radius: 999px;
   line-height: 1;
   font-size: 1.1rem;
+}
+
+.person-expense-actions .edit-row {
+  font-size: 0.95rem;
 }
 
 .person-expense-empty {

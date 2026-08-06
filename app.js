@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-07-30-nuevas-categorias-v21";
+const APP_VERSION = "2026-08-03-editar-gastos-v22";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -171,6 +171,9 @@ const elements = {
   personalTabButton: document.querySelector("#personalTabButton"),
   commonSubmitButton: document.querySelector("#commonSubmitButton"),
   personalSubmitButton: document.querySelector("#personalSubmitButton"),
+  expensePanelTitle: document.querySelector("#expensePanelTitle"),
+  expensePanelSubtitle: document.querySelector("#expensePanelSubtitle"),
+  cancelEditButton: document.querySelector("#cancelEditButton"),
   commonExpenseSection: document.querySelector("#commonExpenseSection"),
   personalExpenseSection: document.querySelector("#personalExpenseSection"),
   commonRecordsSection: document.querySelector("#commonRecordsSection"),
@@ -247,6 +250,7 @@ let state = loadState();
 let chartType = "bar";
 let currentAppView = "load";
 let currentEntryMode = "common";
+let editingExpense = null;
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -1140,7 +1144,7 @@ function shortenLabel(label, maxLength) {
 }
 
 function renderTable(expenses) {
-  elements.commonExpenseColumns.innerHTML = renderMovementGroups(expenses, (expense) => expense.payer, "data-id");
+  elements.commonExpenseColumns.innerHTML = renderMovementGroups(expenses, (expense) => expense.payer, "data-id", "data-edit-id");
   elements.emptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
@@ -1162,7 +1166,7 @@ function formatDayHeading(isoDate) {
   return label.charAt(0).toUpperCase() + label.slice(1);
 }
 
-function renderMovementGroups(expenses, getTag, idAttribute) {
+function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
   if (!expenses.length) return "";
 
   return groupExpensesByDay(expenses)
@@ -1171,7 +1175,7 @@ function renderMovementGroups(expenses, getTag, idAttribute) {
         <div class="movement-day-group">
           <div class="movement-day-heading">${formatDayHeading(group.date)}</div>
           <div class="person-expense-list">
-            ${group.expenses.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute)).join("")}
+            ${group.expenses.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute, editAttribute)).join("")}
           </div>
         </div>
       `,
@@ -1179,7 +1183,7 @@ function renderMovementGroups(expenses, getTag, idAttribute) {
     .join("");
 }
 
-function renderMovementRow(expense, tag, idAttribute) {
+function renderMovementRow(expense, tag, idAttribute, editAttribute) {
   return `
     <div class="person-expense-row">
       <div class="person-expense-main">
@@ -1191,6 +1195,7 @@ function renderMovementRow(expense, tag, idAttribute) {
       </div>
       <div class="person-expense-actions">
         <span class="person-expense-amount">${formatMoney(expense.amount)}</span>
+        <button class="edit-row" type="button" ${editAttribute}="${expense.id}" aria-label="Editar gasto">✎</button>
         <button class="delete-row" type="button" ${idAttribute}="${expense.id}" aria-label="Borrar gasto">×</button>
       </div>
     </div>
@@ -1201,7 +1206,7 @@ function renderPersonalExpenses(expenses) {
   const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
   elements.personalWeekLabel.textContent = elements.weekRangeLabel.textContent;
   elements.personalWeekTotal.textContent = formatMoney(total);
-  elements.personalExpensesTable.innerHTML = renderMovementGroups(expenses, (expense) => expense.owner, "data-personal-id");
+  elements.personalExpensesTable.innerHTML = renderMovementGroups(expenses, (expense) => expense.owner, "data-personal-id", "data-edit-personal-id");
   elements.personalEmptyState.classList.toggle("is-hidden", expenses.length > 0);
 }
 
@@ -2537,25 +2542,56 @@ function handleExpenseSubmit(event) {
     return;
   }
 
-  state.expenses.push({
-    id: createId(),
-    date: expenseDate,
-    payer,
-    category: elements.expenseCategory.value,
-    paymentMethod: elements.expensePaymentMethod.value,
-    amount,
-    note: elements.expenseNote.value.trim(),
-    createdAt: Date.now(),
-  });
+  const isEditing = editingExpense && editingExpense.type === "common";
+
+  if (isEditing) {
+    const editedId = editingExpense.id;
+    state.expenses = state.expenses.map((expense) =>
+      expense.id === editedId
+        ? {
+            ...expense,
+            date: expenseDate,
+            payer,
+            category: elements.expenseCategory.value,
+            paymentMethod: elements.expensePaymentMethod.value,
+            amount,
+            note: elements.expenseNote.value.trim(),
+            updatedAt: Date.now(),
+          }
+        : expense,
+    );
+    editingExpense = null;
+  } else {
+    state.expenses.push({
+      id: createId(),
+      date: expenseDate,
+      payer,
+      category: elements.expenseCategory.value,
+      paymentMethod: elements.expensePaymentMethod.value,
+      amount,
+      note: elements.expenseNote.value.trim(),
+      createdAt: Date.now(),
+    });
+  }
 
   saveState();
   elements.expenseForm.reset();
   elements.expenseDate.value = toISODate(new Date());
   elements.expensePayer.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
-  setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
-  showExpenseToast("Gasto agregado");
-  setRecordsMode("common");
+  updateEditingUi();
+
+  if (isEditing) {
+    setReceiptStatus("");
+    showExpenseToast("Gasto actualizado");
+    setRecordsMode("common");
+    setAppView("movements");
+  } else {
+    setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
+    showExpenseToast("Gasto agregado");
+    setRecordsMode("common");
+  }
+
   render();
   elements.expenseAmount.focus();
 }
@@ -2580,19 +2616,41 @@ function handlePersonalExpenseSubmit(event) {
   const isCard = paymentMethod === "Tarjeta de crédito";
   const installments = isCard ? Math.max(1, parseInt(elements.personalExpenseInstallments.value, 10) || 1) : 1;
   const card = isCard ? elements.personalExpenseCard.value : "";
+  const isEditing = editingExpense && editingExpense.type === "personal";
 
-  state.personalExpenses.push({
-    id: createId(),
-    date: expenseDate,
-    owner,
-    category: elements.personalExpenseCategory.value,
-    paymentMethod,
-    amount,
-    note: elements.personalExpenseNote.value.trim(),
-    card,
-    installments,
-    createdAt: Date.now(),
-  });
+  if (isEditing) {
+    const editedId = editingExpense.id;
+    state.personalExpenses = state.personalExpenses.map((expense) =>
+      expense.id === editedId
+        ? {
+            ...expense,
+            date: expenseDate,
+            owner,
+            category: elements.personalExpenseCategory.value,
+            paymentMethod,
+            amount,
+            note: elements.personalExpenseNote.value.trim(),
+            card,
+            installments,
+            updatedAt: Date.now(),
+          }
+        : expense,
+    );
+    editingExpense = null;
+  } else {
+    state.personalExpenses.push({
+      id: createId(),
+      date: expenseDate,
+      owner,
+      category: elements.personalExpenseCategory.value,
+      paymentMethod,
+      amount,
+      note: elements.personalExpenseNote.value.trim(),
+      card,
+      installments,
+      createdAt: Date.now(),
+    });
+  }
 
   saveState();
   elements.personalExpenseForm.reset();
@@ -2600,8 +2658,17 @@ function handlePersonalExpenseSubmit(event) {
   elements.personalExpenseOwner.value = getDeviceOwner();
   elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
   updatePersonalCardFieldsVisibility();
-  showExpenseToast("Gasto agregado");
-  setRecordsMode("personal");
+  updateEditingUi();
+
+  if (isEditing) {
+    showExpenseToast("Gasto actualizado");
+    setRecordsMode("personal");
+    setAppView("movements");
+  } else {
+    showExpenseToast("Gasto agregado");
+    setRecordsMode("personal");
+  }
+
   render();
   elements.personalExpenseAmount.focus();
 }
@@ -2653,6 +2720,60 @@ function carryOverExpenseDraft(toPersonal) {
   source.note.value = "";
 
   if (toPersonal) updatePersonalCardFieldsVisibility();
+}
+
+function updateEditingUi() {
+  const isEditing = Boolean(editingExpense);
+  elements.cancelEditButton.classList.toggle("is-hidden", !isEditing);
+  elements.expensePanelTitle.textContent = isEditing ? "Editar gasto" : "Agregar gasto";
+  elements.expensePanelSubtitle.textContent = isEditing
+    ? "Cambiá lo que haga falta y guardá para reemplazar el gasto original."
+    : "Cargá gastos comunes para el reparto o personales para tu control.";
+  elements.commonSubmitButton.textContent = isEditing ? "Guardar cambios" : "Agregar gasto";
+  elements.personalSubmitButton.textContent = isEditing ? "Guardar cambios" : "Agregar personal";
+}
+
+function startEditingExpense(expense, type) {
+  const isPersonal = type === "personal";
+  editingExpense = { id: expense.id, type };
+  setAppView("load");
+  setEntryMode(isPersonal ? "personal" : "common");
+
+  const target = getExpenseDraftFields(isPersonal);
+  target.amount.value = expense.amount.toFixed(2);
+  setFieldValue(target.date, expense.date);
+  setFieldValue(target.category, expense.category);
+  setFieldValue(target.paymentMethod, expense.paymentMethod || "");
+  setFieldValue(target.note, expense.note || "");
+  setFieldValue(target.person, isPersonal ? expense.owner : expense.payer);
+
+  if (isPersonal) {
+    elements.personalExpenseCard.value = expense.card || "";
+    elements.personalExpenseInstallments.value = expense.installments || 1;
+    updatePersonalCardFieldsVisibility();
+  }
+
+  updateEditingUi();
+  target.amount.focus();
+}
+
+function cancelEditingExpense() {
+  if (!editingExpense) return;
+  const wasPersonal = editingExpense.type === "personal";
+  editingExpense = null;
+
+  if (wasPersonal) {
+    elements.personalExpenseForm.reset();
+    elements.personalExpenseDate.value = getSelectedWeekKey();
+    elements.personalExpenseOwner.value = getDeviceOwner();
+    updatePersonalCardFieldsVisibility();
+  } else {
+    elements.expenseForm.reset();
+    elements.expenseDate.value = toISODate(new Date());
+    elements.expensePayer.value = getDeviceOwner();
+  }
+
+  updateEditingUi();
 }
 
 function setEntryMode(mode, { carryOverDraft = false } = {}) {
@@ -2939,6 +3060,13 @@ function tombstoneRecords(list, idsToDelete) {
 }
 
 function handleTableClick(event) {
+  const editButton = event.target.closest("button[data-edit-id]");
+  if (editButton) {
+    const expense = state.expenses.find((item) => item.id === editButton.dataset.editId);
+    if (expense) startEditingExpense(expense, "common");
+    return;
+  }
+
   const expenseButton = event.target.closest("button[data-id]");
   if (!expenseButton) return;
 
@@ -2948,6 +3076,13 @@ function handleTableClick(event) {
 }
 
 function handlePersonalTableClick(event) {
+  const editButton = event.target.closest("button[data-edit-personal-id]");
+  if (editButton) {
+    const expense = state.personalExpenses.find((item) => item.id === editButton.dataset.editPersonalId);
+    if (expense) startEditingExpense(expense, "personal");
+    return;
+  }
+
   const expenseButton = event.target.closest("button[data-personal-id]");
   if (!expenseButton) return;
 
@@ -3039,8 +3174,15 @@ async function init() {
   elements.expenseForm.addEventListener("submit", handleExpenseSubmit);
   elements.personalExpenseForm.addEventListener("submit", handlePersonalExpenseSubmit);
   elements.personalExpensePaymentMethod.addEventListener("change", updatePersonalCardFieldsVisibility);
-  elements.commonTabButton.addEventListener("click", () => setEntryMode("common", { carryOverDraft: true }));
-  elements.personalTabButton.addEventListener("click", () => setEntryMode("personal", { carryOverDraft: true }));
+  elements.commonTabButton.addEventListener("click", () => {
+    if (editingExpense) cancelEditingExpense();
+    setEntryMode("common", { carryOverDraft: true });
+  });
+  elements.personalTabButton.addEventListener("click", () => {
+    if (editingExpense) cancelEditingExpense();
+    setEntryMode("personal", { carryOverDraft: true });
+  });
+  elements.cancelEditButton.addEventListener("click", cancelEditingExpense);
   elements.voiceExpenseButton.addEventListener("click", handleVoiceExpenseClick);
   elements.budgetForm.addEventListener("submit", handleBudgetSubmit);
   elements.budgetList.addEventListener("click", handleBudgetListClick);

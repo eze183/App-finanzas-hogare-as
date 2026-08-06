@@ -1,10 +1,16 @@
 # Roadmap
 
-Estado real al 2026-07-29, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-08-03, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
 Nada en curso.
+
+## Editar un gasto desde Movimientos — completo, 2026-08-03
+
+Pedido explícito del usuario: poder editar un gasto (incluido el pagador/propietario) desde Movimientos sin tener que borrarlo y volver a cargarlo. Botón "✎" nuevo junto al de borrar en cada fila (común y personal), que reutiliza el formulario de Cargar en modo edición — mismo `id`, `updatedAt` nuevo, sin duplicar el registro. Cubre todos los campos, incluidas tarjeta/cuotas en personales. Se revisó el merge de sincronización antes de implementarlo (había una advertencia explícita al respecto de una decisión histórica) y **no hizo falta cambiarlo**: ya resuelve por `id` + `updatedAt` completo, verificado simulando ambos sentidos de conflicto. Detalle completo en `decisions.md` y `architecture.md`.
+
+Junto con esto se resolvió la segunda parte del pedido del usuario ("Tami tiene que reseleccionar su nombre cada vez que carga un gasto"): no era un bug — el campo "Este dispositivo es de" en Configuración estaba puesto en "Eze" en su celular. Se le indicó corregirlo ahí; no requirió cambios de código.
 
 ## Coherencia del modo Personales (OCR, "Por categoría" y presupuestos) — completo, 2026-07-29
 
@@ -57,7 +63,6 @@ El usuario rediseñó la interfaz en Claude Design (app "Design") bajo un sistem
 
 ## Ideas mencionadas, no iniciadas
 
-- **Editar un gasto ya cargado** (hoy solo se puede borrar y volver a cargar). Se conversó como mejora de calidad de vida, no se empezó. Si se hace, revisar el impacto en el merge de sincronización (ver `decisions.md`).
 - **Leer tickets/facturas con una IA con visión en vez de Tesseract** (2026-07-29). Surgió cuando el OCR local fallaba con una foto real; se resolvió mejorando el preprocesamiento de imagen antes de Tesseract (gratis, sin backend — ver `decisions.md`), pero si en algún momento Tesseract sigue quedando corto, esta es la alternativa de fondo. Implica un cambio de arquitectura real: la app no tiene backend, así que una API de IA necesitaría exponer una key en el repo público (como ya pasa con Supabase, pero con costo por uso) o un servidor intermedio nuevo. No evaluar a la ligera.
 
 ## Hecho (funcionalidades grandes, resumen — el detalle día a día está en `session-summary.md` y `CODEX_CONTEXT.md`)

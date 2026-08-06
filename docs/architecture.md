@@ -159,6 +159,6 @@ Diseño (antes del merge, y el problema que resolvió):
 ## Cosas no obvias que vale la pena recordar
 
 - El `state` global se reasigna por completo en varias funciones (`applyCloudState`, `mergeCloudState`, rename de personas) — no es inmutable, pero tampoco se muta en profundidad sin cuidado; cada mutación pasa por `normalizeState` en algún punto del ciclo.
-- No existe edición de gastos ya cargados, solo alta y baja. Cualquier feature de "editar" tendría que sumarse a mano (ver `roadmap.md`).
+- Editar un gasto ya cargado (desde el botón "✎" en Movimientos) reutiliza el mismo formulario de Cargar en modo edición: `editingExpense` (variable global) guarda `{ id, type }` mientras dura, `startEditingExpense()`/`cancelEditingExpense()` prellenan/limpian, y el submit actualiza el registro por `id` en vez de crear uno nuevo (ver `decisions.md`, 2026-08-03). No hizo falta tocar `mergeRecordLists` — ya resolvía por `id` + `updatedAt` completo.
 - El OCR de tickets llena fecha/monto/descripción pero **no** la categoría — el usuario siempre la elige a mano en ese camino.
 - Los montos se muestran sin decimales (`moneyFormatter` con `maximumFractionDigits: 0`) pero se guardan y exportan (CSV) con precisión completa — es solo un cambio visual.

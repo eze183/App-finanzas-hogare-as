@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-03 — Editar gastos desde Movimientos + fix de configuración de dispositivo
+
+Dos pedidos del usuario en la misma sesión.
+
+**1) Editar un gasto o su propietario desde Movimientos, sin borrar y recargar.** Antes de tocar código se revisó el impacto en el merge de sincronización, porque `decisions.md` tenía anotado explícitamente "si se agrega edición, hay que revisar el merge" desde que se documentó esa limitación. Buena noticia: `mergeRecordLists` ya resuelve cada gasto por `id` comparando `updatedAt` de todo el registro (el mismo mecanismo que ya usa para altas/bajas), así que una edición no requiere ningún cambio ahí — se verificó explícitamente simulando una edición local más nueva que la remota, y viceversa, antes de dar el análisis por cerrado.
+
+Implementación: botón "✎" nuevo junto al de borrar en cada fila de Movimientos (común y personal), que reutiliza el formulario de Cargar en modo edición en vez de duplicar UI. `editingExpense` (variable global, `{ id, type }`) trackea si hay una edición en curso. `startEditingExpense()` cambia a la pestaña Cargar, prellena todos los campos (incluida tarjeta/cuotas para personales) y cambia el título/botón del panel ("Editar gasto" / "Guardar cambios") más un botón "Cancelar edición" nuevo. Al guardar, el submit actualiza el registro por `id` (mismo `createdAt`, `updatedAt` nuevo) en vez de crear uno nuevo, y navega a Movimientos para ver el resultado. Al cancelar, se descarta todo sin guardar nada.
+
+Un detalle que se pensó a propósito: cambiar de pestaña Comunes/Personales en medio de una edición **cancela la edición** en vez de dispararle el traslado de borrador que ya existía (agregado el 2026-07-29 para el flujo de "cargar" normal). Un registro que se está editando tiene un tipo fijo; mezclarlo con el mecanismo de traslado (pensado para un gasto nuevo que todavía no decidió su tipo) hubiera dejado estados ambiguos. Se verificó explícitamente que cambiar de pestaña a mitad de una edición cancela limpio, sin arrastrar valores.
+
+Probado en el navegador con Supabase mockeado: editar un gasto común (monto, categoría, nota y **pagador**, que era el pedido específico) actualiza el mismo registro sin duplicarlo; editar un gasto personal con tarjeta/cuotas prellena y guarda bien esos campos también; cancelar deja el original intacto; cambiar de pestaña a mitad de edición cancela sin efectos raros; el traslado de borrador y el borrado normal siguen funcionando sin interferencia. Sin errores de consola.
+
+**Nota sobre el entorno de prueba**: hoy la carga de `app.js` en el Browser pane falló de forma mucho más persistente que otras veces (varios reintentos con `ERR_ABORTED`/`ERR_CONNECTION_RESET`, incluso en un servidor nuevo en otro puerto) — confirmado con `curl` desde Bash que los CDN externos sí eran alcanzables, así que no era una caída real de internet, sino algo puntual del sandbox del navegador. Se resolvió comentando temporalmente los 3 `<script>` externos (pdfjs, tesseract.js, supabase-js) en `index.html` — la función de editar gastos no depende de ellos — y restaurándolos exactamente antes de commitear (verificado con `git diff` que quedaron idénticos al original). Dejar esta técnica anotada para la próxima vez que la carga esté especialmente terca: es más confiable que solo reintentar navegar.
+
+**2) "Tami tiene que reseleccionar su nombre cada vez que carga un gasto."** Antes de tocar código se le preguntó al usuario si en el celular de Tami el campo "Este dispositivo es de" (Configuración → Hogar y dispositivo) estaba puesto en "Tami" — confirmó que estaba mal puesto, en "Eze". No era un bug: `getDeviceOwner()`/`mergeCloudState` (que nunca sincroniza `deviceOwner`, a propósito) funcionan como corresponde; simplemente faltaba esa configuración de una vez por dispositivo. Sin cambios de código, solo se le indicó corregirlo ahí.
+
+Se subió la versión del service worker (v21→v22) por el cambio de edición.
+
 ## 2026-07-29 — Cierre de sesión: modo Personales de punta a punta (foto, categorías, presupuestos)
 
 Sesión larga con varias vueltas de ida y vuelta con el usuario, todas alrededor del mismo eje: **el modo Personales tenía huecos donde se colaban datos o comportamiento de Comunes**. Resumen de las 5 entradas de hoy (detalle completo abajo, en orden cronológico inverso):
