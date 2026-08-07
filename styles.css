@@ -422,6 +422,14 @@ label {
   align-items: center;
   justify-content: center;
   gap: 8px;
+  position: relative;
+}
+
+/* `.app-tabs button` fija `display`, así que le gana en especificidad a `.is-hidden`
+   y sin esta regla el botón oculto (Historial/Cuotas, que se turnan) sigue ocupando
+   lugar y parte la barra en dos filas. */
+.app-tabs button.is-hidden {
+  display: none;
 }
 
 .app-tabs button.is-active,
@@ -2192,6 +2200,18 @@ html.personal-mode #commonTabButton,
 
   .tab-icon {
     display: block;
+  }
+
+  /* En la barra fija de abajo los botones apilan ícono + texto: si el badge fuera
+     un tercer hijo en flujo, agrandaría la barra y taparía el contenido. */
+  .tab-badge {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    margin-left: 6px;
+    min-width: 17px;
+    height: 17px;
+    font-size: 0.62rem;
   }
 }
 

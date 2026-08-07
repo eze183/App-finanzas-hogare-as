@@ -6,6 +6,21 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-07 — Fix: la barra de navegación de abajo tapaba el contenido en el celular
+
+El usuario mandó una captura del celular: la barra fija de abajo se había partido en dos filas (con "Cuotas" solo en la segunda) y tapaba el detalle de la lista de movimientos.
+
+**Dos causas, las dos del cambio del día anterior:**
+
+1. **`.is-hidden` no ocultaba los botones de la nav.** `.app-tabs button` (línea ~420 de `styles.css`) define `display: inline-flex`, y con especificidad (0,1,1) le gana a `.is-hidden` (0,1,0) sin importar el orden en el archivo. O sea que "Historial" nunca se ocultó realmente en modo personal — era un bug latente desde el 2026-07-20 que no se notaba porque con 4 botones en una grilla de 4 columnas nada se rompía visualmente. Al agregar el 5to botón (Cuotas), la grilla pasó a 2 filas. Se agregó `.app-tabs button.is-hidden { display: none; }`.
+2. **El badge de la pestaña Cuotas sumaba una fila más.** En móvil los botones de la barra son `flex-direction: column` (ícono arriba, texto abajo), así que el badge se apilaba como tercer hijo y agrandaba la barra. Ahora va `position: absolute` arriba a la derecha del ícono, como un badge de verdad.
+
+**Lección que conviene no repetir**: en la verificación del 2026-08-06 se chequeó que la clase `is-hidden` estuviera aplicada (`classList.contains`) y se filtraron los botones ocultos con JS antes de medir — o sea que se verificó el estado del DOM, no lo que se veía. Para cualquier cosa de layout hay que medir con `getComputedStyle(el).display` y `getBoundingClientRect()` de **todos** los elementos, no solo de los que se esperan visibles. Con eso ahora se confirmó: 4 botones en una sola fila (todos con `top: 755`), barra de 65px contra los 88px de `padding-bottom` del shell (no tapa nada), el oculto realmente en `display: none`, y el badge de 17×17 sobre el ícono. Verificado en los dos modos, a 375px, con `supabase-config.js` stubeado y el `localStorage` limpiado después.
+
+Service worker v23→v24.
+
+---
+
 ## 2026-08-06 — Vista "Cuotas": rediseño completo del seguimiento de compras en cuotas
 
 Pedido del usuario: "cada consumo de tarjeta en cuotas, pasadas unas semanas me olvido que lo hice, o pasados unos meses me olvido que todavía tengo cuotas pendientes de ese gasto. El método que existe hoy no me funciona."
