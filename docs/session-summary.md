@@ -6,6 +6,14 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-07 (2) — Fix: la tira recordatoria de cuotas aparecía en modo Comunes
+
+El usuario reportó: "el gasto de tarjetas cargado en personal, se ve también en la pestaña de comunes". No era el gasto en sí — `expenses` y `personalExpenses` siempre estuvieron bien separados (verificado en `getCurrentWeekExpenses`/`getCurrentWeekPersonalExpenses`, cada una filtra su propia lista) — era la **tira recordatoria** de la vista Cuotas (agregada el 2026-08-06), que se mostraba en Cargar y Resumen mirando solo `currentAppView`, sin importar si el switch Comunes/Personales estaba en un modo o el otro.
+
+Esto había sido una decisión deliberada del día anterior ("que te encuentre a vos"), pero en la práctica confunde: mezcla info de gastos personales en el contexto de comunes. Se corrigió agregando `currentEntryMode === "personal"` a la condición en `renderInstallmentsReminder()`. Verificado en el navegador: la tira aparece en Cargar/Resumen en modo Personales, desaparece al cambiar a Comunes (en las dos vistas) y vuelve a aparecer al volver a Personales. Detalle actualizado en `decisions.md`. Service worker v24→v25.
+
+---
+
 ## 2026-08-07 — Fix: la barra de navegación de abajo tapaba el contenido en el celular
 
 El usuario mandó una captura del celular: la barra fija de abajo se había partido en dos filas (con "Cuotas" solo en la segunda) y tapaba el detalle de la lista de movimientos.

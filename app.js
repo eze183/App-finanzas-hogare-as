@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-07-fix-barra-nav-v24";
+const APP_VERSION = "2026-08-07-fix-recordatorio-cuotas-en-comunes-v25";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -1505,7 +1505,8 @@ function renderInstallmentPlanRow(plan) {
 
 function renderInstallmentsReminder(snapshot) {
   const hasActive = snapshot.active.length > 0;
-  const showReminder = hasActive && (currentAppView === "load" || currentAppView === "summary");
+  const showReminder =
+    hasActive && currentEntryMode === "personal" && (currentAppView === "load" || currentAppView === "summary");
   elements.installmentsReminder.classList.toggle("is-hidden", !showReminder);
   elements.installmentsTabBadge.classList.toggle("is-hidden", !hasActive);
   elements.installmentsTabBadge.textContent = String(snapshot.active.length);
