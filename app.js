@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-07-fix-recordatorio-cuotas-en-comunes-v25";
+const APP_VERSION = "2026-08-09-cierre-de-semana-visible-v26";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -156,6 +156,10 @@ const elements = {
   personATotal: document.querySelector("#personATotal"),
   personBTotal: document.querySelector("#personBTotal"),
   settlementText: document.querySelector("#settlementText"),
+  settlementBlockLabel: document.querySelector("#settlementBlockLabel"),
+  settlementMeta: document.querySelector("#settlementMeta"),
+  unsettleWeekButton: document.querySelector("#unsettleWeekButton"),
+  settlementDetailBadge: document.querySelector("#settlementDetailBadge"),
   settlementDetailIntro: document.querySelector("#settlementDetailIntro"),
   settlementBreakdown: document.querySelector("#settlementBreakdown"),
   monthRangeLabel: document.querySelector("#monthRangeLabel"),
@@ -794,6 +798,26 @@ function populateSettingsForm() {
   elements.deviceOwnerSelect.value = deviceOwner;
 }
 
+// Cierre guardado (no borrado) de una semana, o null si esa semana sigue abierta.
+function getWeekSettlement(weekKey = getSelectedWeekKey()) {
+  return state.settlements.find((settlement) => settlement.weekKey === weekKey && !settlement.deletedAt) || null;
+}
+
+// Estado de cierre de la semana seleccionada. `isStale` marca el caso de haber saldado
+// y después agregado/borrado/editado gastos: el registro guardado ya no refleja la semana.
+function getSettlementStatus(expenses) {
+  const record = getWeekSettlement();
+  const current = calculateSettlement(expenses);
+  if (!record) return { record: null, current, isSettled: false, isStale: false };
+
+  const isStale =
+    Math.abs((record.total || 0) - current.total) >= 0.01 ||
+    Math.abs((record.amount || 0) - current.amount) >= 0.01 ||
+    (record.debtor || "") !== (current.debtor || "");
+
+  return { record, current, isSettled: true, isStale };
+}
+
 function renderSummary(expenses, isPersonal) {
   elements.personATotalCard.classList.toggle("is-hidden", isPersonal);
   elements.personBTotalCard.classList.toggle("is-hidden", isPersonal);
@@ -809,13 +833,48 @@ function renderSummary(expenses, isPersonal) {
   elements.personATotal.textContent = formatMoney(settlement.totals[personA] || 0);
   elements.personBTotal.textContent = formatMoney(settlement.totals[personB] || 0);
 
-  if (settlement.total === 0) {
-    elements.settlementText.textContent = "Sin gastos esta semana";
-  } else if (settlement.amount < 0.01) {
-    elements.settlementText.textContent = "Ya están parejos";
-  } else {
-    elements.settlementText.textContent = `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}`;
+  renderSettlementBlock(expenses, settlement);
+}
+
+function describeSettlementMovement(settlement) {
+  if (settlement.total === 0) return "Sin gastos esta semana";
+  if (settlement.amount < 0.01) return "Ya están parejos";
+  return `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}`;
+}
+
+function renderSettlementBlock(expenses, settlement) {
+  const status = getSettlementStatus(expenses);
+  const { record, isSettled, isStale } = status;
+
+  elements.settlementCard.classList.toggle("is-settled", isSettled && !isStale);
+  elements.settlementCard.classList.toggle("is-stale", isSettled && isStale);
+  elements.unsettleWeekButton.classList.toggle("is-hidden", !isSettled);
+  elements.settlementMeta.classList.toggle("is-hidden", !isSettled);
+
+  if (!isSettled) {
+    elements.settlementBlockLabel.textContent = "Para emparejar";
+    elements.settlementText.textContent = describeSettlementMovement(settlement);
+    elements.settleWeekButton.textContent = "Marcar semana saldada";
+    return;
   }
+
+  const settledOn = dateFormatter.format(parseISODate(record.settledAt));
+  const closedMovement = record.amount
+    ? `${record.debtor} le pasó ${formatMoney(record.amount)} a ${record.creditor}`
+    : "No hizo falta compensación";
+
+  if (isStale) {
+    elements.settlementBlockLabel.textContent = "Cierre desactualizado";
+    elements.settlementText.textContent = describeSettlementMovement(settlement);
+    elements.settlementMeta.textContent = `Cerraste esta semana el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
+    elements.settleWeekButton.textContent = "Actualizar cierre";
+    return;
+  }
+
+  elements.settlementBlockLabel.textContent = "Semana saldada ✓";
+  elements.settlementText.textContent = closedMovement;
+  elements.settlementMeta.textContent = `Cerrada el ${settledOn} · total ${formatMoney(record.total)}`;
+  elements.settleWeekButton.textContent = "Ver en Historial";
 }
 
 function renderSettlementDetail(expenses, isPersonal) {
@@ -827,10 +886,19 @@ function renderSettlementDetail(expenses, isPersonal) {
   const half = settlement.total / 2;
   const personATotal = settlement.totals[personA] || 0;
   const personBTotal = settlement.totals[personB] || 0;
+  const { isSettled, isStale } = getSettlementStatus(expenses);
 
-  elements.settlementDetailIntro.textContent = settlement.total
-    ? "Así queda la cuenta si dividen el total en partes iguales."
-    : "Todavía no hay gastos para calcular el cierre semanal.";
+  // El desglose se sigue viendo después de saldar (pedido del usuario), pero con un sello
+  // que aclara que ya no es una cuenta pendiente.
+  elements.settlementDetailBadge.classList.toggle("is-hidden", !isSettled);
+  elements.settlementDetailBadge.classList.toggle("is-stale", isStale);
+  elements.settlementDetailBadge.textContent = isStale ? "Cierre desactualizado" : "Saldada";
+
+  elements.settlementDetailIntro.textContent = !settlement.total
+    ? "Todavía no hay gastos para calcular el cierre semanal."
+    : isSettled && !isStale
+      ? "Esta semana ya está saldada. El desglose queda como referencia."
+      : "Así queda la cuenta si dividen el total en partes iguales.";
 
   const movement = settlement.amount
     ? `${escapeHtml(settlement.debtor)} le pasa ${formatMoney(settlement.amount)} a ${escapeHtml(settlement.creditor)}`
@@ -1538,7 +1606,9 @@ function renderWeekLabel() {
 }
 
 function renderSettlementHistory() {
-  const settlements = [...state.settlements].sort((a, b) => b.settledAt.localeCompare(a.settledAt));
+  const settlements = state.settlements
+    .filter((settlement) => !settlement.deletedAt)
+    .sort((a, b) => b.settledAt.localeCompare(a.settledAt));
 
   if (!settlements.length) {
     elements.settlementHistory.innerHTML = `<p class="empty-state">Todavía no hay semanas saldadas.</p>`;
@@ -3318,19 +3388,33 @@ function handleSettleWeek() {
     return;
   }
 
-  const weekKey = getSelectedWeekKey();
-  const existingSettlement = state.settlements.find((settlement) => settlement.weekKey === weekKey);
-  if (existingSettlement) {
-    const confirmed = confirm("Esta semana ya figura como saldada. ¿Querés actualizar el cierre?");
-    if (!confirmed) return;
+  const status = getSettlementStatus(expenses);
+
+  // Ya saldada y al día: el botón es solo un atajo al registro, no vuelve a cerrar nada.
+  if (status.isSettled && !status.isStale) {
+    setAppView("history");
+    return;
   }
 
+  const weekKey = getSelectedWeekKey();
   const { start, end } = getSelectedWeekRange();
-  const settlement = calculateSettlement(expenses);
+  const weekLabel = `${dateFormatter.format(start)} al ${dateFormatter.format(end)}`;
+  const settlement = status.current;
+  const movement = settlement.amount
+    ? `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}.`
+    : "No hace falta que se pasen plata.";
+
+  const confirmed = confirm(
+    status.isStale
+      ? `Actualizar el cierre de la semana del ${weekLabel}.\n\nGuardado: ${formatMoney(status.record.total)}\nAhora: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`
+      : `Cerrar la semana del ${weekLabel}.\n\nTotal: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`,
+  );
+  if (!confirmed) return;
+
   const record = {
-    id: existingSettlement?.id || createId(),
+    id: status.record?.id || createId(),
     weekKey,
-    weekLabel: `${dateFormatter.format(start)} al ${dateFormatter.format(end)}`,
+    weekLabel,
     settledAt: toISODate(new Date()),
     total: settlement.total,
     amount: settlement.amount,
@@ -3340,11 +3424,29 @@ function handleSettleWeek() {
     updatedAt: Date.now(),
   };
 
+  // Se conservan los cierres tombstoneados de la misma semana para que un "Deshacer" previo
+  // siga propagándose a los otros dispositivos; `dedupeSettlementsByWeek` se queda con el más nuevo.
   state.settlements = [
     record,
-    ...state.settlements.filter((settlementItem) => settlementItem.weekKey !== weekKey),
+    ...state.settlements.filter((item) => item.weekKey !== weekKey || item.deletedAt),
   ];
   saveState();
+  showExpenseToast(status.isStale ? "Cierre actualizado" : "Semana saldada");
+  render();
+  setAppView("history");
+}
+
+function handleUnsettleWeek() {
+  const record = getWeekSettlement();
+  if (!record) return;
+
+  if (!confirm(`Reabrir la semana del ${record.weekLabel}.\n\nSe borra el cierre guardado. ¿Confirmás?`)) return;
+
+  // Tombstone, no borrado: así el "deshacer" viaja a los otros dispositivos igual que el de un gasto.
+  // Un cierre nuevo para la misma semana se guarda con un `id` nuevo, porque el merge nunca "des-borra".
+  state.settlements = tombstoneRecords(state.settlements, new Set([record.id]));
+  saveState();
+  showExpenseToast("Semana reabierta");
   render();
 }
 
@@ -3530,6 +3632,7 @@ async function init() {
   });
   elements.clearWeekButton.addEventListener("click", handleClearWeek);
   elements.settleWeekButton.addEventListener("click", handleSettleWeek);
+  elements.unsettleWeekButton.addEventListener("click", handleUnsettleWeek);
   elements.exportButton.addEventListener("click", handleExport);
   elements.searchInput.addEventListener("input", handleFiltersChange);
   elements.filterPayer.addEventListener("change", handleFiltersChange);

@@ -6,6 +6,31 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-09 — Cerrar la semana: confirmación, estado visible, deshacer y aviso de cierre desactualizado
+
+Pedido del usuario: "cuando indico una semana como saldada, no hay nada que me confirme que el comando fue aceptado. Además me sigue apareciendo el resumen, lo cual es confuso, porque parece que no hubiese saldado la semana".
+
+**Diagnóstico**: el problema de fondo era peor que la falta de feedback — **el estado "saldada" no existía en la pantalla Resumen**. `handleSettleWeek()` guardaba el registro y llamaba a `render()`, pero ni `renderSummary()` ni `renderSettlementDetail()` consultaban `state.settlements`, así que el bloque "Para emparejar" seguía diciendo "Eze le pasa $X a Tami" como si nada. No era un problema de refresco: la pantalla literalmente no sabía que la semana estaba cerrada. El único rastro estaba en la pestaña Historial. Tampoco había forma de deshacer un cierre, ni aviso si el cierre quedaba desactualizado.
+
+Se le ofrecieron tres alcances y eligió el más completo, más mantener el desglose visible después de saldar.
+
+**Lo que se hizo:**
+
+1. **Diálogo de confirmación previo** con el detalle real del cierre ("Cerrar la semana del 03/08 al 09/08. Total: $25.000. Tami le pasa $12.500 a Eze. ¿Confirmás?").
+2. **Toast** al cerrar ("Semana saldada" / "Cierre actualizado" / "Semana reabierta"), igual que al cargar un gasto.
+3. **Estado visible**: el bloque pasa a "Semana saldada ✓ · Tami le pasó $X a Eze · Cerrada el 09/08 · total $Y", con fondo oscuro en vez del rojo de llamada a la acción, y el botón principal cambia a "Ver en Historial".
+4. **Deshacer**: botón nuevo que reabre la semana.
+5. **Aviso de cierre desactualizado**: si después de saldar cambian los gastos de esa semana, el bloque se pone ámbar, avisa "Cerraste esta semana el 09/08 por $20.000, pero desde entonces cambió a $25.000" y el botón pasa a "Actualizar cierre". `getSettlementStatus()` compara total, monto y deudor guardados contra los actuales.
+6. **Detalle del cierre**: se sigue viendo el desglose (pedido explícito) pero con un sello "Saldada" / "Cierre desactualizado" y una bajada que aclara que ya no es una cuenta pendiente.
+
+**Decisión de sincronización importante** (la parte delicada): "Deshacer" **tombstonea** el cierre (`deletedAt`) en vez de sacarlo del array, para que la reapertura viaje a los otros dispositivos igual que el borrado de un gasto. Como `mergeRecordLists` nunca "des-borra" (una vez con `deletedAt`, queda borrado para siempre), volver a saldar esa semana **crea un `id` nuevo** en vez de reusar el viejo, y el registro tombstoneado se conserva en el array. `dedupeSettlementsByWeek()` (que ya existía en `mergeCloudState`) se queda con el de `updatedAt` más nuevo, así que gana el cierre vivo. Verificado explícitamente en la prueba.
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después: cancelar el diálogo no guarda nada; confirmar muestra el toast, cambia el bloque, pone el sello y navega al Historial donde figura el registro; volver a Resumen mantiene el estado; cargar un gasto después deja el cierre desactualizado con los dos montos; "Actualizar cierre" reusa el mismo `id`; "Deshacer" tombstonea y vacía el Historial; volver a saldar genera `id` nuevo conviviendo con el tombstone. A 375px los dos botones entran en la misma fila sin superponerse y sin overflow (hubo que agregarle `width: fit-content` al sello, porque `.panel-heading` pasa a columna en móvil y lo estiraba a los 318px del ancho completo).
+
+Service worker v25→v26.
+
+---
+
 ## 2026-08-07 (2) — Fix: la tira recordatoria de cuotas aparecía en modo Comunes
 
 El usuario reportó: "el gasto de tarjetas cargado en personal, se ve también en la pestaña de comunes". No era el gasto en sí — `expenses` y `personalExpenses` siempre estuvieron bien separados (verificado en `getCurrentWeekExpenses`/`getCurrentWeekPersonalExpenses`, cada una filtra su propia lista) — era la **tira recordatoria** de la vista Cuotas (agregada el 2026-08-06), que se mostraba en Cargar y Resumen mirando solo `currentAppView`, sin importar si el switch Comunes/Personales estaba en un modo o el otro.

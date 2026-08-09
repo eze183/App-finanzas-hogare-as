@@ -276,6 +276,27 @@ label {
   line-height: 1.25;
 }
 
+.settlement-block-meta {
+  color: color-mix(in srgb, var(--on-accent) 88%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+
+.settlement-block-meta.is-hidden {
+  display: none;
+}
+
+.settlement-block-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.settlement-block.is-settled .settlement-block-actions,
+.settlement-block.is-stale .settlement-block-actions {
+  grid-template-columns: 1fr auto;
+}
+
 .settlement-block-button {
   width: 100%;
   background: var(--on-accent);
@@ -284,6 +305,57 @@ label {
 
 .settlement-block-button:hover {
   background: color-mix(in srgb, var(--on-accent) 90%, var(--accent-soft));
+}
+
+.settlement-block-undo {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--on-accent) 55%, transparent);
+  color: var(--on-accent);
+  white-space: nowrap;
+}
+
+.settlement-block-undo:hover {
+  background: color-mix(in srgb, var(--on-accent) 18%, transparent);
+}
+
+.settlement-block-undo.is-hidden {
+  display: none;
+}
+
+/* Semana cerrada: se apaga el rojo de llamada a la acción, la cuenta ya no está pendiente. */
+.settlement-block.is-settled {
+  background: var(--ink);
+}
+
+/* Cerrada pero con gastos cambiados después: vuelve a pedir atención. */
+.settlement-block.is-stale {
+  background: var(--amber);
+}
+
+.settlement-stamp {
+  /* `.panel-heading` pasa a columna en móvil y estiraría el sello a todo el ancho. */
+  align-self: start;
+  justify-self: start;
+  width: fit-content;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 5px 9px;
+  white-space: nowrap;
+}
+
+.settlement-stamp.is-stale {
+  border-color: color-mix(in srgb, var(--amber) 45%, transparent);
+  background: var(--amber-soft);
+  color: var(--amber);
+}
+
+.settlement-stamp.is-hidden {
+  display: none;
 }
 
 .summary-grid {

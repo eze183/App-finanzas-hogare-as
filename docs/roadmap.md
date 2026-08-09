@@ -10,6 +10,10 @@ Nada en curso.
 
 - **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
 
+## Cierre de semana con estado visible — completo, 2026-08-09
+
+El usuario reportó que marcar una semana como saldada no confirmaba nada y que el resumen seguía mostrando la cuenta pendiente, como si no hubiera pasado. La causa de fondo: el Resumen nunca consultaba `state.settlements`. Ahora hay diálogo de confirmación con el detalle, toast, el bloque pasa a "Semana saldada ✓" con la fecha y el total, botón "Deshacer" para reabrirla, aviso de "cierre desactualizado" cuando los gastos de esa semana cambiaron después de cerrarla, y sello en el detalle del reparto (que se mantiene visible a pedido del usuario). El "Deshacer" usa tombstones para que la reapertura se propague entre dispositivos — ver la decisión correspondiente en `decisions.md`, que tiene una trampa del merge anotada.
+
 ## Vista "Cuotas" para compras con tarjeta — completo, 2026-08-06
 
 Reemplaza el panel de cuotas del 2026-07-20, que resolvía el cálculo pero no el olvido: vivía escondido en Movimientos → Personales, solo mostraba el mes actual (nunca la deuda total ni el mes de fin) y el campo para marcar la compra estaba detrás de "+ Más detalles".

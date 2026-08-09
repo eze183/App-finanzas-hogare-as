@@ -90,6 +90,14 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario. El switch se movió porque *ya* cambiaba el tema visual completo de la app (no solo el formulario de carga), así que tenía sentido que viviera en un lugar global, no escondido dentro de un panel específico. Al moverlo, se eliminó el sub-menú redundante "Gastos comunes/Gastos personales" que existía separado dentro de Movimientos, para no tener dos controles que se pudieran desincronizar.
 
+## Deshacer un cierre de semana tombstonea, y volver a saldar crea un `id` nuevo
+
+**Decisión** (2026-08-09): el botón "Deshacer" de una semana saldada no saca el registro de `state.settlements`, le pone `deletedAt` (`tombstoneRecords()`). Y si después se vuelve a saldar la misma semana, se guarda un registro **con un `id` nuevo**, conservando el tombstoneado en el array.
+
+**Por qué**: sacarlo del array reabre la semana en este dispositivo pero no en el otro — al mergear, el registro remoto vivo vuelve y la semana aparece saldada de nuevo. Es el mismo motivo por el que los gastos se borran con tombstone. Y el `id` nuevo hace falta porque `mergeRecordLists` es deliberadamente "pegajoso" con los tombstones: `const deletedAt = record.deletedAt || existing.deletedAt || null` hace que, una vez que **cualquier** copia tiene `deletedAt`, el resultado del merge lo mantenga borrado aunque el ganador por `updatedAt` esté vivo. O sea que reusar el `id` viejo haría que el cierre nuevo nunca se propague. Con `id` nuevo, `dedupeSettlementsByWeek()` (que ya se aplicaba en `mergeCloudState`) se queda con el de `updatedAt` más alto por semana, que es el cierre vivo.
+
+**Consecuencia a tener en cuenta**: `state.settlements` puede tener más de un registro por `weekKey` (los tombstoneados más el vivo). Todo lo que lea cierres tiene que filtrar `deletedAt` — para eso está `getWeekSettlement()`, y `renderSettlementHistory()` filtra también.
+
 ## Compras en cuotas: campos en `personalExpenses`, no una entidad nueva
 
 **Decisión** (2026-07-20): para el problema de "compro algo en cuotas con una de las 4 tarjetas y me olvido de que la sigo pagando", se evaluó crear una entidad `installmentPurchases` separada (con generación automática de un gasto por mes) pero se descartó a pedido explícito del usuario ("me gustaría que sea simple"). En cambio: `personalExpenses` ganó dos campos opcionales, `card` (una de 4 tarjetas fijas: Visa Banco Galicia, Mastercard Banco Galicia, Mastercard Mercado Pago, Mastercard Banco Nación) y `installments` (cantidad de cuotas, 1 por defecto). El monto cargado sigue siendo el total de la compra, una sola vez.

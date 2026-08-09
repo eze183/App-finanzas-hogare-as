@@ -84,9 +84,13 @@
       </section>
 
       <section id="settlementCard" class="settlement-block summary-view-section app-view-hidden" aria-label="Para emparejar">
-        <span class="settlement-block-label">Para emparejar</span>
+        <span id="settlementBlockLabel" class="settlement-block-label">Para emparejar</span>
         <strong id="settlementText" class="settlement-block-text">Sin gastos esta semana</strong>
-        <button id="settleWeekButton" type="button" class="settlement-block-button">Marcar semana saldada</button>
+        <span id="settlementMeta" class="settlement-block-meta is-hidden"></span>
+        <div class="settlement-block-actions">
+          <button id="settleWeekButton" type="button" class="settlement-block-button">Marcar semana saldada</button>
+          <button id="unsettleWeekButton" type="button" class="settlement-block-undo is-hidden">Deshacer</button>
+        </div>
       </section>
 
       <section class="summary-grid summary-view-section app-view-hidden" aria-label="Reparto por persona">
@@ -134,6 +138,7 @@
               <h2>Detalle del cierre</h2>
               <p id="settlementDetailIntro"></p>
             </div>
+            <span id="settlementDetailBadge" class="settlement-stamp is-hidden">Saldada</span>
           </div>
           <div id="settlementBreakdown" class="breakdown-grid"></div>
         </article>
