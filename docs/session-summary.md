@@ -6,6 +6,22 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-09 (3) — El "Agrupar por" pasa a ser un desplegable más, con opción de ordenar por monto
+
+El usuario pidió que "Agrupar" (agregado un rato antes como par de botones sueltos) fuera un desplegable más dentro del filtro, igual que Persona/Categoría/Forma de pago, y que sumara ordenar por monto mayor o menor además de día/persona.
+
+Se sacó el `.movement-groupby` (par de botones) y se reemplazó por un `<select id="filterGroupBy">` más dentro de `#filterForm`, con las opciones "Por día" / "Por persona" / "Monto: mayor a menor" / "Monto: menor a mayor" — mismo aspecto que los otros filtros porque son el mismo `<label><select>` genérico. En Personales (que no tiene `filterForm` porque no tiene los otros filtros) se agregó un `<select>` suelto equivalente, `#personalFilterGroupBy`, con la misma clase de fondo (`.movement-toolbar`) que ya tenía el resumen de totales.
+
+`movementGroupBy` ahora acepta 4 valores en vez de 2. Los dos modos de monto no agrupan (no tendría sentido agrupar por día o por persona a la vez que se ordena por monto): `renderMovementGroups()` devuelve una lista plana ordenada, sin encabezados, mostrando tag de persona y fecha en cada fila porque ninguna cabecera de grupo los está aportando. `renderMovementGroupToggles()` pasó de togglear clases `is-active` en botones a simplemente sincronizar el `.value` de los dos selects (Comunes y Personales comparten la misma variable de estado, así que seleccionar un orden en una pestaña lo deja seleccionado si se pasa a la otra).
+
+`.filter-bar` tenía el grid-template-columns hardcodeado a 3 selects (`repeat(3, ...)`); con el cuarto campo pasó a `repeat(4, ...)` para no romper el layout.
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después: los 4 modos devuelven el orden esperado (verificado con montos $20.000/$8.000/$5.000: mayor a menor y menor a mayor los ordenan correctamente, por persona agrupa con subtotales, por día vuelve al comportamiento original), el select de Personales queda sincronizado al cambiar el de Comunes, y a 375px no hay overflow horizontal en ninguna de las dos pestañas.
+
+Service worker v27→v28.
+
+---
+
 ## 2026-08-09 (2) — Gráfico mensual en Resumen + totales y agrupación por persona en Movimientos
 
 Dos pedidos del usuario en la misma sesión:

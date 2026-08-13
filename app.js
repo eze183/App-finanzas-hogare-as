@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-09-grafico-mensual-y-totales-de-movimientos-v27";
+const APP_VERSION = "2026-08-09-ordenar-como-filtro-desplegable-v28";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -265,11 +265,9 @@ const elements = {
   chartWeekButton: document.querySelector("#chartWeekButton"),
   chartMonthButton: document.querySelector("#chartMonthButton"),
   chartPeriodNote: document.querySelector("#chartPeriodNote"),
-  commonGroupDayButton: document.querySelector("#commonGroupDayButton"),
-  commonGroupPersonButton: document.querySelector("#commonGroupPersonButton"),
+  filterGroupBy: document.querySelector("#filterGroupBy"),
   commonMovementSummary: document.querySelector("#commonMovementSummary"),
-  personalGroupDayButton: document.querySelector("#personalGroupDayButton"),
-  personalGroupPersonButton: document.querySelector("#personalGroupPersonButton"),
+  personalFilterGroupBy: document.querySelector("#personalFilterGroupBy"),
   personalMovementSummary: document.querySelector("#personalMovementSummary"),
   appShell: document.querySelector("#appShell"),
   loadViewSections: document.querySelectorAll(".load-view-section"),
@@ -282,7 +280,7 @@ const elements = {
 let state = loadState();
 let chartType = "bar";
 let chartPeriod = "week"; // "week" | "month"
-let movementGroupBy = "day"; // "day" | "person"
+let movementGroupBy = "day"; // "day" | "person" | "amount-desc" | "amount-asc"
 let currentAppView = "load";
 let currentEntryMode = "common";
 let editingExpense = null;
@@ -1303,6 +1301,18 @@ function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
       .join("");
   }
 
+  if (movementGroupBy === "amount-desc" || movementGroupBy === "amount-asc") {
+    // Ordenado por monto: no hay agrupación (ni por día ni por persona tendría sentido
+    // acá), así que la fila necesita mostrar tag y fecha, que normalmente vienen del grupo.
+    const direction = movementGroupBy === "amount-desc" ? -1 : 1;
+    const sorted = [...expenses].sort((a, b) => (a.amount - b.amount) * direction);
+    return `
+      <div class="person-expense-list">
+        ${sorted.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute, editAttribute, { showTag: true, showDate: true })).join("")}
+      </div>
+    `;
+  }
+
   return groupExpensesByDay(expenses)
     .map(
       (group) => `
@@ -1352,11 +1362,8 @@ function renderMovementRow(expense, tag, idAttribute, editAttribute, { showTag =
 }
 
 function renderMovementGroupToggles() {
-  const isPerson = movementGroupBy === "person";
-  elements.commonGroupDayButton.classList.toggle("is-active", !isPerson);
-  elements.commonGroupPersonButton.classList.toggle("is-active", isPerson);
-  elements.personalGroupDayButton.classList.toggle("is-active", !isPerson);
-  elements.personalGroupPersonButton.classList.toggle("is-active", isPerson);
+  elements.filterGroupBy.value = movementGroupBy;
+  elements.personalFilterGroupBy.value = movementGroupBy;
 }
 
 function setMovementGroupBy(value) {
@@ -3770,10 +3777,8 @@ async function init() {
     chartPeriod = "month";
     render();
   });
-  elements.commonGroupDayButton.addEventListener("click", () => setMovementGroupBy("day"));
-  elements.commonGroupPersonButton.addEventListener("click", () => setMovementGroupBy("person"));
-  elements.personalGroupDayButton.addEventListener("click", () => setMovementGroupBy("day"));
-  elements.personalGroupPersonButton.addEventListener("click", () => setMovementGroupBy("person"));
+  elements.filterGroupBy.addEventListener("change", () => setMovementGroupBy(elements.filterGroupBy.value));
+  elements.personalFilterGroupBy.addEventListener("change", () => setMovementGroupBy(elements.personalFilterGroupBy.value));
   window.addEventListener("resize", handleWindowResize);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

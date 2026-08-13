@@ -425,15 +425,19 @@
                 <option value="Sin especificar">Sin especificar</option>
               </select>
             </label>
+            <label>
+              Ordenar
+              <select id="filterGroupBy">
+                <option value="day">Por día</option>
+                <option value="person">Por persona</option>
+                <option value="amount-desc">Monto: mayor a menor</option>
+                <option value="amount-asc">Monto: menor a mayor</option>
+              </select>
+            </label>
             <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
           </form>
 
           <div class="movement-toolbar">
-            <div class="movement-groupby" role="group" aria-label="Agrupar gastos">
-              <span class="movement-groupby-label">Agrupar por</span>
-              <button id="commonGroupDayButton" class="is-active" type="button">Día</button>
-              <button id="commonGroupPersonButton" type="button">Persona</button>
-            </div>
             <div id="commonMovementSummary" class="movement-summary is-hidden"></div>
           </div>
 
@@ -454,11 +458,15 @@
           </div>
 
           <div class="movement-toolbar">
-            <div class="movement-groupby" role="group" aria-label="Agrupar gastos personales">
-              <span class="movement-groupby-label">Agrupar por</span>
-              <button id="personalGroupDayButton" class="is-active" type="button">Día</button>
-              <button id="personalGroupPersonButton" type="button">Persona</button>
-            </div>
+            <label class="movement-sort-field">
+              Ordenar
+              <select id="personalFilterGroupBy">
+                <option value="day">Por día</option>
+                <option value="person">Por persona</option>
+                <option value="amount-desc">Monto: mayor a menor</option>
+                <option value="amount-asc">Monto: menor a mayor</option>
+              </select>
+            </label>
             <div id="personalMovementSummary" class="movement-summary is-hidden"></div>
           </div>
 

@@ -2033,7 +2033,7 @@ html.personal-mode #commonTabButton,
 
 .filter-bar {
   display: grid;
-  grid-template-columns: minmax(180px, 1.3fr) repeat(3, minmax(150px, 1fr)) auto;
+  grid-template-columns: minmax(180px, 1.3fr) repeat(4, minmax(150px, 1fr)) auto;
   gap: 12px;
   align-items: end;
   border: 1px solid var(--line);
@@ -2079,38 +2079,8 @@ html.personal-mode #commonTabButton,
   margin-bottom: 16px;
 }
 
-.movement-groupby {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.movement-groupby-label {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 700;
-  margin-right: 2px;
-}
-
-.movement-groupby button {
-  min-height: 32px;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--muted);
-  padding: 0 12px;
-  font-size: 0.8rem;
-}
-
-.movement-groupby button:hover {
-  background: var(--surface-soft);
-  color: var(--ink);
-}
-
-.movement-groupby button.is-active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+.movement-sort-field {
+  max-width: 240px;
 }
 
 .movement-group-heading {
