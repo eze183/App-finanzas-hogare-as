@@ -755,6 +755,13 @@ label {
   color: var(--on-accent);
 }
 
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
 .chart-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 260px;
@@ -1968,7 +1975,10 @@ html.personal-mode .history-item,
 .app-shell.personal-mode .category-row,
 .app-shell.personal-mode .breakdown-item,
 .app-shell.personal-mode .metric-row,
-.app-shell.personal-mode .history-item {
+.app-shell.personal-mode .history-item,
+body.personal-mode .movement-summary,
+html.personal-mode .movement-summary,
+.app-shell.personal-mode .movement-summary {
   border-color: var(--line);
   background: var(--surface-tint);
 }
@@ -2061,6 +2071,135 @@ html.personal-mode #commonTabButton,
 .movement-list {
   display: grid;
   gap: 4px;
+}
+
+.movement-toolbar {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.movement-groupby {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.movement-groupby-label {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  margin-right: 2px;
+}
+
+.movement-groupby button {
+  min-height: 32px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  padding: 0 12px;
+  font-size: 0.8rem;
+}
+
+.movement-groupby button:hover {
+  background: var(--surface-soft);
+  color: var(--ink);
+}
+
+.movement-groupby button.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+}
+
+.movement-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.movement-group-heading strong {
+  color: var(--ink);
+  font-family: var(--font-heading);
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.9rem;
+}
+
+.movement-summary {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-tint);
+  padding: 12px 14px;
+}
+
+.movement-summary.is-hidden {
+  display: none;
+}
+
+.movement-summary-total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.movement-summary-total strong {
+  color: var(--accent-strong);
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.movement-summary-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.movement-summary-label {
+  flex: none;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-width: 68px;
+}
+
+.summary-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.summary-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 3px 8px;
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.summary-chip span {
+  color: var(--muted);
+}
+
+.summary-chip strong {
+  color: var(--ink);
+  font-weight: 800;
 }
 
 .movement-day-group + .movement-day-group {
@@ -2327,6 +2466,10 @@ html.personal-mode #commonTabButton,
 
   .chart-toggle {
     width: 100%;
+  }
+
+  .chart-controls {
+    flex-direction: column;
   }
 
   .expense-form {

@@ -6,6 +6,25 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-09 (2) — Gráfico mensual en Resumen + totales y agrupación por persona en Movimientos
+
+Dos pedidos del usuario en la misma sesión:
+
+**1) El gráfico de Resumen (barras/torta) solo mostraba la semana, y una semana sola no aporta mucho dato.** Se agregó un segundo toggle "Semana / Mes" junto al de Barras/Torta en el panel de gráfico, con la misma apariencia (reutiliza `.chart-toggle`). Nueva variable `chartPeriod` ("week" | "month"); en `render()`, si está en "month" se recalcula con `getMonthExpensesFrom()` (que ya existía, la usaba el panel "Vista mensual") sobre la lista completa del modo activo, en vez de la semana filtrada. La leyenda de texto arriba del gráfico ("Visualizá cómo se reparte...") cambia de "de la semana" a "del mes", y el mensaje de gráfico vacío también ("Sin datos para graficar esta semana/este mes"). No se tocó el panel "Por categoría" de la pestaña Cargar (semanal, sin pedido de cambiarlo) para no meter alcance de más.
+
+**2) En Movimientos, filtrar no daba ninguna sumatoria, y los gastos aparecían intercalados por fecha sin poder agruparlos por persona.** Se agregó una barra de herramientas (`.movement-toolbar`) arriba de la lista, en **ambas** secciones (Comunes y Personales, ya que comparten la misma función de render `renderMovementGroups`), con:
+
+- Toggle "Agrupar por: Día / Persona". Agrupando por persona, cada grupo muestra el subtotal en el encabezado (`groupExpensesByTag()`, nueva, análoga a la `groupExpensesByDay()` que ya existía) y las filas dejan de repetir el tag de persona (ya está en el encabezado) pero muestran la fecha, que agrupando por día no hacía falta.
+- Resumen de totales (`renderMovementSummary()`, nueva): total y cantidad de gastos, más un desglose en chips por persona y por categoría — se recalcula siempre a partir de la lista ya filtrada (`filteredExpenses` en Comunes, que ya pasaba por los filtros existentes de búsqueda/persona/categoría/forma de pago), así que responde exactamente al pedido de "sumatoria cuando filtro por categoría o usuario". Se oculta si el filtro no deja ningún gasto.
+
+Ambos controles son independientes del gráfico: `movementGroupBy` es una variable de módulo separada de `chartPeriod`, y ninguno persiste entre sesiones (se resetea a los valores por defecto al recargar, igual que `chartType` ya hacía).
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después: el toggle semana/mes cambia correctamente el desglose cuando hay gastos en otras semanas del mismo mes (verificado con 3 categorías en agosto repartidas en dos semanas distintas); agrupar por persona en Comunes muestra "EZE $28.000 / TAMI $5.000" con las filas sin tag duplicado y con fecha visible; el resumen de totales coincide con lo filtrado y se recalcula al aplicar/limpiar filtros; se oculta cuando el filtro no matchea nada; funciona igual en Personales. A 375px los dos toggles del gráfico se apilan en columna sin overflow horizontal.
+
+Service worker v26→v27.
+
+---
+
 ## 2026-08-09 — Cerrar la semana: confirmación, estado visible, deshacer y aviso de cierre desactualizado
 
 Pedido del usuario: "cuando indico una semana como saldada, no hay nada que me confirme que el comando fue aceptado. Además me sigue apareciendo el resumen, lo cual es confuso, porque parece que no hubiese saldado la semana".

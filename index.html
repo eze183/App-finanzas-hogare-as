@@ -108,11 +108,17 @@
         <div class="panel-heading chart-heading">
           <div>
             <h2>Gastos por categoría</h2>
-            <p>Visualizá cómo se reparte el total semanal.</p>
+            <p id="chartPeriodNote">Visualizá cómo se reparte el total semanal.</p>
           </div>
-          <div class="chart-toggle" role="group" aria-label="Tipo de gráfico">
-            <button id="barChartButton" class="is-active" type="button">Barras</button>
-            <button id="pieChartButton" type="button">Torta</button>
+          <div class="chart-controls">
+            <div class="chart-toggle" role="group" aria-label="Período del gráfico">
+              <button id="chartWeekButton" class="is-active" type="button">Semana</button>
+              <button id="chartMonthButton" type="button">Mes</button>
+            </div>
+            <div class="chart-toggle" role="group" aria-label="Tipo de gráfico">
+              <button id="barChartButton" class="is-active" type="button">Barras</button>
+              <button id="pieChartButton" type="button">Torta</button>
+            </div>
           </div>
         </div>
         <div class="chart-layout">
@@ -422,6 +428,15 @@
             <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
           </form>
 
+          <div class="movement-toolbar">
+            <div class="movement-groupby" role="group" aria-label="Agrupar gastos">
+              <span class="movement-groupby-label">Agrupar por</span>
+              <button id="commonGroupDayButton" class="is-active" type="button">Día</button>
+              <button id="commonGroupPersonButton" type="button">Persona</button>
+            </div>
+            <div id="commonMovementSummary" class="movement-summary is-hidden"></div>
+          </div>
+
           <div id="commonExpenseColumns" class="movement-list"></div>
           <p id="emptyState" class="empty-state">Todavía no hay gastos cargados para esta semana.</p>
         </section>
@@ -436,6 +451,15 @@
               <span>Total personal</span>
               <strong id="personalWeekTotal">$0</strong>
             </div>
+          </div>
+
+          <div class="movement-toolbar">
+            <div class="movement-groupby" role="group" aria-label="Agrupar gastos personales">
+              <span class="movement-groupby-label">Agrupar por</span>
+              <button id="personalGroupDayButton" class="is-active" type="button">Día</button>
+              <button id="personalGroupPersonButton" type="button">Persona</button>
+            </div>
+            <div id="personalMovementSummary" class="movement-summary is-hidden"></div>
           </div>
 
           <div id="personalExpensesTable" class="movement-list"></div>

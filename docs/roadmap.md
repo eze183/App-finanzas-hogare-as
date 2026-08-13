@@ -10,6 +10,10 @@ Nada en curso.
 
 - **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
 
+## Gráfico mensual + totales/agrupación en Movimientos — completo, 2026-08-09
+
+El gráfico de Resumen (barras/torta) ahora tiene un toggle "Semana / Mes" para ver el mes completo, no solo la semana seleccionada. En Movimientos (Comunes y Personales) se agregó un toggle "Agrupar por: Día / Persona" y una barra de totales (cantidad, monto total, desglose por persona y por categoría) que responde a los filtros existentes — antes filtrar no daba ninguna sumatoria. Detalle en `session-summary.md`.
+
 ## Cierre de semana con estado visible — completo, 2026-08-09
 
 El usuario reportó que marcar una semana como saldada no confirmaba nada y que el resumen seguía mostrando la cuenta pendiente, como si no hubiera pasado. La causa de fondo: el Resumen nunca consultaba `state.settlements`. Ahora hay diálogo de confirmación con el detalle, toast, el bloque pasa a "Semana saldada ✓" con la fecha y el total, botón "Deshacer" para reabrirla, aviso de "cierre desactualizado" cuando los gastos de esa semana cambiaron después de cerrarla, y sello en el detalle del reparto (que se mantiene visible a pedido del usuario). El "Deshacer" usa tombstones para que la reapertura se propague entre dispositivos — ver la decisión correspondiente en `decisions.md`, que tiene una trampa del merge anotada.

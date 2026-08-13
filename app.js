@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-09-cierre-de-semana-visible-v26";
+const APP_VERSION = "2026-08-09-grafico-mensual-y-totales-de-movimientos-v27";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -262,6 +262,15 @@ const elements = {
   chartLegend: document.querySelector("#chartLegend"),
   barChartButton: document.querySelector("#barChartButton"),
   pieChartButton: document.querySelector("#pieChartButton"),
+  chartWeekButton: document.querySelector("#chartWeekButton"),
+  chartMonthButton: document.querySelector("#chartMonthButton"),
+  chartPeriodNote: document.querySelector("#chartPeriodNote"),
+  commonGroupDayButton: document.querySelector("#commonGroupDayButton"),
+  commonGroupPersonButton: document.querySelector("#commonGroupPersonButton"),
+  commonMovementSummary: document.querySelector("#commonMovementSummary"),
+  personalGroupDayButton: document.querySelector("#personalGroupDayButton"),
+  personalGroupPersonButton: document.querySelector("#personalGroupPersonButton"),
+  personalMovementSummary: document.querySelector("#personalMovementSummary"),
   appShell: document.querySelector("#appShell"),
   loadViewSections: document.querySelectorAll(".load-view-section"),
   summaryViewSections: document.querySelectorAll(".summary-view-section"),
@@ -272,6 +281,8 @@ const elements = {
 
 let state = loadState();
 let chartType = "bar";
+let chartPeriod = "week"; // "week" | "month"
+let movementGroupBy = "day"; // "day" | "person"
 let currentAppView = "load";
 let currentEntryMode = "common";
 let editingExpense = null;
@@ -1093,6 +1104,16 @@ function getCategoryChartData(expenses) {
     }));
 }
 
+function renderChartPeriodNote(isPersonal) {
+  elements.chartWeekButton.classList.toggle("is-active", chartPeriod === "week");
+  elements.chartMonthButton.classList.toggle("is-active", chartPeriod === "month");
+  const scope = isPersonal ? "personales" : "comunes";
+  elements.chartPeriodNote.textContent =
+    chartPeriod === "month"
+      ? `Visualizá cómo se reparten los gastos ${scope} del mes.`
+      : `Visualizá cómo se reparten los gastos ${scope} de la semana.`;
+}
+
 function renderChart(expenses) {
   const chartData = getCategoryChartData(expenses);
   renderChartLegend(chartData);
@@ -1110,7 +1131,7 @@ function renderChart(expenses) {
   context.clearRect(0, 0, width, height);
 
   if (!chartData.length) {
-    drawEmptyChart(context, width, height);
+    drawEmptyChart(context, width, height, chartPeriod === "month" ? "este mes" : "esta semana");
     return;
   }
 
@@ -1142,12 +1163,12 @@ function renderChartLegend(chartData) {
     .join("");
 }
 
-function drawEmptyChart(context, width, height) {
+function drawEmptyChart(context, width, height, periodLabel = "esta semana") {
   context.fillStyle = getThemeColor("--muted", "#9aa1ac");
   context.font = "700 16px Inter, system-ui, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
-  context.fillText("Sin datos para graficar esta semana", width / 2, height / 2);
+  context.fillText(`Sin datos para graficar ${periodLabel}`, width / 2, height / 2);
 }
 
 function drawBarChart(context, chartData, width, height) {
@@ -1262,6 +1283,26 @@ function formatDayHeading(isoDate) {
 function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
   if (!expenses.length) return "";
 
+  if (movementGroupBy === "person") {
+    // Agrupado por persona: la fecha ya no se ve en el encabezado del grupo, así que
+    // cada fila la muestra, y el tag de persona ya no hace falta (está en el encabezado).
+    return groupExpensesByTag(expenses, getTag)
+      .map(
+        (group) => `
+          <div class="movement-day-group">
+            <div class="movement-day-heading movement-group-heading">
+              <span>${escapeHtml(group.tag)}</span>
+              <strong>${formatMoney(group.total)}</strong>
+            </div>
+            <div class="person-expense-list">
+              ${group.expenses.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute, editAttribute, { showTag: false, showDate: true })).join("")}
+            </div>
+          </div>
+        `,
+      )
+      .join("");
+  }
+
   return groupExpensesByDay(expenses)
     .map(
       (group) => `
@@ -1276,14 +1317,29 @@ function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
     .join("");
 }
 
-function renderMovementRow(expense, tag, idAttribute, editAttribute) {
+function groupExpensesByTag(expenses, getTag) {
+  const groups = new Map();
+  for (const expense of expenses) {
+    const tag = getTag(expense) || "Sin especificar";
+    if (!groups.has(tag)) groups.set(tag, { tag, expenses: [], total: 0 });
+    const group = groups.get(tag);
+    group.expenses.push(expense);
+    group.total += expense.amount;
+  }
+  // Ya vienen ordenados por fecha desc desde getCurrentWeekExpenses/getFilteredExpenses,
+  // así que cada grupo conserva ese orden; solo hace falta ordenar los grupos entre sí.
+  return [...groups.values()].sort((a, b) => b.total - a.total);
+}
+
+function renderMovementRow(expense, tag, idAttribute, editAttribute, { showTag = true, showDate = false } = {}) {
+  const dateLabel = showDate ? ` · ${dateFormatter.format(parseISODate(expense.date))}` : "";
   return `
     <div class="person-expense-row">
       <div class="person-expense-main">
-        <span class="movement-tag">${escapeHtml(tag)}</span>
+        ${showTag ? `<span class="movement-tag">${escapeHtml(tag)}</span>` : ""}
         <div class="person-expense-info">
           <strong>${escapeHtml(expense.note || expense.category)}</strong>
-          <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}</small>
+          <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}${dateLabel}</small>
         </div>
       </div>
       <div class="person-expense-actions">
@@ -1291,6 +1347,59 @@ function renderMovementRow(expense, tag, idAttribute, editAttribute) {
         <button class="edit-row" type="button" ${editAttribute}="${expense.id}" aria-label="Editar gasto">✎</button>
         <button class="delete-row" type="button" ${idAttribute}="${expense.id}" aria-label="Borrar gasto">×</button>
       </div>
+    </div>
+  `;
+}
+
+function renderMovementGroupToggles() {
+  const isPerson = movementGroupBy === "person";
+  elements.commonGroupDayButton.classList.toggle("is-active", !isPerson);
+  elements.commonGroupPersonButton.classList.toggle("is-active", isPerson);
+  elements.personalGroupDayButton.classList.toggle("is-active", !isPerson);
+  elements.personalGroupPersonButton.classList.toggle("is-active", isPerson);
+}
+
+function setMovementGroupBy(value) {
+  movementGroupBy = value;
+  render();
+}
+
+// Sumatoria de lo que se está viendo (después de filtros), por persona y por categoría.
+function renderMovementSummary(container, expenses, getTag, tagLabel) {
+  if (!expenses.length) {
+    container.classList.add("is-hidden");
+    container.innerHTML = "";
+    return;
+  }
+  container.classList.remove("is-hidden");
+
+  const byTag = new Map();
+  const byCategory = new Map();
+  let total = 0;
+  for (const expense of expenses) {
+    total += expense.amount;
+    const tag = getTag(expense) || "Sin especificar";
+    byTag.set(tag, (byTag.get(tag) || 0) + expense.amount);
+    byCategory.set(expense.category, (byCategory.get(expense.category) || 0) + expense.amount);
+  }
+  const sortDesc = (map) => [...map.entries()].sort((a, b) => b[1] - a[1]);
+  const renderChips = (entries) =>
+    entries
+      .map(([label, amount]) => `<span class="summary-chip"><span>${escapeHtml(label)}</span><strong>${formatMoney(amount)}</strong></span>`)
+      .join("");
+
+  container.innerHTML = `
+    <div class="movement-summary-total">
+      <span>${expenses.length} ${expenses.length === 1 ? "gasto" : "gastos"}</span>
+      <strong>${formatMoney(total)}</strong>
+    </div>
+    <div class="movement-summary-row">
+      <span class="movement-summary-label">${escapeHtml(tagLabel)}</span>
+      <div class="summary-chip-list">${renderChips(sortDesc(byTag))}</div>
+    </div>
+    <div class="movement-summary-row">
+      <span class="movement-summary-label">Categoría</span>
+      <div class="summary-chip-list">${renderChips(sortDesc(byCategory))}</div>
     </div>
   `;
 }
@@ -1650,8 +1759,14 @@ function render() {
   renderCategories(summaryExpenses, isPersonal);
   renderBudgets(summaryExpenses, isPersonal);
   renderRecurringExpenses();
-  renderChart(summaryExpenses);
+  renderChartPeriodNote(isPersonal);
+  const chartBaseList = isPersonal ? state.personalExpenses : state.expenses;
+  const chartExpenses = chartPeriod === "month" ? getMonthExpensesFrom(chartBaseList) : summaryExpenses;
+  renderChart(chartExpenses);
+  renderMovementGroupToggles();
+  renderMovementSummary(elements.commonMovementSummary, filteredExpenses, (expense) => expense.payer, "Persona");
   renderTable(filteredExpenses);
+  renderMovementSummary(elements.personalMovementSummary, personalExpenses, (expense) => expense.owner, "Persona");
   renderPersonalExpenses(personalExpenses);
   renderInstallments();
   renderSettlementHistory();
@@ -3647,6 +3762,18 @@ async function init() {
     chartType = "pie";
     render();
   });
+  elements.chartWeekButton.addEventListener("click", () => {
+    chartPeriod = "week";
+    render();
+  });
+  elements.chartMonthButton.addEventListener("click", () => {
+    chartPeriod = "month";
+    render();
+  });
+  elements.commonGroupDayButton.addEventListener("click", () => setMovementGroupBy("day"));
+  elements.commonGroupPersonButton.addEventListener("click", () => setMovementGroupBy("person"));
+  elements.personalGroupDayButton.addEventListener("click", () => setMovementGroupBy("day"));
+  elements.personalGroupPersonButton.addEventListener("click", () => setMovementGroupBy("person"));
   window.addEventListener("resize", handleWindowResize);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {
