@@ -618,6 +618,97 @@ label {
   padding: 18px;
 }
 
+/* — Detalle de un movimiento — */
+.detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  background: rgba(5, 10, 8, 0.72);
+  padding: 18px;
+}
+
+.detail-overlay.is-hidden {
+  display: none;
+}
+
+.detail-sheet {
+  display: grid;
+  gap: 14px;
+  width: min(460px, 100%);
+  max-height: 100%;
+  overflow: auto;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.detail-sheet-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.detail-sheet-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  /* La descripción entera es justamente lo que no se puede leer en la fila. */
+  overflow-wrap: anywhere;
+}
+
+.detail-sheet-header .icon-button {
+  flex: 0 0 auto;
+  font-size: 1.5rem;
+}
+
+.detail-amount {
+  color: var(--accent-strong);
+  font-family: var(--font-heading);
+  font-size: 1.9rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.detail-fields {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.detail-fields > div {
+  display: grid;
+  grid-template-columns: 118px minmax(0, 1fr);
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 8px;
+}
+
+.detail-fields dt {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.detail-fields dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.detail-sheet-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+}
+
 .settings-sheet {
   width: min(760px, 100%);
   height: 100%;
@@ -995,35 +1086,13 @@ label {
 }
 
 /* — Sección colapsable de detalles — */
-.more-details {
-  border-top: 2px solid var(--line-strong);
-  padding-top: 14px;
-}
-
-.more-details > summary {
-  cursor: pointer;
-  list-style: none;
-  color: var(--accent-deep);
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 0.9rem;
-}
-
-.more-details > summary::-webkit-details-marker {
-  display: none;
-}
-
-.more-details > summary:hover {
-  color: var(--accent);
-}
-
-.more-details[open] > summary {
-  margin-bottom: 14px;
-}
-
-.more-details-body {
+/* Antes esto vivía detrás de un <details> "+ Más detalles"; la descripción es de los
+   campos que más se usan, así que tener que abrir un desplegable no tenía sentido. */
+.form-extra-fields {
   display: grid;
   gap: 14px;
+  border-top: 2px solid var(--line-strong);
+  padding-top: 14px;
 }
 
 .submit-actions {
@@ -2211,14 +2280,37 @@ html.personal-mode #commonTabButton,
   border-radius: var(--radius-sm);
   background: var(--surface-tint);
   padding: 10px 12px;
+  /* La fila es un grid item y un <button> no colapsa su ancho mínimo intrínseco como
+     un div: sin esto, una descripción larga estira la fila y desborda la pantalla. */
+  min-width: 0;
 }
 
+/* Es un <button> para abrir el detalle, pero tiene que verse como parte de la fila. */
 .person-expense-main {
   display: flex;
   align-items: center;
   gap: 10px;
   min-width: 0;
   flex: 1;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  min-height: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.person-expense-main:hover {
+  background: transparent;
+  color: var(--accent-deep);
+}
+
+.person-expense-main:active {
+  transform: none;
 }
 
 .person-expense-info {

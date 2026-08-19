@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-09-ordenar-como-filtro-desplegable-v28";
+const APP_VERSION = "2026-08-19-detalle-export-mensual-y-form-sin-submenu-v29";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -245,6 +245,16 @@ const elements = {
   emptyState: document.querySelector("#emptyState"),
   weekRangeLabel: document.querySelector("#weekRangeLabel"),
   exportButton: document.querySelector("#exportButton"),
+  exportMonthButton: document.querySelector("#exportMonthButton"),
+  exportMonthPersonalButton: document.querySelector("#exportMonthPersonalButton"),
+  movementDetailView: document.querySelector("#movementDetailView"),
+  movementDetailKicker: document.querySelector("#movementDetailKicker"),
+  movementDetailTitle: document.querySelector("#movementDetailTitle"),
+  movementDetailAmount: document.querySelector("#movementDetailAmount"),
+  movementDetailFields: document.querySelector("#movementDetailFields"),
+  movementDetailCloseButton: document.querySelector("#movementDetailCloseButton"),
+  movementDetailEditButton: document.querySelector("#movementDetailEditButton"),
+  movementDetailDeleteButton: document.querySelector("#movementDetailDeleteButton"),
   settleWeekButton: document.querySelector("#settleWeekButton"),
   clearWeekButton: document.querySelector("#clearWeekButton"),
   filterForm: document.querySelector("#filterForm"),
@@ -285,6 +295,7 @@ let currentAppView = "load";
 let currentEntryMode = "common";
 let editingExpense = null;
 let firstInstallmentTouched = false;
+let openedMovement = null;
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -1343,15 +1354,18 @@ function groupExpensesByTag(expenses, getTag) {
 
 function renderMovementRow(expense, tag, idAttribute, editAttribute, { showTag = true, showDate = false } = {}) {
   const dateLabel = showDate ? ` · ${dateFormatter.format(parseISODate(expense.date))}` : "";
+  // El texto es un <button> para que abra el detalle con teclado y lector de pantalla también:
+  // en la fila la descripción se trunca con ellipsis, así que el detalle es la única forma de leerla entera.
+  const detailAttribute = idAttribute === "data-personal-id" ? "data-detail-personal-id" : "data-detail-id";
   return `
     <div class="person-expense-row">
-      <div class="person-expense-main">
+      <button class="person-expense-main" type="button" ${detailAttribute}="${expense.id}" aria-label="Ver detalle del gasto">
         ${showTag ? `<span class="movement-tag">${escapeHtml(tag)}</span>` : ""}
         <div class="person-expense-info">
           <strong>${escapeHtml(expense.note || expense.category)}</strong>
           <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}${dateLabel}</small>
         </div>
-      </div>
+      </button>
       <div class="person-expense-actions">
         <span class="person-expense-amount">${formatMoney(expense.amount)}</span>
         <button class="edit-row" type="button" ${editAttribute}="${expense.id}" aria-label="Editar gasto">✎</button>
@@ -1364,6 +1378,79 @@ function renderMovementRow(expense, tag, idAttribute, editAttribute, { showTag =
 function renderMovementGroupToggles() {
   elements.filterGroupBy.value = movementGroupBy;
   elements.personalFilterGroupBy.value = movementGroupBy;
+}
+
+// --- Detalle de un movimiento -----------------------------------------------
+// En la lista la descripción se trunca con ellipsis para que las filas no crezcan;
+// este panel es donde se lee completa junto con el resto de los datos del gasto.
+
+function openMovementDetail(expense, type) {
+  const isPersonal = type === "personal";
+  openedMovement = { id: expense.id, type };
+
+  elements.movementDetailKicker.textContent = isPersonal ? "Gasto personal" : "Gasto común";
+  elements.movementDetailTitle.textContent = expense.note || expense.category;
+  elements.movementDetailAmount.textContent = formatMoney(expense.amount);
+
+  const fields = [
+    ["Fecha", dateFormatter.format(parseISODate(expense.date))],
+    [isPersonal ? "Persona" : "Pagó", isPersonal ? expense.owner : expense.payer],
+    ["Categoría", expense.category],
+    ["Forma de pago", expense.paymentMethod || "Sin especificar"],
+  ];
+
+  if (isPersonal && expense.installments > 1) {
+    const firstMonth = monthIndexFromKey(expense.firstInstallmentMonth || expense.date.slice(0, 7));
+    fields.push(["Tarjeta", expense.card || "Sin especificar"]);
+    fields.push([
+      "Cuotas",
+      `${expense.installments} de ${formatMoney(expense.amount / expense.installments)} · ${monthLabelFromIndex(firstMonth)} a ${monthLabelFromIndex(firstMonth + expense.installments - 1)}`,
+    ]);
+  } else if (isPersonal && expense.card) {
+    fields.push(["Tarjeta", expense.card]);
+  }
+
+  if (expense.note) fields.push(["Descripción", expense.note]);
+
+  elements.movementDetailFields.innerHTML = fields
+    .map(([label, value]) => `<div><dt>${escapeHtml(label)}</dt><dd>${escapeHtml(value)}</dd></div>`)
+    .join("");
+
+  elements.movementDetailView.classList.remove("is-hidden");
+}
+
+function closeMovementDetail() {
+  openedMovement = null;
+  elements.movementDetailView.classList.add("is-hidden");
+}
+
+function findOpenedMovement() {
+  if (!openedMovement) return null;
+  const list = openedMovement.type === "personal" ? state.personalExpenses : state.expenses;
+  return list.find((expense) => expense.id === openedMovement.id) || null;
+}
+
+function handleMovementDetailEdit() {
+  const expense = findOpenedMovement();
+  const type = openedMovement?.type;
+  closeMovementDetail();
+  if (expense) startEditingExpense(expense, type);
+}
+
+function handleMovementDetailDelete() {
+  const expense = findOpenedMovement();
+  if (!expense) return;
+  if (!confirm(`Borrar "${expense.note || expense.category}" por ${formatMoney(expense.amount)}. ¿Confirmás?`)) return;
+
+  if (openedMovement.type === "personal") {
+    state.personalExpenses = tombstoneRecords(state.personalExpenses, new Set([expense.id]));
+  } else {
+    state.expenses = tombstoneRecords(state.expenses, new Set([expense.id]));
+  }
+  closeMovementDetail();
+  saveState();
+  showExpenseToast("Gasto borrado");
+  render();
 }
 
 function setMovementGroupBy(value) {
@@ -3338,7 +3425,12 @@ function handleSettingsOverlayClick(event) {
 }
 
 function handleGlobalKeydown(event) {
-  if (event.key === "Escape" && !elements.settingsView.classList.contains("is-hidden")) {
+  if (event.key !== "Escape") return;
+  if (!elements.movementDetailView.classList.contains("is-hidden")) {
+    closeMovementDetail();
+    return;
+  }
+  if (!elements.settingsView.classList.contains("is-hidden")) {
     closeSettings();
   }
 }
@@ -3583,6 +3675,13 @@ function tombstoneRecords(list, idsToDelete) {
 }
 
 function handleTableClick(event) {
+  const detailButton = event.target.closest("button[data-detail-id]");
+  if (detailButton) {
+    const expense = state.expenses.find((item) => item.id === detailButton.dataset.detailId);
+    if (expense) openMovementDetail(expense, "common");
+    return;
+  }
+
   const editButton = event.target.closest("button[data-edit-id]");
   if (editButton) {
     const expense = state.expenses.find((item) => item.id === editButton.dataset.editId);
@@ -3599,6 +3698,13 @@ function handleTableClick(event) {
 }
 
 function handlePersonalTableClick(event) {
+  const detailButton = event.target.closest("button[data-detail-personal-id]");
+  if (detailButton) {
+    const expense = state.personalExpenses.find((item) => item.id === detailButton.dataset.detailPersonalId);
+    if (expense) openMovementDetail(expense, "personal");
+    return;
+  }
+
   const editButton = event.target.closest("button[data-edit-personal-id]");
   if (editButton) {
     const expense = state.personalExpenses.find((item) => item.id === editButton.dataset.editPersonalId);
@@ -3663,16 +3769,89 @@ function handleExport() {
     expense.note || "",
     expense.amount.toFixed(2),
   ]);
-  const csv = [header, ...rows]
+  downloadCsv([header, ...rows], `gastos-${elements.weekStart.value}.csv`);
+}
+
+function downloadCsv(rows, filename) {
+  const csv = rows
     .map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(","))
     .join("\n");
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  // El BOM hace que Excel abra el CSV en UTF-8 y no rompa los acentos.
+  const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `gastos-${elements.weekStart.value}.csv`;
+  link.download = filename;
   link.click();
   URL.revokeObjectURL(url);
+}
+
+// Resumen mensual con comunes y personales juntos: primero el detalle (con encabezado
+// en la fila 1, para que se pueda filtrar en la planilla) y después los totales.
+function handleExportMonth() {
+  const common = getMonthExpensesFrom(state.expenses);
+  const personal = getMonthExpensesFrom(state.personalExpenses);
+
+  if (!common.length && !personal.length) {
+    alert("No hay gastos cargados en el mes seleccionado.");
+    return;
+  }
+
+  const monthKey = elements.weekStart.value.slice(0, 7);
+  const monthLabel = monthLabelFromIndex(monthIndexFromKey(monthKey), { long: true });
+
+  const detail = [
+    ...common.map((expense) => ({ type: "Común", person: expense.payer, expense })),
+    ...personal.map((expense) => ({ type: "Personal", person: expense.owner, expense })),
+  ].sort((a, b) => a.expense.date.localeCompare(b.expense.date));
+
+  const rows = [
+    ["Tipo", "Fecha", "Persona", "Categoria", "Forma de pago", "Descripcion", "Tarjeta", "Cuotas", "Monto"],
+    ...detail.map(({ type, person, expense }) => [
+      type,
+      expense.date,
+      person,
+      expense.category,
+      expense.paymentMethod || "Sin especificar",
+      expense.note || "",
+      expense.card || "",
+      expense.installments > 1 ? expense.installments : "",
+      expense.amount.toFixed(2),
+    ]),
+  ];
+
+  const sum = (list) => list.reduce((total, expense) => total + expense.amount, 0);
+  const totalsBy = (list, getKey) => {
+    const totals = new Map();
+    for (const expense of list) {
+      const key = getKey(expense);
+      totals.set(key, (totals.get(key) || 0) + expense.amount);
+    }
+    return [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  };
+
+  rows.push([], [`RESUMEN DE ${monthLabel.toUpperCase()}`]);
+  rows.push(["Total comunes", "", "", "", "", "", "", "", sum(common).toFixed(2)]);
+  rows.push(["Total personales", "", "", "", "", "", "", "", sum(personal).toFixed(2)]);
+  rows.push(["Total general", "", "", "", "", "", "", "", (sum(common) + sum(personal)).toFixed(2)]);
+
+  rows.push([], ["Comunes por persona"]);
+  for (const [person, amount] of totalsBy(common, (expense) => expense.payer)) {
+    rows.push([person, "", "", "", "", "", "", "", amount.toFixed(2)]);
+  }
+
+  rows.push([], ["Personales por persona"]);
+  for (const [person, amount] of totalsBy(personal, (expense) => expense.owner)) {
+    rows.push([person, "", "", "", "", "", "", "", amount.toFixed(2)]);
+  }
+
+  rows.push([], ["Todas las categorias"]);
+  for (const [category, amount] of totalsBy([...common, ...personal], (expense) => expense.category)) {
+    rows.push([category, "", "", "", "", "", "", "", amount.toFixed(2)]);
+  }
+
+  downloadCsv(rows, `resumen-mensual-${monthKey}.csv`);
+  showExpenseToast(`Resumen de ${monthLabel} exportado`);
 }
 
 async function init() {
@@ -3756,6 +3935,14 @@ async function init() {
   elements.settleWeekButton.addEventListener("click", handleSettleWeek);
   elements.unsettleWeekButton.addEventListener("click", handleUnsettleWeek);
   elements.exportButton.addEventListener("click", handleExport);
+  elements.exportMonthButton.addEventListener("click", handleExportMonth);
+  elements.exportMonthPersonalButton.addEventListener("click", handleExportMonth);
+  elements.movementDetailCloseButton.addEventListener("click", closeMovementDetail);
+  elements.movementDetailEditButton.addEventListener("click", handleMovementDetailEdit);
+  elements.movementDetailDeleteButton.addEventListener("click", handleMovementDetailDelete);
+  elements.movementDetailView.addEventListener("click", (event) => {
+    if (event.target === elements.movementDetailView) closeMovementDetail();
+  });
   elements.searchInput.addEventListener("input", handleFiltersChange);
   elements.filterPayer.addEventListener("change", handleFiltersChange);
   elements.filterCategory.addEventListener("change", handleFiltersChange);

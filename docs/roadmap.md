@@ -10,6 +10,10 @@ Nada en curso.
 
 - **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
 
+## Detalle de movimiento + export mensual + formulario sin submenú — completo, 2026-08-19
+
+Tocar un movimiento abre un modal con todos sus datos (resuelve que una descripción larga se trunque en la lista), con Editar y Borrar adentro. Botón "Exportar mes" nuevo que baja un CSV del mes con comunes y personales juntos, detalle arriba y totales abajo. Y se eliminó el `<details>` "+ Más detalles" de los dos formularios de carga: descripción y forma de pago quedan siempre a la vista. Detalle en `session-summary.md`, incluida la trampa de layout de convertir un flex item en `<button>`.
+
 ## Gráfico mensual + totales/agrupación en Movimientos — completo, 2026-08-09
 
 El gráfico de Resumen (barras/torta) ahora tiene un toggle "Semana / Mes" para ver el mes completo, no solo la semana seleccionada. En Movimientos (Comunes y Personales) se agregó un toggle "Agrupar por: Día / Persona" y una barra de totales (cantidad, monto total, desglose por persona y por categoría) que responde a los filtros existentes — antes filtrar no daba ninguna sumatoria. Detalle en `session-summary.md`.

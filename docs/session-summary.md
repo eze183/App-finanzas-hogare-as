@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-19 — Detalle de un movimiento, export mensual combinado y formulario sin submenú
+
+Tres pedidos del usuario en el mismo mensaje.
+
+**1) Poder abrir el detalle de un movimiento al tocarlo.** El problema concreto: en la lista, `.person-expense-info strong` trunca con ellipsis, así que una descripción larga no se puede leer. Se agregó un modal (`#movementDetailView`) que muestra descripción completa, monto grande, fecha, persona, categoría, forma de pago y —en personales en cuotas— tarjeta y el plan ("6 de $20.000 · Ago 2026 a Ene 2027"), más botones Editar y Borrar. Se abre tocando el texto de la fila, que pasó de `<div>` a `<button>` para que también funcione con teclado y lector de pantalla. Cierra con la ×, con Escape o tocando fuera.
+
+**2) Exportar un resumen mensual con comunes y personales juntos.** Botón "Exportar mes" nuevo (en Comunes junto al de exportar semana, que pasó a llamarse "Exportar semana", y en Personales en el encabezado). Genera un CSV del mes de la semana seleccionada con el detalle primero —encabezado en la fila 1 para que se pueda filtrar en la planilla, con una columna "Tipo" que distingue Común/Personal, más tarjeta y cuotas— y abajo los totales: total comunes, total personales, total general, por persona de cada tipo y por categoría. Se extrajo `downloadCsv()` compartida con el export semanal, y se le agregó **BOM UTF-8** para que Excel no rompa los acentos (el export viejo no lo tenía).
+
+**3) Sacar el submenú "+ Más detalles".** Se eliminó el `<details>` de los dos formularios: descripción y forma de pago quedan siempre visibles, con la descripción primero por ser la más usada. `.more-details`/`.more-details-body` se reemplazaron por `.form-extra-fields` (mismo borde superior de separación, sin el disclosure).
+
+**Un bug de layout que apareció con el cambio 1 y costó encontrar**: pasar `.person-expense-main` de `<div>` a `<button>` hizo que Movimientos desbordara 327px a 375px de ancho, con la descripción sin truncar. La causa: un `<button>` no colapsa su ancho mínimo intrínseco como un div, ni siquiera con `min-width: 0` (verificado: el computado era `0px` y aun así el botón medía 498px), y ese mínimo se propagaba a la fila, que es un grid item con `min-width: auto`. La solución fue `min-width: 0` en `.person-expense-row` — probado en el navegador inyectando reglas antes de tocar el archivo, porque las dos primeras hipótesis (`overflow: hidden` en el botón, `minmax(0, 1fr)` en la grilla) no alcanzaban o no eran la causa real.
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después: el detalle abre desde comunes y personales con los campos correctos (incluido el plan de cuotas), Escape y la × lo cierran, Editar lleva a Cargar con todo prellenado, Borrar pide confirmación (cancelar no borra y deja el modal abierto) y tombstonea al confirmar; el CSV mensual sale con las dos filas de tipos distintos y los bloques de totales correctos; el submenú ya no existe y ambas descripciones se ven sin tocar nada. Sin overflow horizontal a 375px ni en desktop, en Movimientos, en el modal ni en Cargar.
+
+Service worker v28→v29.
+
+---
+
 ## 2026-08-09 (3) — El "Agrupar por" pasa a ser un desplegable más, con opción de ordenar por monto
 
 El usuario pidió que "Agrupar" (agregado un rato antes como par de botones sueltos) fuera un desplegable más dentro del filtro, igual que Persona/Categoría/Forma de pago, y que sumara ordenar por monto mayor o menor además de día/persona.

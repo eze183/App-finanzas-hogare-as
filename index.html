@@ -199,25 +199,22 @@
                 <p class="form-context-note">
                   Este gasto se carga como <strong id="commonPayerLabel">Persona 1</strong>
                 </p>
-                <details class="more-details">
-                  <summary>+ Más detalles (forma de pago, descripción)</summary>
-                  <div class="more-details-body">
-                    <label>
-                      Forma de pago
-                      <select id="expensePaymentMethod">
-                        <option value="">Sin especificar</option>
-                        <option value="Tarjeta de crédito">Tarjeta de crédito</option>
-                        <option value="Tarjeta de débito">Tarjeta de débito</option>
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Transferencia">Transferencia</option>
-                      </select>
-                    </label>
-                    <label>
-                      Descripción
-                      <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
-                    </label>
-                  </div>
-                </details>
+                <div class="form-extra-fields">
+                  <label>
+                    Descripción
+                    <input id="expenseNote" type="text" maxlength="80" placeholder="Ej: compra supermercado" />
+                  </label>
+                  <label>
+                    Forma de pago
+                    <select id="expensePaymentMethod">
+                      <option value="">Sin especificar</option>
+                      <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                      <option value="Tarjeta de débito">Tarjeta de débito</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </label>
+                </div>
               </form>
             </section>
 
@@ -307,25 +304,22 @@
                   <p id="installmentPreview" class="installment-preview is-hidden"></p>
                 </div>
 
-                <details class="more-details">
-                  <summary>+ Más detalles (forma de pago, descripción)</summary>
-                  <div class="more-details-body">
-                    <label>
-                      Forma de pago
-                      <select id="personalExpensePaymentMethod">
-                        <option value="">Sin especificar</option>
-                        <option value="Tarjeta de crédito">Tarjeta de crédito</option>
-                        <option value="Tarjeta de débito">Tarjeta de débito</option>
-                        <option value="Efectivo">Efectivo</option>
-                        <option value="Transferencia">Transferencia</option>
-                      </select>
-                    </label>
-                    <label>
-                      Descripción
-                      <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
-                    </label>
-                  </div>
-                </details>
+                <div class="form-extra-fields">
+                  <label>
+                    Descripción
+                    <input id="personalExpenseNote" type="text" maxlength="100" placeholder="Ej: compra personal" />
+                  </label>
+                  <label>
+                    Forma de pago
+                    <select id="personalExpensePaymentMethod">
+                      <option value="">Sin especificar</option>
+                      <option value="Tarjeta de crédito">Tarjeta de crédito</option>
+                      <option value="Tarjeta de débito">Tarjeta de débito</option>
+                      <option value="Efectivo">Efectivo</option>
+                      <option value="Transferencia">Transferencia</option>
+                    </select>
+                  </label>
+                </div>
               </form>
             </section>
 
@@ -381,7 +375,8 @@
               <p id="weekRangeLabel"></p>
             </div>
             <div class="table-actions">
-              <button id="exportButton" type="button">Exportar</button>
+              <button id="exportButton" type="button">Exportar semana</button>
+              <button id="exportMonthButton" type="button">Exportar mes</button>
               <button id="applyRecurringButton" type="button">Aplicar recurrentes</button>
               <button id="clearWeekButton" class="danger" type="button">Borrar semana</button>
             </div>
@@ -454,6 +449,9 @@
             <div class="personal-total">
               <span>Total personal</span>
               <strong id="personalWeekTotal">$0</strong>
+            </div>
+            <div class="table-actions">
+              <button id="exportMonthPersonalButton" type="button">Exportar mes</button>
             </div>
           </div>
 
@@ -548,6 +546,26 @@
             </section>
           </div>
         </section>
+      </section>
+
+      <section id="movementDetailView" class="detail-overlay is-hidden" aria-label="Detalle del gasto">
+        <div class="detail-sheet" role="dialog" aria-modal="true" aria-labelledby="movementDetailTitle">
+          <div class="detail-sheet-header">
+            <div>
+              <p id="movementDetailKicker" class="eyebrow">Gasto común</p>
+              <h2 id="movementDetailTitle">Detalle</h2>
+            </div>
+            <button id="movementDetailCloseButton" class="icon-button" type="button" aria-label="Cerrar detalle" title="Cerrar">
+              ×
+            </button>
+          </div>
+          <strong id="movementDetailAmount" class="detail-amount">$0</strong>
+          <dl id="movementDetailFields" class="detail-fields"></dl>
+          <div class="detail-sheet-actions">
+            <button id="movementDetailEditButton" type="button">Editar</button>
+            <button id="movementDetailDeleteButton" class="danger" type="button">Borrar</button>
+          </div>
+        </div>
       </section>
 
       <section id="settingsView" class="settings-overlay is-hidden" aria-label="Configuración">
