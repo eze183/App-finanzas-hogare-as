@@ -26,12 +26,25 @@
       <section class="hero">
         <div>
           <h1>Gastos del hogar</h1>
-          <p class="subtitle">Vean al instante cómo queda el reparto de la semana.</p>
+          <p class="subtitle">Vean al instante cómo queda el reparto del período elegido.</p>
         </div>
-        <div class="week-card" aria-label="Semana seleccionada">
-          <label for="weekStart">Semana desde</label>
-          <input id="weekStart" type="date" />
-          <button id="currentWeekButton" type="button">Semana actual</button>
+        <div class="week-card period-card" aria-label="Período seleccionado">
+          <div class="period-presets" role="group" aria-label="Períodos rápidos">
+            <button id="periodPrevButton" class="period-nav" type="button" aria-label="Período anterior" title="Período anterior">‹</button>
+            <button id="periodWeekButton" type="button">Semana</button>
+            <button id="periodMonthButton" type="button">Mes</button>
+            <button id="periodNextButton" class="period-nav" type="button" aria-label="Período siguiente" title="Período siguiente">›</button>
+          </div>
+          <div class="period-range">
+            <label>
+              Desde
+              <input id="periodStart" type="date" />
+            </label>
+            <label>
+              Hasta
+              <input id="periodEnd" type="date" />
+            </label>
+          </div>
         </div>
       </section>
 
@@ -78,17 +91,17 @@
       </button>
 
       <section id="dailyView" class="main-view">
-      <section class="summary-hero summary-view-section app-view-hidden" aria-label="Resumen semanal">
-        <span class="summary-hero-label">Total semanal</span>
+      <section class="summary-hero summary-view-section app-view-hidden" aria-label="Resumen del período">
+        <span class="summary-hero-label">Total del período</span>
         <strong id="totalAmount" class="summary-hero-amount">$0</strong>
       </section>
 
       <section id="settlementCard" class="settlement-block summary-view-section app-view-hidden" aria-label="Para emparejar">
         <span id="settlementBlockLabel" class="settlement-block-label">Para emparejar</span>
-        <strong id="settlementText" class="settlement-block-text">Sin gastos esta semana</strong>
+        <strong id="settlementText" class="settlement-block-text">Sin gastos en el período</strong>
         <span id="settlementMeta" class="settlement-block-meta is-hidden"></span>
         <div class="settlement-block-actions">
-          <button id="settleWeekButton" type="button" class="settlement-block-button">Marcar semana saldada</button>
+          <button id="settleWeekButton" type="button" class="settlement-block-button">Marcar período saldado</button>
           <button id="unsettleWeekButton" type="button" class="settlement-block-undo is-hidden">Deshacer</button>
         </div>
       </section>
@@ -108,11 +121,11 @@
         <div class="panel-heading chart-heading">
           <div>
             <h2>Gastos por categoría</h2>
-            <p id="chartPeriodNote">Visualizá cómo se reparte el total semanal.</p>
+            <p id="chartPeriodNote">Visualizá cómo se reparte el total del período.</p>
           </div>
           <div class="chart-controls">
             <div class="chart-toggle" role="group" aria-label="Período del gráfico">
-              <button id="chartWeekButton" class="is-active" type="button">Semana</button>
+              <button id="chartWeekButton" class="is-active" type="button">Período</button>
               <button id="chartMonthButton" type="button">Mes</button>
             </div>
             <div class="chart-toggle" role="group" aria-label="Tipo de gráfico">
@@ -371,14 +384,14 @@
         <section id="commonRecordsSection" class="panel table-panel movements-view-section app-view-hidden">
           <div class="panel-heading table-heading">
             <div>
-              <h2>Gastos de la semana</h2>
+              <h2>Gastos del período</h2>
               <p id="weekRangeLabel"></p>
             </div>
             <div class="table-actions">
-              <button id="exportButton" type="button">Exportar semana</button>
+              <button id="exportButton" type="button">Exportar período</button>
               <button id="exportMonthButton" type="button">Exportar mes</button>
               <button id="applyRecurringButton" type="button">Aplicar recurrentes</button>
-              <button id="clearWeekButton" class="danger" type="button">Borrar semana</button>
+              <button id="clearWeekButton" class="danger" type="button">Borrar período</button>
             </div>
           </div>
 
@@ -424,6 +437,8 @@
               Ordenar
               <select id="filterGroupBy">
                 <option value="day">Por día</option>
+                <option value="week">Por semana</option>
+                <option value="month">Por mes</option>
                 <option value="person">Por persona</option>
                 <option value="amount-desc">Monto: mayor a menor</option>
                 <option value="amount-asc">Monto: menor a mayor</option>
@@ -437,13 +452,13 @@
           </div>
 
           <div id="commonExpenseColumns" class="movement-list"></div>
-          <p id="emptyState" class="empty-state">Todavía no hay gastos cargados para esta semana.</p>
+          <p id="emptyState" class="empty-state">Todavía no hay gastos cargados en este período.</p>
         </section>
 
         <section id="personalRecordsSection" class="panel table-panel movements-view-section app-view-hidden is-hidden">
           <div class="panel-heading table-heading">
             <div>
-              <h2>Gastos personales de la semana</h2>
+              <h2>Gastos personales del período</h2>
               <p id="personalWeekLabel"></p>
             </div>
             <div class="personal-total">
@@ -460,6 +475,8 @@
               Ordenar
               <select id="personalFilterGroupBy">
                 <option value="day">Por día</option>
+                <option value="week">Por semana</option>
+                <option value="month">Por mes</option>
                 <option value="person">Por persona</option>
                 <option value="amount-desc">Monto: mayor a menor</option>
                 <option value="amount-asc">Monto: menor a mayor</option>
@@ -469,7 +486,7 @@
           </div>
 
           <div id="personalExpensesTable" class="movement-list"></div>
-          <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales para esta semana.</p>
+          <p id="personalEmptyState" class="empty-state">Todavía no hay gastos personales en este período.</p>
         </section>
 
         <section class="panel history-panel history-view-section app-view-hidden">

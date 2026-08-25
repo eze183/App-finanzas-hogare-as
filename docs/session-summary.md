@@ -6,6 +6,31 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-25 — El período pasa a ser un rango libre de fechas, no una semana fija
+
+Pedido del usuario: "la app calcula los gastos semanalmente, pero hay semanas que no necesariamente cerramos los gastos cuando finaliza la semana, es decir el domingo. Debería poder seleccionar el rango de días". Más lo mismo para gastos personales en Movimientos ("no puedo seleccionar el rango de días, solo me muestra semanalmente y no el total") y agregar "por mes" y "por semana" al filtro de ordenar.
+
+**El cambio de fondo**: `#weekStart` (un solo `<input type="date">` que definía una semana lunes-domingo) se reemplazó por `#periodStart` + `#periodEnd`. Esos dos campos son ahora la única fuente de verdad del período, y todo lo que antes se llamaba "semana" pasó a llamarse "período": `getSelectedWeekRange()` → `getSelectedPeriodRange()`, `isExpenseInSelectedWeek()` → `isExpenseInSelectedPeriod()`, `getCurrentWeekExpenses()` → `getPeriodExpenses()`, `getCurrentWeekPersonalExpenses()` → `getPeriodPersonalExpenses()`, `renderWeekLabel()` → `renderPeriodLabel()`. Como los gastos personales ya usaban las mismas funciones de filtrado, el pedido 2 quedó resuelto por el mismo cambio: el rango aplica igual y "Total personal" ahora es el total del período.
+
+En el encabezado hay presets **Semana** y **Mes** (que setean la semana/mes actual y se marcan como activos cuando el rango coincide exactamente) y flechas **‹ ›** que corren el período: si es un mes exacto salta al mes vecino, si no lo corre por su propia cantidad de días. El label del período ahora dice también cuántos días abarca.
+
+**La parte delicada: no romper los cierres saldados ya guardados.** `state.settlements` identifica cada cierre por `weekKey`, que hasta ahora era la fecha de inicio de la semana. `getSelectedPeriodKey()` devuelve **solo la fecha de inicio cuando el rango es exactamente una semana lunes-domingo** (idéntico a lo que se venía guardando) y `"inicio_fin"` para cualquier otro rango. Así los cierres del historial siguen matcheando sin migrar nada, y un rango libre nunca pisa el cierre de una semana. Verificado explícitamente en el navegador: se inyectó un cierre con la clave vieja (`2026-08-03`), se comprobó que al pararse en esa semana la app lo reconoce como saldado, que un rango distinto (`2026-08-03_2026-08-12`) aparece como no saldado, y que saldar ese rango deja los dos cierres conviviendo sin pisarse.
+
+**Otras dos trampas que aparecieron al hacer el cambio:**
+
+1. `getSelectedWeekKey()` se usaba para **dos cosas distintas**: la clave del cierre y el valor por defecto de los campos de fecha de los formularios. Con rangos libres eso se rompe, porque la clave puede ser compuesta y no es una fecha válida. Se separó en `getSelectedPeriodKey()` (identidad del cierre) y `getSelectedPeriodStartKey()` (fecha ISO de inicio, para prellenar).
+2. Los recurrentes mensuales usaban `isFirstWeekOfMonth(weekStart)` y chequeaban duplicados comparando la semana del gasto contra la semana seleccionada. Ahora se usa `periodContainsFirstOfMonth(range)` (equivalente exacto para una semana lunes-domingo) y el chequeo de duplicados mira si el recurrente ya tiene un gasto **dentro del período**, que con rangos libres es lo correcto.
+
+También: al guardar un gasto la app ya no salta siempre a la semana de ese gasto — `ensurePeriodIncludes()` solo mueve el período si el gasto queda afuera, para no pisar un rango elegido a mano. Y el importador de resúmenes dejó de reescribir el período (ya cargaba en el seleccionado, reescribirlo lo rompía).
+
+**Filtro "Ordenar"**: se sumaron **Por semana** y **Por mes**, que agrupan con subtotal por grupo igual que "Por persona", pero ordenados cronológicamente descendente en vez de por monto (agrupar por tiempo pide orden de tiempo). Reutilizan `groupExpensesByTag()` pasándole una función de clave distinta.
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después: un rango libre del 6 al 20 de agosto trae solo los 3 gastos de ese tramo con el total correcto; el preset Mes trae los 4 de agosto; la flecha atrás salta a julio y muestra su total; personales respeta el rango y muestra su total; agrupar por semana devuelve las 4 semanas con subtotal y por mes devuelve Agosto/Julio; un período que cruza dos meses suma los dos. Recurrentes: un rango sin día 1 no aplica el mensual, uno con día 1 sí, y volver a aplicar no duplica. Sin overflow horizontal a 375px en Cargar, Movimientos ni Resumen (las flechas ‹ › se agrandaron a 40px porque quedaban de 25px, muy chicas para el dedo).
+
+Service worker v29→v30.
+
+---
+
 ## 2026-08-19 — Detalle de un movimiento, export mensual combinado y formulario sin submenú
 
 Tres pedidos del usuario en el mismo mensaje.

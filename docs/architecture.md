@@ -90,12 +90,12 @@ Todo el estado pasa siempre por `normalizeState()`/`normalizeExpense()`/etc. al 
 
 ## Pipeline de renderizado
 
-No hay virtual DOM ni framework: `render()` (en `app.js`) recalcula y reescribe el HTML de todas las secciones visibles cada vez que algo cambia. Se llama después de cualquier mutación de estado (agregar, borrar, importar, etc.) y también al cambiar de semana o al entrar a la vista Resumen.
+No hay virtual DOM ni framework: `render()` (en `app.js`) recalcula y reescribe el HTML de todas las secciones visibles cada vez que algo cambia. Se llama después de cualquier mutación de estado (agregar, borrar, importar, etc.) y también al cambiar el período o al entrar a la vista Resumen.
 
 ```
 render()
- ├─ getCurrentWeekExpenses() / getCurrentWeekPersonalExpenses()   (filtran semana + deletedAt)
- ├─ renderPeople(), renderFilterValues(), renderWeekLabel()
+ ├─ getPeriodExpenses() / getPeriodPersonalExpenses()   (filtran período + deletedAt)
+ ├─ renderPeople(), renderFilterValues(), renderPeriodLabel()
  ├─ renderSummary(), renderSettlementDetail(), renderMonthlySummary()
  ├─ renderCategories(), renderBudgets(), renderRecurringExpenses()
  ├─ renderChart()          → dibuja en <canvas> (barras o torta)
@@ -107,6 +107,14 @@ render()
 No hay memoización: cada `render()` reconstruye el `innerHTML` de cada sección desde cero. Para una app de este tamaño (decenas de gastos por semana) el costo es despreciable.
 
 ## Navegación y vistas
+
+### Período seleccionado
+
+**Decisión** (2026-08-25): el rango de fechas que mira toda la app son los inputs `#periodStart` / `#periodEnd` del encabezado — no hay estado en `state`, se leen del DOM. Antes era una sola semana lunes-domingo (`#weekStart`).
+
+`getSelectedPeriodRange()` los devuelve como `{ start, end }` (invirtiéndolos si el usuario los pone al revés) y de ahí salen `isExpenseInSelectedPeriod()`, `getPeriodExpenses()` y `getPeriodPersonalExpenses()`. Ojo con dos funciones parecidas: `getSelectedPeriodKey()` es la **identidad del cierre saldado** (puede ser compuesta, ver `decisions.md`) y `getSelectedPeriodStartKey()` es la fecha ISO de inicio, que es la que se usa para prellenar campos de fecha.
+
+Los presets Semana/Mes y las flechas ‹ › solo escriben esos dos inputs (`setSelectedPeriod()`, `shiftSelectedPeriod()`).
 
 No hay router. Cinco vistas (`#loadViewButton`, `#summaryViewButton`, `#movementsViewButton`, `#historyViewButton`, `#installmentsViewButton`) controladas por `setAppView()`, que alterna la clase `app-view-hidden` sobre secciones marcadas con `.load-view-section`, `.summary-view-section`, `.movements-view-section`, `.history-view-section`, `.installments-view-section`.
 
@@ -142,7 +150,7 @@ Diseño (antes del merge, y el problema que resolvió):
 
 - Ahora: sincronización basada en **merge por id + tombstones**, no reemplazo:
   - Cada gasto/personal/recurrente tiene `id`, `updatedAt`, `deletedAt`.
-  - Borrar un gasto ya NO lo saca del array: le pone `deletedAt = Date.now()` (`tombstoneRecords()`). Todos los lectores de gastos (`getCurrentWeekExpenses`, `getCurrentMonthExpenses`, etc.) filtran `!expense.deletedAt`.
+  - Borrar un gasto ya NO lo saca del array: le pone `deletedAt = Date.now()` (`tombstoneRecords()`). Todos los lectores de gastos (`getPeriodExpenses`, `getCurrentMonthExpenses`, etc.) filtran `!expense.deletedAt`.
   - `mergeRecordLists(local, remote)` hace unión por `id`: un id nuevo en cualquiera de los dos lados sobrevive; un id en ambos lados se resuelve por `updatedAt` más reciente, y si cualquiera de los dos lo tiene tombstoneado, el resultado queda tombstoneado (el borrado gana).
   - `pruneTombstones()` descarta tombstones de más de 90 días (`TOMBSTONE_RETENTION_MS`) para no crecer indefinidamente. Nunca poda registros vivos.
   - `settlements` se mezclan igual por id y además se deduplican por `weekKey` (`dedupeSettlementsByWeek`) por si dos dispositivos saldan la misma semana antes de sincronizar.

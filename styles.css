@@ -206,6 +206,51 @@ h2 {
   box-shadow: var(--shadow-soft);
 }
 
+.period-presets {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr auto;
+  gap: 4px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  padding: 4px;
+}
+
+.period-presets button {
+  min-height: 34px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+  font-size: 0.82rem;
+}
+
+.period-presets button:hover,
+.period-presets button.is-active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.period-nav {
+  min-width: 40px;
+  font-size: 1.15rem;
+  line-height: 1;
+  padding: 0;
+}
+
+.period-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.period-range label {
+  font-size: 0.78rem;
+  gap: 4px;
+}
+
+.period-range input {
+  min-height: 36px;
+}
+
 .inline-status {
   min-height: 22px;
   color: var(--muted);

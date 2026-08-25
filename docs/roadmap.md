@@ -1,6 +1,6 @@
 # Roadmap
 
-Estado real al 2026-08-06, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
+Estado real al 2026-08-25, extraído del código, del historial de git y de la última sesión. Se actualiza automáticamente al cerrar cada funcionalidad importante.
 
 ## En curso ahora mismo
 
@@ -9,6 +9,12 @@ Nada en curso.
 ## Pendiente de confirmación del usuario
 
 - **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
+
+## Período de fechas libre en vez de semana fija — completo, 2026-08-25
+
+La app calculaba todo por semana lunes-domingo y no se podía cambiar, pero las semanas no siempre se cierran el domingo. Ahora el encabezado tiene **Desde / Hasta** libres, presets Semana y Mes, y flechas para correr el período. Aplica igual a comunes y personales (que ahora muestran el total del rango). Se sumaron **Por semana** y **Por mes** al filtro de ordenar, con subtotal por grupo.
+
+Lo más delicado fue no romper los cierres saldados ya guardados: la clave de un cierre sigue siendo la fecha de inicio cuando el rango es una semana exacta. Ver la decisión en `decisions.md` — romper eso "des-saldaría" semanas viejas sin ningún error visible.
 
 ## Detalle de movimiento + export mensual + formulario sin submenú — completo, 2026-08-19
 

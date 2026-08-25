@@ -90,6 +90,14 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario. El switch se movió porque *ya* cambiaba el tema visual completo de la app (no solo el formulario de carga), así que tenía sentido que viviera en un lugar global, no escondido dentro de un panel específico. Al moverlo, se eliminó el sub-menú redundante "Gastos comunes/Gastos personales" que existía separado dentro de Movimientos, para no tener dos controles que se pudieran desincronizar.
 
+## La clave de un cierre es la fecha de inicio si el período es una semana exacta
+
+**Decisión** (2026-08-25): al pasar de semana fija a rango libre de fechas, `getSelectedPeriodKey()` devuelve **solo la fecha de inicio** cuando el rango es exactamente una semana lunes-domingo, y `"inicio_fin"` para cualquier otro rango.
+
+**Por qué**: `state.settlements` identifica cada cierre por `weekKey`, y hasta ese día `weekKey` era siempre la fecha de inicio de la semana. Si la clave hubiera pasado a ser `"inicio_fin"` para todos los casos, **todos los cierres ya guardados en el historial habrían dejado de matchear** con la semana correspondiente: la app los seguiría listando en Historial pero el bloque de Resumen mostraría esas semanas como no saldadas. La alternativa era migrar los registros existentes, que es más riesgoso (toca datos reales sincronizados entre dos dispositivos) para resolver algo que una derivación de clave resuelve sola.
+
+**Consecuencia**: la fecha de inicio de un rango libre y la de la semana que empieza ese mismo día generan claves distintas, así que son cierres independientes y no se pisan (verificado). Si alguna vez hace falta cambiar cómo se arma la clave, hay que tener en cuenta que romperlo silenciosamente "des-salda" semanas viejas sin ningún error visible.
+
 ## Deshacer un cierre de semana tombstonea, y volver a saldar crea un `id` nuevo
 
 **Decisión** (2026-08-09): el botón "Deshacer" de una semana saldada no saca el registro de `state.settlements`, le pone `deletedAt` (`tombstoneRecords()`). Y si después se vuelve a saldar la misma semana, se guarda un registro **con un `id` nuevo**, conservando el tombstoneado en el array.
@@ -194,7 +202,7 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 **Condición de disparo**: solo se traslada si el formulario de origen tiene un monto cargado (indicador de "hay un borrador en progreso"). Sin eso, cambiar de pestaña no toca nada — importante para no pisar los valores por defecto (por ejemplo la fecha) al navegar entre pestañas sin estar cargando nada.
 
 **Detalles de implementación que no hay que romper**:
-- El traslado corre **después** de `render()` dentro de `setEntryMode`. Es obligatorio en ese orden: `renderPeople()` resetea el pagador al dueño del dispositivo y `renderWeekLabel()` puede reescribir la fecha del formulario personal si cae fuera de la semana seleccionada. Si el traslado corriera antes (como en el primer intento), esos dos renders le pisarían la persona y potencialmente la fecha.
+- El traslado corre **después** de `render()` dentro de `setEntryMode`. Es obligatorio en ese orden: `renderPeople()` resetea el pagador al dueño del dispositivo y `renderPeriodLabel()` puede reescribir la fecha del formulario personal si cae fuera del período seleccionado. Si el traslado corriera antes (como en el primer intento), esos dos renders le pisarían la persona y potencialmente la fecha.
 - Solo se traslada cuando el cambio de modo viene de un **click del usuario** en las pestañas (`setEntryMode(mode, { carryOverDraft: true })`). Los cambios de modo programáticos no trasladan: `fillExpenseFromVoice` llama `setEntryMode` sin el flag porque decide el modo según lo dictado y llena el formulario destino inmediatamente después; trasladar ahí arrastraría restos del otro formulario.
 - `card`/`installments` no se trasladan porque solo existen en el formulario personal. Al pasar a personal se llama `updatePersonalCardFieldsVisibility()` por si la forma de pago trasladada es "Tarjeta de crédito".
 - La persona se traslada entre un `<select>` (pagador común) y un `<input type="text">` (dueño personal); `setFieldValue` distingue el tipo y, para el select, solo asigna si el nombre existe como opción.

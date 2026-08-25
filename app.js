@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-19-detalle-export-mensual-y-form-sin-submenu-v29";
+const APP_VERSION = "2026-08-25-periodo-de-fechas-libre-v30";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -128,8 +128,12 @@ const TOMBSTONE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 const elements = {
   expenseToast: document.querySelector("#expenseToast"),
   expenseToastText: document.querySelector("#expenseToastText"),
-  weekStart: document.querySelector("#weekStart"),
-  currentWeekButton: document.querySelector("#currentWeekButton"),
+  periodStart: document.querySelector("#periodStart"),
+  periodEnd: document.querySelector("#periodEnd"),
+  periodWeekButton: document.querySelector("#periodWeekButton"),
+  periodMonthButton: document.querySelector("#periodMonthButton"),
+  periodPrevButton: document.querySelector("#periodPrevButton"),
+  periodNextButton: document.querySelector("#periodNextButton"),
   settingsOpenButton: document.querySelector("#settingsOpenButton"),
   settingsCloseButton: document.querySelector("#settingsCloseButton"),
   loadViewButton: document.querySelector("#loadViewButton"),
@@ -692,31 +696,103 @@ function getWeekEnd(weekStart) {
   return end;
 }
 
-function getSelectedWeekRange() {
-  const start = parseISODate(elements.weekStart.value);
-  const end = getWeekEnd(start);
+function getMonthStart(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth(), 1);
+}
+
+function getMonthEnd(date = new Date()) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+// El período es un rango libre de fechas: los "Desde/Hasta" del encabezado son la única
+// fuente de verdad. Antes era una semana fija de lunes a domingo, pero las semanas no
+// siempre se cierran el domingo (pedido del usuario del 2026-08-25).
+function getSelectedPeriodRange() {
+  const startValue = elements.periodStart.value || toISODate(getWeekStart());
+  const endValue = elements.periodEnd.value || startValue;
+  let start = parseISODate(startValue);
+  let end = parseISODate(endValue);
+  // Si se invierten, se toma el rango igual en vez de mostrar la lista vacía sin explicación.
+  if (end < start) [start, end] = [end, start];
   return { start, end };
 }
 
-function getSelectedWeekKey() {
-  return elements.weekStart.value;
+function setSelectedPeriod(start, end) {
+  elements.periodStart.value = toISODate(start);
+  elements.periodEnd.value = toISODate(end);
 }
 
-function isExpenseInSelectedWeek(expense) {
-  const { start, end } = getSelectedWeekRange();
+// Al guardar un gasto conviene que quede a la vista. Antes se saltaba siempre a su semana;
+// ahora solo se mueve el período si el gasto cae afuera, para no pisar un rango elegido a mano.
+function ensurePeriodIncludes(dateISO) {
+  if (isExpenseInSelectedPeriod({ date: dateISO })) return;
+  const weekStart = getWeekStart(parseISODate(dateISO));
+  setSelectedPeriod(weekStart, getWeekEnd(weekStart));
+}
+
+function isWholeWeekPeriod({ start, end }) {
+  return toISODate(getWeekStart(start)) === toISODate(start) && toISODate(getWeekEnd(start)) === toISODate(end);
+}
+
+function isWholeMonthPeriod({ start, end }) {
+  return toISODate(getMonthStart(start)) === toISODate(start) && toISODate(getMonthEnd(start)) === toISODate(end);
+}
+
+// Mueve el período una unidad hacia atrás o adelante. Si es una semana o un mes exacto salta
+// a la semana/mes vecino; si es un rango libre lo corre por su propia cantidad de días.
+function shiftSelectedPeriod(direction) {
+  const range = getSelectedPeriodRange();
+
+  if (isWholeMonthPeriod(range)) {
+    const target = new Date(range.start.getFullYear(), range.start.getMonth() + direction, 1);
+    setSelectedPeriod(getMonthStart(target), getMonthEnd(target));
+    return;
+  }
+
+  const days = Math.round((range.end - range.start) / 86400000) + 1;
+  const start = new Date(range.start);
+  start.setDate(start.getDate() + direction * days);
+  const end = new Date(start);
+  end.setDate(end.getDate() + days - 1);
+  setSelectedPeriod(start, end);
+}
+
+// Clave de los cierres saldados. Para una semana lunes-domingo devuelve solo la fecha de
+// inicio, que es exactamente lo que se venía guardando: así los cierres viejos del historial
+// siguen coincidiendo sin migrar nada. Para cualquier otro rango se usa "inicio_fin".
+function getSelectedPeriodKey() {
+  const range = getSelectedPeriodRange();
+  const startKey = toISODate(range.start);
+  return isWholeWeekPeriod(range) ? startKey : `${startKey}_${toISODate(range.end)}`;
+}
+
+// Fecha de inicio del período en ISO. Es lo que se usa para prellenar los campos de fecha
+// de los formularios; ojo de no confundirla con getSelectedPeriodKey(), que para un rango
+// libre devuelve una clave compuesta y no es una fecha válida.
+function getSelectedPeriodStartKey() {
+  return toISODate(getSelectedPeriodRange().start);
+}
+
+function getSelectedPeriodLabel() {
+  const { start, end } = getSelectedPeriodRange();
+  return `${dateFormatter.format(start)} al ${dateFormatter.format(end)}`;
+}
+
+function isExpenseInSelectedPeriod(expense) {
+  const { start, end } = getSelectedPeriodRange();
   const expenseDate = parseISODate(expense.date);
   return expenseDate >= start && expenseDate <= end;
 }
 
-function getCurrentWeekExpenses() {
+function getPeriodExpenses() {
   return state.expenses
-    .filter((expense) => !expense.deletedAt && isExpenseInSelectedWeek(expense))
+    .filter((expense) => !expense.deletedAt && isExpenseInSelectedPeriod(expense))
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
-function getCurrentWeekPersonalExpenses() {
+function getPeriodPersonalExpenses() {
   return state.personalExpenses
-    .filter((expense) => !expense.deletedAt && isExpenseInSelectedWeek(expense))
+    .filter((expense) => !expense.deletedAt && isExpenseInSelectedPeriod(expense))
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
@@ -737,7 +813,7 @@ function getFilteredExpenses(expenses) {
 }
 
 function getMonthExpensesFrom(list) {
-  const selected = parseISODate(elements.weekStart.value);
+  const selected = getSelectedPeriodRange().start;
   const year = selected.getFullYear();
   const month = selected.getMonth();
 
@@ -819,7 +895,7 @@ function populateSettingsForm() {
 }
 
 // Cierre guardado (no borrado) de una semana, o null si esa semana sigue abierta.
-function getWeekSettlement(weekKey = getSelectedWeekKey()) {
+function getWeekSettlement(weekKey = getSelectedPeriodKey()) {
   return state.settlements.find((settlement) => settlement.weekKey === weekKey && !settlement.deletedAt) || null;
 }
 
@@ -857,7 +933,7 @@ function renderSummary(expenses, isPersonal) {
 }
 
 function describeSettlementMovement(settlement) {
-  if (settlement.total === 0) return "Sin gastos esta semana";
+  if (settlement.total === 0) return "Sin gastos en el período";
   if (settlement.amount < 0.01) return "Ya están parejos";
   return `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}`;
 }
@@ -874,7 +950,7 @@ function renderSettlementBlock(expenses, settlement) {
   if (!isSettled) {
     elements.settlementBlockLabel.textContent = "Para emparejar";
     elements.settlementText.textContent = describeSettlementMovement(settlement);
-    elements.settleWeekButton.textContent = "Marcar semana saldada";
+    elements.settleWeekButton.textContent = "Marcar período saldado";
     return;
   }
 
@@ -886,12 +962,12 @@ function renderSettlementBlock(expenses, settlement) {
   if (isStale) {
     elements.settlementBlockLabel.textContent = "Cierre desactualizado";
     elements.settlementText.textContent = describeSettlementMovement(settlement);
-    elements.settlementMeta.textContent = `Cerraste esta semana el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
+    elements.settlementMeta.textContent = `Cerraste este período el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
     elements.settleWeekButton.textContent = "Actualizar cierre";
     return;
   }
 
-  elements.settlementBlockLabel.textContent = "Semana saldada ✓";
+  elements.settlementBlockLabel.textContent = "Período saldado ✓";
   elements.settlementText.textContent = closedMovement;
   elements.settlementMeta.textContent = `Cerrada el ${settledOn} · total ${formatMoney(record.total)}`;
   elements.settleWeekButton.textContent = "Ver en Historial";
@@ -952,7 +1028,7 @@ function renderSettlementDetail(expenses, isPersonal) {
 
 function renderMonthlySummary(isPersonal) {
   const monthExpenses = getMonthExpensesFrom(isPersonal ? state.personalExpenses : state.expenses);
-  const selected = parseISODate(elements.weekStart.value);
+  const selected = getSelectedPeriodRange().start;
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(selected);
   const monthlyTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const categoryTotals = Object.entries(getCategoryTotals(monthExpenses)).sort((a, b) => b[1] - a[1]);
@@ -1005,8 +1081,8 @@ function renderCategories(expenses, isPersonal) {
   const categories = getCategoryTotals(expenses);
 
   elements.categoryPanelNote.textContent = isPersonal
-    ? "Resumen de tus gastos personales de esta semana."
-    : "Resumen de los gastos comunes de esta semana.";
+    ? "Resumen de tus gastos personales del período."
+    : "Resumen de los gastos comunes del período.";
 
   const rows = Object.entries(categories)
     .sort((a, b) => b[1] - a[1])
@@ -1140,7 +1216,7 @@ function renderChart(expenses) {
   context.clearRect(0, 0, width, height);
 
   if (!chartData.length) {
-    drawEmptyChart(context, width, height, chartPeriod === "month" ? "este mes" : "esta semana");
+    drawEmptyChart(context, width, height, chartPeriod === "month" ? "este mes" : "este período");
     return;
   }
 
@@ -1172,7 +1248,7 @@ function renderChartLegend(chartData) {
     .join("");
 }
 
-function drawEmptyChart(context, width, height, periodLabel = "esta semana") {
+function drawEmptyChart(context, width, height, periodLabel = "este período") {
   context.fillStyle = getThemeColor("--muted", "#9aa1ac");
   context.font = "700 16px Inter, system-ui, sans-serif";
   context.textAlign = "center";
@@ -1312,6 +1388,33 @@ function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
       .join("");
   }
 
+  if (movementGroupBy === "week" || movementGroupBy === "month") {
+    const isWeek = movementGroupBy === "week";
+    const groups = groupExpensesByTag(expenses, (expense) => {
+      const date = parseISODate(expense.date);
+      if (!isWeek) return monthLabelFromIndex(monthIndex(date.getFullYear(), date.getMonth()), { long: true });
+      const weekStart = getWeekStart(date);
+      return `${dateFormatter.format(weekStart)} al ${dateFormatter.format(getWeekEnd(weekStart))}`;
+    });
+    // Cronológico descendente, no por monto: agrupar por tiempo pide orden de tiempo.
+    groups.sort((a, b) => b.expenses[0].date.localeCompare(a.expenses[0].date));
+    return groups
+      .map(
+        (group) => `
+          <div class="movement-day-group">
+            <div class="movement-day-heading movement-group-heading">
+              <span>${escapeHtml(group.tag)}</span>
+              <strong>${formatMoney(group.total)}</strong>
+            </div>
+            <div class="person-expense-list">
+              ${group.expenses.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute, editAttribute, { showTag: true, showDate: true })).join("")}
+            </div>
+          </div>
+        `,
+      )
+      .join("");
+  }
+
   if (movementGroupBy === "amount-desc" || movementGroupBy === "amount-asc") {
     // Ordenado por monto: no hay agrupación (ni por día ni por persona tendría sentido
     // acá), así que la fila necesita mostrar tag y fecha, que normalmente vienen del grupo.
@@ -1347,7 +1450,7 @@ function groupExpensesByTag(expenses, getTag) {
     group.expenses.push(expense);
     group.total += expense.amount;
   }
-  // Ya vienen ordenados por fecha desc desde getCurrentWeekExpenses/getFilteredExpenses,
+  // Ya vienen ordenados por fecha desc desde getPeriodExpenses/getFilteredExpenses,
   // así que cada grupo conserva ese orden; solo hace falta ordenar los grupos entre sí.
   return [...groups.values()].sort((a, b) => b.total - a.total);
 }
@@ -1800,11 +1903,14 @@ function renderFilterValues() {
   elements.filterPaymentMethod.value = filters.paymentMethod;
 }
 
-function renderWeekLabel() {
-  const { start, end } = getSelectedWeekRange();
-  elements.weekRangeLabel.textContent = `${dateFormatter.format(start)} al ${dateFormatter.format(end)}`;
-  if (!elements.personalExpenseDate.value || !isExpenseInSelectedWeek({ date: elements.personalExpenseDate.value })) {
-    elements.personalExpenseDate.value = getSelectedWeekKey();
+function renderPeriodLabel() {
+  const range = getSelectedPeriodRange();
+  const days = Math.round((range.end - range.start) / 86400000) + 1;
+  elements.weekRangeLabel.textContent = `${getSelectedPeriodLabel()} · ${days} ${days === 1 ? "día" : "días"}`;
+  elements.periodWeekButton.classList.toggle("is-active", isWholeWeekPeriod(range));
+  elements.periodMonthButton.classList.toggle("is-active", isWholeMonthPeriod(range));
+  if (!elements.personalExpenseDate.value || !isExpenseInSelectedPeriod({ date: elements.personalExpenseDate.value })) {
+    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
   }
 }
 
@@ -1840,13 +1946,13 @@ function renderSettlementHistory() {
 
 function render() {
   const isPersonal = currentEntryMode === "personal";
-  const expenses = getCurrentWeekExpenses();
-  const personalExpenses = getCurrentWeekPersonalExpenses();
+  const expenses = getPeriodExpenses();
+  const personalExpenses = getPeriodPersonalExpenses();
   const filteredExpenses = getFilteredExpenses(expenses);
   const summaryExpenses = isPersonal ? personalExpenses : expenses;
   renderPeople();
   renderFilterValues();
-  renderWeekLabel();
+  renderPeriodLabel();
   renderSummary(summaryExpenses, isPersonal);
   renderSettlementDetail(expenses, isPersonal);
   renderMonthlySummary(isPersonal);
@@ -2226,7 +2332,7 @@ function resolveStatementDate(line, fallbackYear) {
 }
 
 function extractStatementLine(line) {
-  const selected = parseISODate(elements.weekStart.value || toISODate(new Date()));
+  const selected = getSelectedPeriodRange().start;
   const resolvedDate = resolveStatementDate(line, selected.getFullYear());
   if (!resolvedDate) return null;
 
@@ -2368,7 +2474,7 @@ function renderStatementReview(result) {
       <strong>Resumen detectado</strong>
       <span>${allCandidates.length} movimiento${allCandidates.length === 1 ? "" : "s"} para revisar</span>
     </div>
-    <p class="statement-note">Se van a cargar en la semana seleccionada: ${escapeHtml(elements.weekRangeLabel.textContent || getSelectedWeekKey())}. La fecha original queda guardada en la descripción.</p>
+    <p class="statement-note">Se van a cargar en el período seleccionado: ${escapeHtml(getSelectedPeriodLabel())}. La fecha original queda guardada en la descripción.</p>
     <label class="statement-rate">
       Titular detectado
       <input id="statementOwnerInput" type="text" maxlength="50" value="${escapeHtml(result.owner || getDeviceOwner())}" />
@@ -2455,7 +2561,7 @@ function handleStatementReviewClick(event) {
   const payer = elements.expensePayer.value || getDeviceOwner();
   const owner = elements.statementReview.querySelector("#statementOwnerInput")?.value.trim() || payer;
   const now = Date.now();
-  const importDate = getSelectedWeekKey();
+  const importDate = getSelectedPeriodStartKey();
   const importedCommonExpenses = selectedItems.filter((candidate) => candidate.isCommon).map((candidate, index) => {
     const convertedAmount = getStatementCandidateAmount(candidate, usdRate);
     const originalDateLabel = dateFormatter.format(parseISODate(candidate.date));
@@ -2496,11 +2602,10 @@ function handleStatementReviewClick(event) {
   state.personalExpenses.push(...importedPersonalExpenses);
 
   const importedTotal = [...importedCommonExpenses, ...importedPersonalExpenses].reduce((sum, expense) => sum + expense.amount, 0);
-  elements.weekStart.value = importDate;
   saveState();
   clearStatementReview();
   setReceiptStatus(
-    `Agregué ${importedCommonExpenses.length} común${importedCommonExpenses.length === 1 ? "" : "es"} y ${importedPersonalExpenses.length} personal${importedPersonalExpenses.length === 1 ? "" : "es"} por ${formatMoney(importedTotal)} en la semana seleccionada.`,
+    `Agregué ${importedCommonExpenses.length} común${importedCommonExpenses.length === 1 ? "" : "es"} y ${importedPersonalExpenses.length} personal${importedPersonalExpenses.length === 1 ? "" : "es"} por ${formatMoney(importedTotal)} en el período seleccionado.`,
     "success",
   );
   render();
@@ -2623,7 +2728,7 @@ function fillExpenseFromVoice(transcript) {
 
   if (parsed.isPersonal) {
     setEntryMode("personal");
-    elements.personalExpenseDate.value = getSelectedWeekKey();
+    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
     elements.personalExpenseOwner.value = parsed.person || elements.personalExpenseOwner.value || getDeviceOwner();
     if (parsed.category) setSelectValueIfAvailable(elements.personalExpenseCategory, parsed.category);
     if (parsed.amount) elements.personalExpenseAmount.value = parsed.amount.toFixed(2);
@@ -2637,7 +2742,7 @@ function fillExpenseFromVoice(transcript) {
   }
 
   setEntryMode("common");
-  elements.expenseDate.value = getSelectedWeekKey();
+  elements.expenseDate.value = getSelectedPeriodStartKey();
   if (parsed.person && state.people.includes(parsed.person)) elements.expensePayer.value = parsed.person;
   if (parsed.category) setSelectValueIfAvailable(elements.expenseCategory, parsed.category);
   if (parsed.amount) elements.expenseAmount.value = parsed.amount.toFixed(2);
@@ -3130,7 +3235,7 @@ function handleExpenseSubmit(event) {
   elements.expenseForm.reset();
   elements.expenseDate.value = toISODate(new Date());
   elements.expensePayer.value = getDeviceOwner();
-  elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
+  ensurePeriodIncludes(expenseDate);
   updateEditingUi();
 
   if (isEditing) {
@@ -3151,7 +3256,7 @@ function handleExpenseSubmit(event) {
 function handlePersonalExpenseSubmit(event) {
   event.preventDefault();
   const amount = parseAmountInput(elements.personalExpenseAmount.value);
-  const expenseDate = elements.personalExpenseDate.value || getSelectedWeekKey();
+  const expenseDate = elements.personalExpenseDate.value || getSelectedPeriodStartKey();
   const owner = elements.personalExpenseOwner.value.trim() || getDeviceOwner();
 
   if (!owner) {
@@ -3213,9 +3318,9 @@ function handlePersonalExpenseSubmit(event) {
   saveState();
   elements.personalExpenseForm.reset();
   firstInstallmentTouched = false;
-  elements.personalExpenseDate.value = getSelectedWeekKey();
+  elements.personalExpenseDate.value = getSelectedPeriodStartKey();
   elements.personalExpenseOwner.value = getDeviceOwner();
-  elements.weekStart.value = toISODate(getWeekStart(parseISODate(expenseDate)));
+  ensurePeriodIncludes(expenseDate);
   updatePersonalCardFieldsVisibility();
   updateEditingUi();
 
@@ -3331,7 +3436,7 @@ function cancelEditingExpense() {
   if (wasPersonal) {
     elements.personalExpenseForm.reset();
     firstInstallmentTouched = false;
-    elements.personalExpenseDate.value = getSelectedWeekKey();
+    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
     elements.personalExpenseOwner.value = getDeviceOwner();
     updatePersonalCardFieldsVisibility();
   } else {
@@ -3365,7 +3470,7 @@ function setEntryMode(mode, { carryOverDraft = false } = {}) {
   render();
 
   // Después de render(): renderPeople() resetea el pagador al dueño del dispositivo y
-  // renderWeekLabel() puede reescribir la fecha, así que el traslado tiene que ir al final
+  // renderPeriodLabel() puede reescribir la fecha, así que el traslado tiene que ir al final
   // para que no le pisen los datos.
   if (carryOverDraft && modeChanged) {
     carryOverExpenseDraft(isPersonal);
@@ -3494,21 +3599,23 @@ function handleApplyRecurring() {
     return;
   }
 
-  const weekKey = getSelectedWeekKey();
-  const { start } = getSelectedWeekRange();
+  const range = getSelectedPeriodRange();
+  const startKey = toISODate(range.start);
   let added = 0;
 
   for (const recurring of activeRecurring) {
-    const shouldApply = recurring.frequency === "weekly" || isFirstWeekOfMonth(start);
+    const shouldApply = recurring.frequency === "weekly" || periodContainsFirstOfMonth(range);
+    // Con rangos libres ya no alcanza comparar semanas: se mira si el recurrente
+    // tiene un gasto dentro del período que se está viendo.
     const alreadyApplied = state.expenses.some(
-      (expense) => !expense.deletedAt && expense.recurringId === recurring.id && toISODate(getWeekStart(parseISODate(expense.date))) === weekKey,
+      (expense) => !expense.deletedAt && expense.recurringId === recurring.id && isExpenseInSelectedPeriod(expense),
     );
 
     if (!shouldApply || alreadyApplied) continue;
 
     state.expenses.push({
       id: createId(),
-      date: weekKey,
+      date: startKey,
       payer: recurring.payer,
       category: recurring.category,
       paymentMethod: recurring.paymentMethod || "",
@@ -3521,7 +3628,7 @@ function handleApplyRecurring() {
   }
 
   if (!added) {
-    alert("No hay recurrentes nuevos para aplicar en esta semana.");
+    alert("No hay recurrentes nuevos para aplicar en este período.");
     return;
   }
 
@@ -3529,9 +3636,13 @@ function handleApplyRecurring() {
   render();
 }
 
-function isFirstWeekOfMonth(weekStart) {
-  const firstDay = new Date(weekStart.getFullYear(), weekStart.getMonth(), 1);
-  return toISODate(getWeekStart(firstDay)) === toISODate(weekStart);
+// Los recurrentes mensuales se aplican en el período que contiene un día 1. Para una semana
+// lunes-domingo es exactamente lo mismo que preguntaba el viejo isFirstWeekOfMonth().
+function periodContainsFirstOfMonth({ start, end }) {
+  for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
+    if (date.getDate() === 1) return true;
+  }
+  return false;
 }
 
 function handleExportBackup() {
@@ -3596,9 +3707,9 @@ function handleClearFilters() {
 }
 
 function handleSettleWeek() {
-  const expenses = getCurrentWeekExpenses();
+  const expenses = getPeriodExpenses();
   if (!expenses.length) {
-    alert("Primero cargá algún gasto para esta semana.");
+    alert("Primero cargá algún gasto en el período seleccionado.");
     return;
   }
 
@@ -3610,9 +3721,9 @@ function handleSettleWeek() {
     return;
   }
 
-  const weekKey = getSelectedWeekKey();
-  const { start, end } = getSelectedWeekRange();
-  const weekLabel = `${dateFormatter.format(start)} al ${dateFormatter.format(end)}`;
+  const periodKey = getSelectedPeriodKey();
+  const { start, end } = getSelectedPeriodRange();
+  const weekLabel = getSelectedPeriodLabel();
   const settlement = status.current;
   const movement = settlement.amount
     ? `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}.`
@@ -3620,14 +3731,14 @@ function handleSettleWeek() {
 
   const confirmed = confirm(
     status.isStale
-      ? `Actualizar el cierre de la semana del ${weekLabel}.\n\nGuardado: ${formatMoney(status.record.total)}\nAhora: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`
-      : `Cerrar la semana del ${weekLabel}.\n\nTotal: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`,
+      ? `Actualizar el cierre del período ${weekLabel}.\n\nGuardado: ${formatMoney(status.record.total)}\nAhora: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`
+      : `Cerrar el período ${weekLabel}.\n\nTotal: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`,
   );
   if (!confirmed) return;
 
   const record = {
     id: status.record?.id || createId(),
-    weekKey,
+    weekKey: periodKey,
     weekLabel,
     settledAt: toISODate(new Date()),
     total: settlement.total,
@@ -3638,14 +3749,14 @@ function handleSettleWeek() {
     updatedAt: Date.now(),
   };
 
-  // Se conservan los cierres tombstoneados de la misma semana para que un "Deshacer" previo
+  // Se conservan los cierres tombstoneados del mismo período para que un "Deshacer" previo
   // siga propagándose a los otros dispositivos; `dedupeSettlementsByWeek` se queda con el más nuevo.
   state.settlements = [
     record,
-    ...state.settlements.filter((item) => item.weekKey !== weekKey || item.deletedAt),
+    ...state.settlements.filter((item) => item.weekKey !== periodKey || item.deletedAt),
   ];
   saveState();
-  showExpenseToast(status.isStale ? "Cierre actualizado" : "Semana saldada");
+  showExpenseToast(status.isStale ? "Cierre actualizado" : "Período saldado");
   render();
   setAppView("history");
 }
@@ -3654,13 +3765,13 @@ function handleUnsettleWeek() {
   const record = getWeekSettlement();
   if (!record) return;
 
-  if (!confirm(`Reabrir la semana del ${record.weekLabel}.\n\nSe borra el cierre guardado. ¿Confirmás?`)) return;
+  if (!confirm(`Reabrir el período ${record.weekLabel}.\n\nSe borra el cierre guardado. ¿Confirmás?`)) return;
 
   // Tombstone, no borrado: así el "deshacer" viaja a los otros dispositivos igual que el de un gasto.
   // Un cierre nuevo para la misma semana se guarda con un `id` nuevo, porque el merge nunca "des-borra".
   state.settlements = tombstoneRecords(state.settlements, new Set([record.id]));
   saveState();
-  showExpenseToast("Semana reabierta");
+  showExpenseToast("Período reabierto");
   render();
 }
 
@@ -3746,10 +3857,10 @@ function handleRecurringListClick(event) {
 }
 
 function handleClearWeek() {
-  const expenses = getCurrentWeekExpenses();
+  const expenses = getPeriodExpenses();
   if (!expenses.length) return;
 
-  const confirmed = confirm("¿Querés borrar todos los gastos de esta semana?");
+  const confirmed = confirm("¿Querés borrar todos los gastos del período seleccionado?");
   if (!confirmed) return;
 
   const idsToDelete = new Set(expenses.map((expense) => expense.id));
@@ -3759,7 +3870,7 @@ function handleClearWeek() {
 }
 
 function handleExport() {
-  const expenses = getCurrentWeekExpenses();
+  const expenses = getPeriodExpenses();
   const header = ["Fecha", "Pago", "Categoria", "Forma de pago", "Descripcion", "Monto"];
   const rows = expenses.map((expense) => [
     expense.date,
@@ -3769,7 +3880,7 @@ function handleExport() {
     expense.note || "",
     expense.amount.toFixed(2),
   ]);
-  downloadCsv([header, ...rows], `gastos-${elements.weekStart.value}.csv`);
+  downloadCsv([header, ...rows], `gastos-${getSelectedPeriodStartKey()}.csv`);
 }
 
 function downloadCsv(rows, filename) {
@@ -3797,7 +3908,7 @@ function handleExportMonth() {
     return;
   }
 
-  const monthKey = elements.weekStart.value.slice(0, 7);
+  const monthKey = getSelectedPeriodStartKey().slice(0, 7);
   const monthLabel = monthLabelFromIndex(monthIndexFromKey(monthKey), { long: true });
 
   const detail = [
@@ -3855,9 +3966,9 @@ function handleExportMonth() {
 }
 
 async function init() {
-  elements.weekStart.value = toISODate(getWeekStart());
+  setSelectedPeriod(getWeekStart(), getWeekEnd(getWeekStart()));
   elements.expenseDate.value = toISODate(new Date());
-  elements.personalExpenseDate.value = getSelectedWeekKey();
+  elements.personalExpenseDate.value = getSelectedPeriodStartKey();
   updatePersonalCardFieldsVisibility();
 
   elements.exportBackupButton.addEventListener("click", handleExportBackup);
@@ -3926,9 +4037,23 @@ async function init() {
   elements.statementReview.addEventListener("change", handleStatementReviewInput);
   elements.commonExpenseColumns.addEventListener("click", handleTableClick);
   elements.personalExpensesTable.addEventListener("click", handlePersonalTableClick);
-  elements.weekStart.addEventListener("change", render);
-  elements.currentWeekButton.addEventListener("click", () => {
-    elements.weekStart.value = toISODate(getWeekStart());
+  elements.periodStart.addEventListener("change", render);
+  elements.periodEnd.addEventListener("change", render);
+  elements.periodWeekButton.addEventListener("click", () => {
+    const weekStart = getWeekStart();
+    setSelectedPeriod(weekStart, getWeekEnd(weekStart));
+    render();
+  });
+  elements.periodMonthButton.addEventListener("click", () => {
+    setSelectedPeriod(getMonthStart(), getMonthEnd());
+    render();
+  });
+  elements.periodPrevButton.addEventListener("click", () => {
+    shiftSelectedPeriod(-1);
+    render();
+  });
+  elements.periodNextButton.addEventListener("click", () => {
+    shiftSelectedPeriod(1);
     render();
   });
   elements.clearWeekButton.addEventListener("click", handleClearWeek);
