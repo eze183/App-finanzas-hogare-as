@@ -90,6 +90,16 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario. El switch se movió porque *ya* cambiaba el tema visual completo de la app (no solo el formulario de carga), así que tenía sentido que viviera en un lugar global, no escondido dentro de un panel específico. Al moverlo, se eliminó el sub-menú redundante "Gastos comunes/Gastos personales" que existía separado dentro de Movimientos, para no tener dos controles que se pudieran desincronizar.
 
+## Los gastos personales se filtran por dispositivo, pero se sincronizan completos
+
+**Decisión** (2026-08-26): cada celular muestra solo los gastos personales cuyo `owner` coincide con `deviceOwner` ("Este dispositivo es de"). Es un **filtro de vista** (`isOwnPersonalExpense()`/`getOwnPersonalExpenses()`), no un cambio en qué se sincroniza: `personalExpenses` sigue viajando completo entre dispositivos.
+
+**Por qué así y no partiendo los datos**: filtrar en el sync (que cada celular suba/baje solo lo suyo) habría roto el modelo de "un solo estado de hogar" — el merge por id, el backup JSON completo y la restauración desde cualquier dispositivo dependen de que ambos tengan todo. Además `deviceOwner` no se sincroniza a propósito (decisión del 2026-08-03), así que ya era el discriminador natural.
+
+**No es privacidad real**: los datos del otro están en el `localStorage` y en Supabase igual que antes; solo no se muestran. Para una app de pareja alcanza; si algún día se quisiera privacidad de verdad haría falta autenticación y filas separadas en el backend.
+
+**Borde importante — huérfanos**: un gasto cuyo `owner` no coincide con ninguna de las dos personas se muestra en **ambos** celulares. Si se lo ocultara "por no ser mío", un typo en el nombre lo volvería invisible en los dos dispositivos sin ningún error. No sacar ese fallback sin resolver eso de otra forma.
+
 ## La clave de un cierre es la fecha de inicio si el período es una semana exacta
 
 **Decisión** (2026-08-25): al pasar de semana fija a rango libre de fechas, `getSelectedPeriodKey()` devuelve **solo la fecha de inicio** cuando el rango es exactamente una semana lunes-domingo, y `"inicio_fin"` para cualquier otro rango.

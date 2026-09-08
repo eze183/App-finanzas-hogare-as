@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-25-periodo-de-fechas-libre-v30";
+const APP_VERSION = "2026-08-26-personales-solo-del-dueno-v31";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -790,9 +790,25 @@ function getPeriodExpenses() {
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
+// Los gastos personales son de cada uno: cada celular muestra solo los del dueño del
+// dispositivo ("Este dispositivo es de", en Configuración). Los datos igual se sincronizan
+// completos entre dispositivos — es un filtro de vista, no un borrado (así el backup y el
+// merge siguen viendo todo, y si Tami mira su celular ve los suyos).
+function isOwnPersonalExpense(expense) {
+  const ownerKey = normalizeText(expense.owner || "");
+  if (ownerKey === normalizeText(getDeviceOwner())) return true;
+  // Huérfano: el dueño no coincide con ninguna persona conocida (ej. un typo al cargar).
+  // Se muestra en todos los dispositivos para que no quede invisible en los dos.
+  return !state.people.some((person) => normalizeText(person) === ownerKey);
+}
+
+function getOwnPersonalExpenses() {
+  return state.personalExpenses.filter((expense) => !expense.deletedAt && isOwnPersonalExpense(expense));
+}
+
 function getPeriodPersonalExpenses() {
-  return state.personalExpenses
-    .filter((expense) => !expense.deletedAt && isExpenseInSelectedPeriod(expense))
+  return getOwnPersonalExpenses()
+    .filter((expense) => isExpenseInSelectedPeriod(expense))
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
@@ -1027,7 +1043,7 @@ function renderSettlementDetail(expenses, isPersonal) {
 }
 
 function renderMonthlySummary(isPersonal) {
-  const monthExpenses = getMonthExpensesFrom(isPersonal ? state.personalExpenses : state.expenses);
+  const monthExpenses = getMonthExpensesFrom(isPersonal ? getOwnPersonalExpenses() : state.expenses);
   const selected = getSelectedPeriodRange().start;
   const monthLabel = new Intl.DateTimeFormat("es-AR", { month: "long", year: "numeric" }).format(selected);
   const monthlyTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -1696,8 +1712,9 @@ function currentMonthIndex(referenceDate = new Date()) {
 }
 
 function getInstallmentPlans() {
-  return state.personalExpenses
-    .filter((expense) => !expense.deletedAt && expense.installments > 1)
+  // Igual que Movimientos → Personales: la vista Cuotas es de cada uno, no del hogar.
+  return getOwnPersonalExpenses()
+    .filter((expense) => expense.installments > 1)
     .map((expense) => {
       const firstMonth =
         monthIndexFromKey(expense.firstInstallmentMonth) ?? monthIndexFromKey(expense.date.slice(0, 7));
@@ -1960,7 +1977,7 @@ function render() {
   renderBudgets(summaryExpenses, isPersonal);
   renderRecurringExpenses();
   renderChartPeriodNote(isPersonal);
-  const chartBaseList = isPersonal ? state.personalExpenses : state.expenses;
+  const chartBaseList = isPersonal ? getOwnPersonalExpenses() : state.expenses;
   const chartExpenses = chartPeriod === "month" ? getMonthExpensesFrom(chartBaseList) : summaryExpenses;
   renderChart(chartExpenses);
   renderMovementGroupToggles();
@@ -3334,7 +3351,16 @@ function handlePersonalExpenseSubmit(event) {
     setRecordsMode("personal");
     setAppView(installments > 1 ? "installments" : "movements");
   } else {
-    showExpenseToast(installmentsSummary ? `Cargado: ${installmentsSummary}` : "Gasto agregado");
+    // Si el gasto es de otra persona, desaparece de este celular al guardarlo (los
+    // personales solo se ven en el dispositivo de su dueño) — avisarlo evita que parezca un bug.
+    const isForSomeoneElse = normalizeText(owner) !== normalizeText(getDeviceOwner());
+    showExpenseToast(
+      isForSomeoneElse
+        ? `Cargado para ${owner} — se va a ver en su celular`
+        : installmentsSummary
+          ? `Cargado: ${installmentsSummary}`
+          : "Gasto agregado",
+    );
     setRecordsMode("personal");
   }
 
@@ -3901,7 +3927,8 @@ function downloadCsv(rows, filename) {
 // en la fila 1, para que se pueda filtrar en la planilla) y después los totales.
 function handleExportMonth() {
   const common = getMonthExpensesFrom(state.expenses);
-  const personal = getMonthExpensesFrom(state.personalExpenses);
+  // El resumen mensual exportado también respeta que lo personal es de cada uno.
+  const personal = getMonthExpensesFrom(getOwnPersonalExpenses());
 
   if (!common.length && !personal.length) {
     alert("No hay gastos cargados en el mes seleccionado.");

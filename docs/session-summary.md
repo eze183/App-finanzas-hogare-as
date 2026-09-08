@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-26 — Los gastos personales solo se ven en el celular de su dueño
+
+Pedido del usuario: "Tami carga sus gastos personales en su teléfono, y me aparecen cargados a mí también en la pestaña personal. Eso no debería pasar: los personales son personales, los comunes son de ambos."
+
+**Qué pasaba**: la sincronización comparte `personalExpenses` completo entre los dos celulares (correcto: es un solo estado de hogar), pero todas las vistas mostraban la lista entera sin filtrar. **La solución es un filtro de vista, no un cambio de datos**: los personales se siguen sincronizando completos (así el backup abarca todo y el merge no cambia), pero cada pantalla muestra solo los del dueño del dispositivo (`deviceOwner`, el campo "Este dispositivo es de" de Configuración, que ya existía y no se sincroniza a propósito).
+
+Implementación: `isOwnPersonalExpense()` + `getOwnPersonalExpenses()` en `app.js`, aplicados en los cuatro consumidores de vista: `getPeriodPersonalExpenses()` (Movimientos, total, resumen, gráfico y presupuestos del modo personal salen todos de ahí), `getInstallmentPlans()` (vista Cuotas, tira recordatoria y badge), `renderMonthlySummary()` y el gráfico en modo mes, y el export mensual (los personales del CSV son solo los propios). La comparación de nombres usa `normalizeText()` (case/acentos-insensible).
+
+**Dos decisiones de borde pensadas a propósito**:
+1. **Huérfanos visibles en todos lados**: si el `owner` de un gasto no coincide con *ninguna* de las dos personas (un typo al cargar, un nombre viejo), se muestra en ambos celulares. La alternativa (ocultarlo por no ser "mío") lo volvería invisible en los dos dispositivos a la vez, sin ningún error — un dato perdido silenciosamente.
+2. **Cargar un gasto personal para la otra persona sigue permitido** (el campo Persona quedó libre), pero como desaparece de la vista propia al guardarlo, el toast avisa: "Cargado para Tami — se va a ver en su celular". Sin ese aviso parecería un bug.
+
+**Probado en el navegador** con `supabase-config.js` stubeado y `localStorage` limpiado después, simulando los dos celulares con el mismo estado sincronizado: el de Eze muestra solo sus gastos/cuotas/badge (los de Tami desaparecen de movimientos, total, Cuotas y export), el de Tami (cambiando `deviceOwner`) muestra solo los de ella, el huérfano "Pepe" aparece en ambos, el export mensual desde cada celular lleva solo los personales propios, y cargar para la otra persona muestra el toast y no aparece en la lista propia. Cambiar "Este dispositivo es de" en Configuración re-aplica el filtro porque ese submit ya llamaba a `render()`.
+
+Service worker v30→v31.
+
+---
+
 ## 2026-08-25 — El período pasa a ser un rango libre de fechas, no una semana fija
 
 Pedido del usuario: "la app calcula los gastos semanalmente, pero hay semanas que no necesariamente cerramos los gastos cuando finaliza la semana, es decir el domingo. Debería poder seleccionar el rango de días". Más lo mismo para gastos personales en Movimientos ("no puedo seleccionar el rango de días, solo me muestra semanalmente y no el total") y agregar "por mes" y "por semana" al filtro de ordenar.
