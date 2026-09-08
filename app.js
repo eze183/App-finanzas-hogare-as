@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-26-tarjetas-banco-pampa-v33";
+const APP_VERSION = "2026-08-27-voz-forma-de-pago-v34";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -2888,8 +2888,10 @@ function fillExpenseFromVoice(transcript) {
     elements.personalExpenseDate.value = getSelectedPeriodStartKey();
     elements.personalExpenseOwner.value = parsed.person || elements.personalExpenseOwner.value || getDeviceOwner();
     if (parsed.category) setSelectValueIfAvailable(elements.personalExpenseCategory, parsed.category);
+    if (parsed.paymentMethod) setSelectValueIfAvailable(elements.personalExpensePaymentMethod, parsed.paymentMethod);
     if (parsed.amount) elements.personalExpenseAmount.value = parsed.amount.toFixed(2);
     if (parsed.note) elements.personalExpenseNote.value = parsed.note;
+    updatePersonalCardFieldsVisibility();
     setVoiceStatus(
       `Escuché: "${transcript}". Completé el gasto personal para revisar antes de agregarlo.${amountStatus}`,
       parsed.amount ? "success" : "error",
@@ -2902,6 +2904,7 @@ function fillExpenseFromVoice(transcript) {
   elements.expenseDate.value = getSelectedPeriodStartKey();
   if (parsed.person && state.people.includes(parsed.person)) elements.expensePayer.value = parsed.person;
   if (parsed.category) setSelectValueIfAvailable(elements.expenseCategory, parsed.category);
+  if (parsed.paymentMethod) setSelectValueIfAvailable(elements.expensePaymentMethod, parsed.paymentMethod);
   if (parsed.amount) elements.expenseAmount.value = parsed.amount.toFixed(2);
   if (parsed.note) elements.expenseNote.value = parsed.note;
   setVoiceStatus(
@@ -2915,11 +2918,12 @@ function parseVoiceExpense(transcript) {
   const normalized = normalizeText(transcript);
   const amount = extractVoiceAmount(normalized);
   const category = detectVoiceCategory(normalized);
+  const paymentMethod = detectVoicePaymentMethod(normalized);
   const person = detectVoicePerson(normalized);
   const isPersonal = /\b(personal|mio|mia|propio|propia|para mi)\b/.test(normalized);
-  const note = cleanVoiceNote(transcript, { amount, category, person, isPersonal });
+  const note = cleanVoiceNote(transcript, { amount, category, person, isPersonal, paymentMethod });
 
-  return { amount, category, person, isPersonal, note };
+  return { amount, category, paymentMethod, person, isPersonal, note };
 }
 
 function extractVoiceAmount(text) {
@@ -3126,13 +3130,36 @@ function detectVoiceCategory(text) {
     ["Verduleria", ["verduleria", "verdura", "verduras", "fruta", "frutas"]],
     ["Carniceria", ["carniceria", "carne", "asado", "milanesa"]],
     ["Polleria/Pescaderia", ["polleria", "pescaderia", "pollo", "pescado"]],
-    ["Servicios", ["servicio", "servicios", "luz", "gas", "agua", "internet", "seguro", "telefono", "streaming"]],
-    ["Tarjeta de credito", ["tarjeta", "visa", "mastercard", "resumen"]],
+    [
+      "Servicios",
+      [
+        "servicio",
+        "servicios",
+        "luz",
+        "gas",
+        "agua",
+        "internet",
+        "seguro",
+        "telefono",
+        "streaming",
+        "netflix",
+        "spotify",
+        "disney",
+        "prime",
+        "flow",
+      ],
+    ],
     ["Combustible", ["combustible", "nafta", "gasoil", "ypf", "shell", "axion", "peaje"]],
     ["Otros", ["otro", "otros", "varios", "ropa", "zapatillas", "cine", "bar"]],
   ];
-  const match = categoryRules.find(([, words]) => words.some((word) => text.includes(word)));
+  const match = categoryRules.find(([, words]) => words.some((word) => containsVoiceWord(text, word)));
   return match ? match[0] : "";
+}
+
+// Chequeo por palabra completa, no substring: sin esto "gas" matchea dentro de "gaste"
+// y "pan" dentro de "pantalla", clasificando mal la categoría.
+function containsVoiceWord(text, word) {
+  return new RegExp(`\\b${escapeRegExp(word)}\\b`, "i").test(text);
 }
 
 function setSelectValueIfAvailable(select, value) {
@@ -3144,7 +3171,20 @@ function detectVoicePerson(text) {
   return state.people.find((person) => text.includes(normalizeText(person))) || "";
 }
 
-function cleanVoiceNote(transcript, { amount, category, person, isPersonal }) {
+// El orden importa: "tarjeta de debito" contiene la palabra "tarjeta", así que débito
+// se revisa antes que la regla genérica de crédito para no perderlo.
+function detectVoicePaymentMethod(text) {
+  const paymentMethodRules = [
+    ["Efectivo", ["efectivo", "cash"]],
+    ["Transferencia", ["transferencia"]],
+    ["Tarjeta de débito", ["debito"]],
+    ["Tarjeta de crédito", ["credito", "tarjeta", "visa", "mastercard"]],
+  ];
+  const match = paymentMethodRules.find(([, words]) => words.some((word) => containsVoiceWord(text, word)));
+  return match ? match[0] : "";
+}
+
+function cleanVoiceNote(transcript, { amount, category, person, isPersonal, paymentMethod }) {
   let note = transcript.trim();
   const normalizedPerson = person ? normalizeText(person) : "";
   const numberWords = new Set([
@@ -3240,6 +3280,11 @@ function cleanVoiceNote(transcript, { amount, category, person, isPersonal }) {
   }
   if (category) {
     note = note.replace(new RegExp(category, "gi"), " ");
+  }
+  // La forma de pago ya se va a mostrar en su propio campo: no tiene que quedar duplicada
+  // en la descripción ("Netflix tarjeta de crédito" → "Netflix").
+  if (paymentMethod) {
+    note = note.replace(/\b(tarjeta de credito|tarjeta de débito|tarjeta de debito|tarjeta|visa|mastercard|efectivo|transferencia|credito|débito|debito)\b/gi, " ");
   }
   if (person && normalizedPerson) note = note.replace(new RegExp(escapeRegExp(person), "gi"), " ");
   if (isPersonal) note = note.replace(/\b(m[ií]o|m[ií]a|propio|propia|para m[ií]|para)\b/gi, " ");

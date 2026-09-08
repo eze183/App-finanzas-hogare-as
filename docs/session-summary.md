@@ -6,6 +6,22 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-27 — El dictado por voz reconoce la forma de pago (y deja de mandar todo a la descripción)
+
+Pedido del usuario: "$35.000 Netflix tarjeta de crédito" cargaba bien el monto, pero el resto quedaba todo amontonado en la descripción en vez de reconocer el concepto y la forma de pago por separado.
+
+**Causa real, más rara de lo esperado**: `detectVoiceCategory()` ya tenía una regla `["Tarjeta de credito", ["tarjeta", "visa", "mastercard", "resumen"]]` — pero apuntaba a una **categoría** de gasto (una opción real del `<select>` de categoría, para cargos de tarjeta que no encajan en otra categoría), no al campo **forma de pago**. Nunca existió detección de forma de pago por voz: el `<select>` de forma de pago quedaba en "Sin especificar" siempre, y como la categoría tampoco encajaba con "Netflix", la frase entera terminaba en la descripción.
+
+**Arreglo**: se agregó `detectVoicePaymentMethod()`, con reglas para Efectivo/Transferencia/Débito/Crédito (débito se revisa antes que la regla genérica de crédito, porque "tarjeta de débito" contiene la palabra "tarjeta"). `fillExpenseFromVoice()` ahora completa el `<select>` de forma de pago en los dos formularios. Se sacó la regla de categoría "Tarjeta de credito" (esas palabras ahora son de la forma de pago, no de la categoría) y se sumaron `netflix`/`spotify`/`disney`/`prime`/`flow` a la categoría Servicios, para que el concepto también se reconozca. `cleanVoiceNote()` ahora también quita las palabras de forma de pago de la descripción, así "Netflix tarjeta de crédito" queda como nota solo "Netflix".
+
+**Bug de substring encontrado al probar, corregido de paso**: tanto la detección de categoría como la nueva de forma de pago usaban `text.includes(palabra)`, que matchea subcadenas — "gaste" contiene "gas", así que "gasté 12.000 en nafta con tarjeta de débito" categorizaba como Servicios en vez de Combustible. Se agregó `containsVoiceWord()` con `\b` (límite de palabra) y se usa en las dos detecciones.
+
+**Probado en el navegador** llamando `parseVoiceExpense()` directamente con varias frases y verificando el resultado completo (monto, categoría, forma de pago, nota), y después el flujo real por `fillExpenseFromVoice()` confirmando que los `<select>` de los dos formularios (común y personal) quedan con el valor correcto. Casos verificados: "Netflix tarjeta de crédito" → Servicios / Tarjeta de crédito / nota "netflix"; "nafta con tarjeta de débito" → Combustible / Tarjeta de débito (ya no Servicios); efectivo, transferencia y el caso personal con "tarjeta" a secas (asume crédito, que es el comportamiento por defecto de la app en el resto de los formularios).
+
+Service worker v33→v34.
+
+---
+
 ## 2026-08-26 (3) — Se suman Visa y Mastercard de Banco Pampa
 
 Pedido del usuario. Las tarjetas son una lista fija de `<option>` en el `<select id="personalExpenseCard">` de `index.html` y **no existen en ningún otro lado** (no hay constante en `app.js` ni validación contra la lista): el campo `card` de `personalExpenses` guarda el string tal cual, así que agregar opciones es solo HTML. Quedaron seis: Visa/Mastercard Banco Galicia, Mastercard Mercado Pago, Mastercard Banco Nación y las dos nuevas de Banco Pampa.
