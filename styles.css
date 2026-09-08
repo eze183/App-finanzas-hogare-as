@@ -1080,6 +1080,77 @@ label {
   margin-bottom: 6px;
 }
 
+.amount-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.amount-hero-top .amount-hero-label {
+  margin-bottom: 0;
+}
+
+.currency-toggle {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  border: 1px solid var(--line);
+  background: var(--surface-soft);
+  padding: 3px;
+}
+
+.currency-toggle button {
+  min-height: 30px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0 10px;
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+.currency-toggle button:hover,
+.currency-toggle button.is-active {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.usd-helper {
+  display: grid;
+  gap: 6px;
+  border-top: 1px dashed var(--line);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+.usd-helper.is-hidden {
+  display: none;
+}
+
+.usd-helper label {
+  font-size: 0.8rem;
+}
+
+.usd-helper input {
+  min-height: 38px;
+}
+
+.usd-status {
+  color: var(--muted);
+  font-size: 0.76rem;
+}
+
+.usd-preview {
+  margin: 0;
+  color: var(--accent-deep);
+  font-size: 0.86rem;
+}
+
+.usd-preview.is-hidden {
+  display: none;
+}
+
 .amount-hero-field {
   display: flex;
   align-items: baseline;

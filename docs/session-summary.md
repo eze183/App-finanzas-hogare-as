@@ -6,6 +6,24 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-26 (2) — Gastos en dólares con conversión automática a pesos (dólar MEP)
+
+Pedido del usuario: poder cargar gastos en dólares en ambas pestañas y que el sistema los pase a pesos al valor del dólar MEP.
+
+**Modelo**: el gasto se guarda **siempre en pesos** (`amount`), que es la moneda de toda la app — totales, reparto 50/50, cuotas, gráficos y exports no cambian. Los campos opcionales nuevos `usdAmount`/`usdRate` conservan el origen (cuántos dólares y a qué cotización), normalizados en `normalizeExpense`/`normalizePersonalExpense` para que sobrevivan al sync.
+
+**UI**: en los dos formularios, el bloque de Monto tiene un toggle **$ Pesos / US$ Dólar**. Al pasar a dólares aparece el campo "Dólar MEP" con la cotización traída de `dolarapi.com` (venta del dólar bolsa) — siempre editable a mano — y una vista previa en vivo: "USD 100,00 × $1.200 = $120.000 — se guarda en pesos". La cotización se cachea en `localStorage` (`usd-mep-rate-v1`, fuera del estado sincronizado: es una conveniencia por dispositivo) y se refresca si tiene más de 30 minutos; sin conexión muestra la última conocida con su fecha, y sin caché pide cargarla a mano. Guardar sin cotización frena con una alerta. La moneda es estado compartido entre las dos pestañas (`entryCurrency`) y el traslado de borrador lleva la cotización consigo.
+
+**Trazabilidad**: la fila de Movimientos muestra "· USD 100,00" en el metadato, y el detalle agrega "Cargado en dólares: USD 100,00 × $1.200 (MEP)". **Editar un gasto cargado en dólares abre en dólares** (monto y cotización originales), así el round-trip sin tocar nada guarda exactamente lo mismo — verificado. Las compras en cuotas en USD funcionan: la preview de cuotas convierte primero ("6 cuotas de $60.000" para USD 300 a $1.200).
+
+El service worker no interfiere con el fetch a dolarapi porque solo intercepta same-origin (decisión del 2026-07-11).
+
+**Probado en el navegador** con `supabase-config.js` stubeado, mockeando la API del dólar: autocompletado de cotización y status "MEP hoy: $1.200", preview correcta, guardado `{amount: 120000, usdAmount: 100, usdRate: 1200}`, toast con la conversión, vuelta automática a pesos tras guardar, fila y detalle con el dato USD, edición round-trip exacta, cuotas en USD convertidas, freno sin cotización, fallback sin red y sin caché ("No pude traer el dólar MEP. Cargá la cotización a mano."), y sin overflow a 375px.
+
+Service worker v31→v32.
+
+---
+
 ## 2026-08-26 — Los gastos personales solo se ven en el celular de su dueño
 
 Pedido del usuario: "Tami carga sus gastos personales en su teléfono, y me aparecen cargados a mí también en la pestaña personal. Eso no debería pasar: los personales son personales, los comunes son de ambos."

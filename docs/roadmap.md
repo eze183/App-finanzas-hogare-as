@@ -10,6 +10,10 @@ Nada en curso.
 
 - **Vista "Cuotas" (2026-08-06)**: implementada y verificada en el navegador, falta que el usuario la use en el celular con compras reales. Los dos puntos a mirar cuando la pruebe: si el mes de "primera cuota" que autocompleta la app coincide con lo que le muestra el resumen de cada tarjeta (si no, se corrige a mano por compra, para eso quedó editable), y si la tira recordatoria en Cargar/Resumen le resulta suficiente o termina necesitando algo más insistente (ver la nota sobre `setAppBadge` en `decisions.md`).
 
+## Gastos en dólares con conversión MEP — completo, 2026-08-26
+
+Toggle $ Pesos / US$ Dólar en el monto de los dos formularios. La cotización MEP se trae de dolarapi.com (editable a mano, cacheada por dispositivo), la preview muestra la conversión en vivo y el gasto se guarda en pesos con `usdAmount`/`usdRate` como referencia — visible en la fila y el detalle, y editable en dólares. Ver la decisión de "se guarda convertido, no multi-moneda" en `decisions.md`.
+
 ## Gastos personales visibles solo en el celular de su dueño — completo, 2026-08-26
 
 Tami cargaba personales en su teléfono y aparecían también en el de Eze. Ahora cada celular muestra solo los personales de su `deviceOwner` (Movimientos, totales, Cuotas, badge, vista mensual, gráfico y export). Los datos se siguen sincronizando completos — es un filtro de vista, no privacidad real; ver la decisión y el borde de los "huérfanos" en `decisions.md`. Cargar un gasto para la otra persona sigue permitido y el toast avisa que se va a ver en su celular.

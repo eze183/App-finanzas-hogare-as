@@ -62,6 +62,7 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
   card,               // solo en personalExpenses: tarjeta elegida si paymentMethod es "Tarjeta de crédito", o ""
   installments,       // solo en personalExpenses: cantidad de cuotas (1 si no es compra en cuotas)
   firstInstallmentMonth, // solo en personalExpenses: mes del primer vencimiento, "YYYY-MM" (default: mes de date)
+  usdAmount, usdRate,  // si el gasto se cargó en US$: monto original y cotización MEP usada (null si se cargó en pesos); amount ya está convertido a pesos
   createdAt,          // timestamp de creación, no cambia nunca
   updatedAt,          // timestamp de la última modificación de contenido (rename de persona, por ejemplo)
   deletedAt,          // null normalmente; timestamp si está "borrado" (tombstone, ver sync más abajo)

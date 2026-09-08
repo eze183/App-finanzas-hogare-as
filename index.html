@@ -176,10 +176,24 @@
             <section id="commonExpenseSection" class="expense-mode-panel">
               <form id="expenseForm" class="expense-form">
                 <div class="amount-hero">
-                  <span class="amount-hero-label">Monto</span>
+                  <div class="amount-hero-top">
+                    <span class="amount-hero-label">Monto</span>
+                    <div class="currency-toggle" role="group" aria-label="Moneda del gasto">
+                      <button type="button" class="currency-ars is-active" data-currency="ARS">$ Pesos</button>
+                      <button type="button" class="currency-usd" data-currency="USD">US$ Dólar</button>
+                    </div>
+                  </div>
                   <div class="amount-hero-field">
-                    <span class="amount-hero-currency">$</span>
+                    <span class="amount-hero-currency currency-symbol">$</span>
                     <input id="expenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                  </div>
+                  <div id="commonUsdHelper" class="usd-helper is-hidden">
+                    <label>
+                      Dólar MEP
+                      <input id="commonUsdRate" type="text" inputmode="decimal" placeholder="Ej: 1250,00" />
+                    </label>
+                    <small id="commonUsdStatus" class="usd-status"></small>
+                    <p id="commonUsdPreview" class="usd-preview is-hidden"></p>
                   </div>
                 </div>
                 <label class="field-block">
@@ -234,10 +248,24 @@
             <section id="personalExpenseSection" class="expense-mode-panel is-hidden">
               <form id="personalExpenseForm" class="expense-form">
                 <div class="amount-hero">
-                  <span class="amount-hero-label">Monto</span>
+                  <div class="amount-hero-top">
+                    <span class="amount-hero-label">Monto</span>
+                    <div class="currency-toggle" role="group" aria-label="Moneda del gasto personal">
+                      <button type="button" class="currency-ars is-active" data-currency="ARS">$ Pesos</button>
+                      <button type="button" class="currency-usd" data-currency="USD">US$ Dólar</button>
+                    </div>
+                  </div>
                   <div class="amount-hero-field">
-                    <span class="amount-hero-currency">$</span>
+                    <span class="amount-hero-currency currency-symbol">$</span>
                     <input id="personalExpenseAmount" type="text" inputmode="decimal" placeholder="0,00" required />
+                  </div>
+                  <div id="personalUsdHelper" class="usd-helper is-hidden">
+                    <label>
+                      Dólar MEP
+                      <input id="personalUsdRate" type="text" inputmode="decimal" placeholder="Ej: 1250,00" />
+                    </label>
+                    <small id="personalUsdStatus" class="usd-status"></small>
+                    <p id="personalUsdPreview" class="usd-preview is-hidden"></p>
                   </div>
                 </div>
                 <label class="field-block">

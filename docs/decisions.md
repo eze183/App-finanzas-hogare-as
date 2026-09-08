@@ -90,6 +90,14 @@ Extraídas del historial real del proyecto (`git log`, `CODEX_CONTEXT.md`, y la 
 
 **Por qué**: pedido explícito del usuario. El switch se movió porque *ya* cambiaba el tema visual completo de la app (no solo el formulario de carga), así que tenía sentido que viviera en un lugar global, no escondido dentro de un panel específico. Al moverlo, se eliminó el sub-menú redundante "Gastos comunes/Gastos personales" que existía separado dentro de Movimientos, para no tener dos controles que se pudieran desincronizar.
 
+## Los gastos en dólares se guardan convertidos a pesos, con el origen como referencia
+
+**Decisión** (2026-08-26): un gasto cargado en US$ se convierte al guardar (dólar MEP, venta de dolarapi.com, editable a mano) y `amount` queda **en pesos**; `usdAmount`/`usdRate` se guardan solo como referencia de origen.
+
+**Por qué así y no montos multi-moneda**: toda la app (reparto 50/50, cierres, cuotas, presupuestos, gráficos, exports) suma `amount` directo. Mantener montos en dos monedas habría obligado a convertir en cada lectura y a decidir *con qué cotización* mostrar cada total histórico. Congelar la conversión al momento de la carga es lo que hace el resumen de la tarjeta y es lo que el usuario espera ver después.
+
+**Consecuencias**: el valor en pesos NO se recalcula si el MEP cambia (es una foto del día de carga, a propósito). Editar un gasto en USD reabre en USD con su cotización original — cambiarla es la única forma de "recotizar". La cotización cacheada vive en `localStorage` del dispositivo (`usd-mep-rate-v1`), no en el estado sincronizado.
+
 ## Los gastos personales se filtran por dispositivo, pero se sincronizan completos
 
 **Decisión** (2026-08-26): cada celular muestra solo los gastos personales cuyo `owner` coincide con `deviceOwner` ("Este dispositivo es de"). Es un **filtro de vista** (`isOwnPersonalExpense()`/`getOwnPersonalExpenses()`), no un cambio en qué se sincroniza: `personalExpenses` sigue viajando completo entre dispositivos.

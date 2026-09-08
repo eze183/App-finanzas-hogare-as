@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-26-personales-solo-del-dueno-v31";
+const APP_VERSION = "2026-08-26-gastos-en-dolares-mep-v32";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -192,6 +192,16 @@ const elements = {
   personalExpenseCategory: document.querySelector("#personalExpenseCategory"),
   personalExpenseAmount: document.querySelector("#personalExpenseAmount"),
   personalExpensePaymentMethod: document.querySelector("#personalExpensePaymentMethod"),
+  commonUsdHelper: document.querySelector("#commonUsdHelper"),
+  commonUsdRate: document.querySelector("#commonUsdRate"),
+  commonUsdStatus: document.querySelector("#commonUsdStatus"),
+  commonUsdPreview: document.querySelector("#commonUsdPreview"),
+  personalUsdHelper: document.querySelector("#personalUsdHelper"),
+  personalUsdRate: document.querySelector("#personalUsdRate"),
+  personalUsdStatus: document.querySelector("#personalUsdStatus"),
+  personalUsdPreview: document.querySelector("#personalUsdPreview"),
+  currencyToggleButtons: document.querySelectorAll(".currency-toggle button"),
+  currencySymbols: document.querySelectorAll(".amount-hero .currency-symbol"),
   personalExpenseNote: document.querySelector("#personalExpenseNote"),
   personATotalCard: document.querySelector("#personATotalCard"),
   personBTotalCard: document.querySelector("#personBTotalCard"),
@@ -300,6 +310,8 @@ let currentEntryMode = "common";
 let editingExpense = null;
 let firstInstallmentTouched = false;
 let openedMovement = null;
+let entryCurrency = "ARS"; // "ARS" | "USD" — moneda del formulario de carga (compartida entre pestañas)
+let isFetchingMepRate = false;
 let voiceRecognition = null;
 let isListeningForExpense = false;
 let selectedDocumentFile = null;
@@ -377,6 +389,8 @@ function normalizePersonalExpense(expense) {
     amount,
     note: expense.note || "",
     card: expense.card || "",
+    usdAmount: Number(expense.usdAmount) > 0 ? Number(expense.usdAmount) : null,
+    usdRate: Number(expense.usdRate) > 0 ? Number(expense.usdRate) : null,
     installments: Number(expense.installments) > 1 ? Math.floor(Number(expense.installments)) : 1,
     // Mes del primer vencimiento ("YYYY-MM"). Si falta (datos viejos), se asume el mes de la compra.
     firstInstallmentMonth: /^\d{4}-\d{2}$/.test(expense.firstInstallmentMonth || "")
@@ -402,6 +416,8 @@ function normalizeExpense(expense) {
     paymentMethod: expense.paymentMethod || "",
     amount,
     note: expense.note || "",
+    usdAmount: Number(expense.usdAmount) > 0 ? Number(expense.usdAmount) : null,
+    usdRate: Number(expense.usdRate) > 0 ? Number(expense.usdRate) : null,
     recurringId: expense.recurringId || "",
     createdAt,
     updatedAt: Number(expense.updatedAt) || createdAt,
@@ -857,6 +873,121 @@ function formatUsd(amount) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`;
+}
+
+// --- Gastos en dólares (conversión a pesos con dólar MEP) ---------------------
+// El gasto siempre se guarda en pesos (`amount`), que es la moneda de toda la app;
+// `usdAmount`/`usdRate` quedan como referencia de origen. La cotización se trae de
+// dolarapi.com (venta MEP), se cachea en localStorage (no en el estado sincronizado,
+// es una conveniencia por dispositivo) y siempre queda editable a mano.
+
+const MEP_RATE_STORAGE_KEY = "usd-mep-rate-v1";
+const MEP_RATE_MAX_AGE_MS = 30 * 60 * 1000;
+
+function getUsdFormElements(isPersonal) {
+  return isPersonal
+    ? { rate: elements.personalUsdRate, status: elements.personalUsdStatus, preview: elements.personalUsdPreview, helper: elements.personalUsdHelper, amount: elements.personalExpenseAmount }
+    : { rate: elements.commonUsdRate, status: elements.commonUsdStatus, preview: elements.commonUsdPreview, helper: elements.commonUsdHelper, amount: elements.expenseAmount };
+}
+
+function loadCachedMepRate() {
+  try {
+    const cached = JSON.parse(localStorage.getItem(MEP_RATE_STORAGE_KEY));
+    if (cached && Number(cached.rate) > 0) return { rate: Number(cached.rate), fetchedAt: Number(cached.fetchedAt) || 0 };
+  } catch {
+    // caché ilegible: se ignora y se vuelve a buscar
+  }
+  return null;
+}
+
+function setUsdStatus(message) {
+  elements.commonUsdStatus.textContent = message;
+  elements.personalUsdStatus.textContent = message;
+}
+
+// Escribe la cotización en los inputs que el usuario no haya pisado a mano.
+function fillUsdRateInputs(rate, { force = false } = {}) {
+  for (const input of [elements.commonUsdRate, elements.personalUsdRate]) {
+    if (force || !input.value.trim()) input.value = String(rate).replace(".", ",");
+  }
+}
+
+async function fetchMepRate() {
+  if (isFetchingMepRate) return;
+  isFetchingMepRate = true;
+  setUsdStatus("Buscando el dólar MEP...");
+  try {
+    const response = await fetch("https://dolarapi.com/v1/dolares/bolsa");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const data = await response.json();
+    const rate = Number(data?.venta);
+    if (!Number.isFinite(rate) || rate <= 0) throw new Error("cotización inválida");
+    localStorage.setItem(MEP_RATE_STORAGE_KEY, JSON.stringify({ rate, fetchedAt: Date.now() }));
+    fillUsdRateInputs(rate);
+    setUsdStatus(`MEP hoy: ${formatMoney(rate)} · podés corregirlo a mano`);
+  } catch {
+    const cached = loadCachedMepRate();
+    setUsdStatus(
+      cached
+        ? `Sin conexión a la cotización. Última conocida: ${formatMoney(cached.rate)} (${dateFormatter.format(new Date(cached.fetchedAt))})`
+        : "No pude traer el dólar MEP. Cargá la cotización a mano.",
+    );
+  } finally {
+    isFetchingMepRate = false;
+    updateUsdPreviews();
+  }
+}
+
+function setEntryCurrency(currency) {
+  entryCurrency = currency === "USD" ? "USD" : "ARS";
+  const isUsd = entryCurrency === "USD";
+  elements.currencyToggleButtons.forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.currency === entryCurrency);
+  });
+  elements.currencySymbols.forEach((symbol) => {
+    symbol.textContent = isUsd ? "US$" : "$";
+  });
+  elements.commonUsdHelper.classList.toggle("is-hidden", !isUsd);
+  elements.personalUsdHelper.classList.toggle("is-hidden", !isUsd);
+
+  if (isUsd) {
+    const cached = loadCachedMepRate();
+    if (cached) {
+      fillUsdRateInputs(cached.rate);
+      setUsdStatus(`MEP: ${formatMoney(cached.rate)} (${dateFormatter.format(new Date(cached.fetchedAt))}) · podés corregirlo a mano`);
+    }
+    if (!cached || Date.now() - cached.fetchedAt > MEP_RATE_MAX_AGE_MS) fetchMepRate();
+  }
+  updateUsdPreviews();
+  updateInstallmentPreview();
+}
+
+function getEntryUsdRate(isPersonal) {
+  const rate = parseAmountInput(getUsdFormElements(isPersonal).rate.value);
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
+}
+
+// Monto final en pesos del formulario, más los datos USD de origen si corresponde.
+// Devuelve null si falta la cotización (el caller avisa y corta).
+function resolveEntryAmount(amount, isPersonal) {
+  if (entryCurrency !== "USD") return { amount, usdAmount: null, usdRate: null };
+  const rate = getEntryUsdRate(isPersonal);
+  if (!rate) return null;
+  return { amount: amount * rate, usdAmount: amount, usdRate: rate };
+}
+
+function updateUsdPreviews() {
+  for (const isPersonal of [false, true]) {
+    const { rate, preview, amount } = getUsdFormElements(isPersonal);
+    const usdAmount = parseAmountInput(amount.value);
+    const usdRate = parseAmountInput(rate.value);
+    const isValid =
+      entryCurrency === "USD" && Number.isFinite(usdAmount) && usdAmount > 0 && Number.isFinite(usdRate) && usdRate > 0;
+    preview.classList.toggle("is-hidden", !isValid);
+    if (isValid) {
+      preview.innerHTML = `<strong>${formatUsd(usdAmount)} × ${formatMoney(usdRate)} = ${formatMoney(usdAmount * usdRate)}</strong> — se guarda en pesos`;
+    }
+  }
 }
 
 function parseAmountInput(value) {
@@ -1482,7 +1613,7 @@ function renderMovementRow(expense, tag, idAttribute, editAttribute, { showTag =
         ${showTag ? `<span class="movement-tag">${escapeHtml(tag)}</span>` : ""}
         <div class="person-expense-info">
           <strong>${escapeHtml(expense.note || expense.category)}</strong>
-          <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}${dateLabel}</small>
+          <small>${escapeHtml(expense.category)} · ${escapeHtml(expense.paymentMethod || "Sin especificar")}${dateLabel}${expense.usdAmount ? ` · ${escapeHtml(formatUsd(expense.usdAmount))}` : ""}</small>
         </div>
       </button>
       <div class="person-expense-actions">
@@ -1527,6 +1658,10 @@ function openMovementDetail(expense, type) {
     ]);
   } else if (isPersonal && expense.card) {
     fields.push(["Tarjeta", expense.card]);
+  }
+
+  if (expense.usdAmount) {
+    fields.push(["Cargado en dólares", `${formatUsd(expense.usdAmount)} × ${formatMoney(expense.usdRate)} (MEP)`]);
   }
 
   if (expense.note) fields.push(["Descripción", expense.note]);
@@ -1668,7 +1803,12 @@ function updateInstallmentChips() {
 function updateInstallmentPreview() {
   const isCard = elements.personalExpensePaymentMethod.value === "Tarjeta de crédito";
   const installments = getInstallmentsFieldValue();
-  const amount = parseAmountInput(elements.personalExpenseAmount.value);
+  let amount = parseAmountInput(elements.personalExpenseAmount.value);
+  // Con moneda en dólares, la cuota se previsualiza ya convertida a pesos.
+  if (entryCurrency === "USD") {
+    const rate = getEntryUsdRate(true);
+    amount = rate ? amount * rate : NaN;
+  }
   const firstMonth = monthIndexFromKey(elements.personalExpenseFirstInstallment.value || elements.personalExpenseDate.value.slice(0, 7));
 
   if (!isCard || installments <= 1 || !Number.isFinite(amount) || amount <= 0 || firstMonth === null) {
@@ -3216,6 +3356,12 @@ function handleExpenseSubmit(event) {
     return;
   }
 
+  const resolved = resolveEntryAmount(amount, false);
+  if (!resolved) {
+    alert("Cargá la cotización del dólar MEP para convertir el gasto a pesos.");
+    return;
+  }
+
   const isEditing = editingExpense && editingExpense.type === "common";
 
   if (isEditing) {
@@ -3228,7 +3374,9 @@ function handleExpenseSubmit(event) {
             payer,
             category: elements.expenseCategory.value,
             paymentMethod: elements.expensePaymentMethod.value,
-            amount,
+            amount: resolved.amount,
+            usdAmount: resolved.usdAmount,
+            usdRate: resolved.usdRate,
             note: elements.expenseNote.value.trim(),
             updatedAt: Date.now(),
           }
@@ -3242,27 +3390,32 @@ function handleExpenseSubmit(event) {
       payer,
       category: elements.expenseCategory.value,
       paymentMethod: elements.expensePaymentMethod.value,
-      amount,
+      amount: resolved.amount,
+      usdAmount: resolved.usdAmount,
+      usdRate: resolved.usdRate,
       note: elements.expenseNote.value.trim(),
       createdAt: Date.now(),
     });
   }
 
+  const usdSummary = resolved.usdAmount ? `${formatUsd(resolved.usdAmount)} = ${formatMoney(resolved.amount)}` : "";
+
   saveState();
   elements.expenseForm.reset();
   elements.expenseDate.value = toISODate(new Date());
   elements.expensePayer.value = getDeviceOwner();
+  setEntryCurrency("ARS");
   ensurePeriodIncludes(expenseDate);
   updateEditingUi();
 
   if (isEditing) {
     setReceiptStatus("");
-    showExpenseToast("Gasto actualizado");
+    showExpenseToast(usdSummary ? `Actualizado: ${usdSummary}` : "Gasto actualizado");
     setRecordsMode("common");
     setAppView("movements");
   } else {
     setReceiptStatus("Gasto agregado. Te llevé a la semana correspondiente para que lo veas en el resumen.", "success");
-    showExpenseToast("Gasto agregado");
+    showExpenseToast(usdSummary ? `Cargado: ${usdSummary}` : "Gasto agregado");
     setRecordsMode("common");
   }
 
@@ -3294,6 +3447,12 @@ function handlePersonalExpenseSubmit(event) {
     isCard && installments > 1
       ? elements.personalExpenseFirstInstallment.value || expenseDate.slice(0, 7)
       : expenseDate.slice(0, 7);
+  const resolved = resolveEntryAmount(amount, true);
+  if (!resolved) {
+    alert("Cargá la cotización del dólar MEP para convertir el gasto a pesos.");
+    return;
+  }
+
   const isEditing = editingExpense && editingExpense.type === "personal";
 
   if (isEditing) {
@@ -3306,7 +3465,9 @@ function handlePersonalExpenseSubmit(event) {
             owner,
             category: elements.personalExpenseCategory.value,
             paymentMethod,
-            amount,
+            amount: resolved.amount,
+            usdAmount: resolved.usdAmount,
+            usdRate: resolved.usdRate,
             note: elements.personalExpenseNote.value.trim(),
             card,
             installments,
@@ -3323,7 +3484,9 @@ function handlePersonalExpenseSubmit(event) {
       owner,
       category: elements.personalExpenseCategory.value,
       paymentMethod,
-      amount,
+      amount: resolved.amount,
+      usdAmount: resolved.usdAmount,
+      usdRate: resolved.usdRate,
       note: elements.personalExpenseNote.value.trim(),
       card,
       installments,
@@ -3337,14 +3500,16 @@ function handlePersonalExpenseSubmit(event) {
   firstInstallmentTouched = false;
   elements.personalExpenseDate.value = getSelectedPeriodStartKey();
   elements.personalExpenseOwner.value = getDeviceOwner();
+  setEntryCurrency("ARS");
   ensurePeriodIncludes(expenseDate);
   updatePersonalCardFieldsVisibility();
   updateEditingUi();
 
+  const usdSummary = resolved.usdAmount ? `${formatUsd(resolved.usdAmount)} = ${formatMoney(resolved.amount)}` : "";
   const installmentsSummary =
     installments > 1
-      ? `${installments} cuotas de ${formatMoney(amount / installments)} · hasta ${monthLabelFromIndex(monthIndexFromKey(firstInstallmentMonth) + installments - 1)}`
-      : "";
+      ? `${installments} cuotas de ${formatMoney(resolved.amount / installments)} · hasta ${monthLabelFromIndex(monthIndexFromKey(firstInstallmentMonth) + installments - 1)}`
+      : usdSummary;
 
   if (isEditing) {
     showExpenseToast(installmentsSummary ? `Actualizado: ${installmentsSummary}` : "Gasto actualizado");
@@ -3414,6 +3579,10 @@ function carryOverExpenseDraft(toPersonal) {
   source.amount.value = "";
   source.note.value = "";
 
+  // La moneda es estado compartido (entryCurrency); la cotización viaja con el borrador.
+  getUsdFormElements(toPersonal).rate.value = getUsdFormElements(!toPersonal).rate.value;
+  updateUsdPreviews();
+
   if (toPersonal) updatePersonalCardFieldsVisibility();
 }
 
@@ -3435,7 +3604,16 @@ function startEditingExpense(expense, type) {
   setEntryMode(isPersonal ? "personal" : "common");
 
   const target = getExpenseDraftFields(isPersonal);
-  target.amount.value = expense.amount.toFixed(2);
+  // Un gasto cargado en dólares se edita en dólares (monto y cotización originales),
+  // así el round-trip guarda lo mismo si no se toca nada.
+  if (expense.usdAmount) {
+    setEntryCurrency("USD");
+    getUsdFormElements(isPersonal).rate.value = String(expense.usdRate).replace(".", ",");
+    target.amount.value = expense.usdAmount.toFixed(2);
+  } else {
+    setEntryCurrency("ARS");
+    target.amount.value = expense.amount.toFixed(2);
+  }
   setFieldValue(target.date, expense.date);
   setFieldValue(target.category, expense.category);
   setFieldValue(target.paymentMethod, expense.paymentMethod || "");
@@ -3471,6 +3649,7 @@ function cancelEditingExpense() {
     elements.expensePayer.value = getDeviceOwner();
   }
 
+  setEntryCurrency("ARS");
   updateEditingUi();
 }
 
@@ -4032,7 +4211,19 @@ async function init() {
     updateInstallmentChips();
     updateInstallmentPreview();
   });
-  elements.personalExpenseAmount.addEventListener("input", updateInstallmentPreview);
+  elements.personalExpenseAmount.addEventListener("input", () => {
+    updateInstallmentPreview();
+    updateUsdPreviews();
+  });
+  elements.expenseAmount.addEventListener("input", updateUsdPreviews);
+  elements.currencyToggleButtons.forEach((button) => {
+    button.addEventListener("click", () => setEntryCurrency(button.dataset.currency));
+  });
+  elements.commonUsdRate.addEventListener("input", updateUsdPreviews);
+  elements.personalUsdRate.addEventListener("input", () => {
+    updateUsdPreviews();
+    updateInstallmentPreview();
+  });
   elements.personalExpenseFirstInstallment.addEventListener("change", () => {
     firstInstallmentTouched = true;
     updateInstallmentPreview();
