@@ -6,6 +6,14 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 ---
 
+## 2026-08-26 (3) — Se suman Visa y Mastercard de Banco Pampa
+
+Pedido del usuario. Las tarjetas son una lista fija de `<option>` en el `<select id="personalExpenseCard">` de `index.html` y **no existen en ningún otro lado** (no hay constante en `app.js` ni validación contra la lista): el campo `card` de `personalExpenses` guarda el string tal cual, así que agregar opciones es solo HTML. Quedaron seis: Visa/Mastercard Banco Galicia, Mastercard Mercado Pago, Mastercard Banco Nación y las dos nuevas de Banco Pampa.
+
+Verificado en el navegador cargando una compra en cuotas con "Visa Banco Pampa": la opción se selecciona bien y la tarjeta aparece en el desglose "Este mes, por tarjeta" de la vista Cuotas. Service worker v32→v33.
+
+---
+
 ## 2026-08-26 (2) — Gastos en dólares con conversión automática a pesos (dólar MEP)
 
 Pedido del usuario: poder cargar gastos en dólares en ambas pestañas y que el sistema los pase a pesos al valor del dólar MEP.
