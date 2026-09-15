@@ -41,7 +41,15 @@ git diff --check
 
 Cubren carreras de escritura y primera inserción, cambios durante await, fallos/reinicio/timeout, estado remoto inválido, tombstones antiguos, backups inválidos/duplicados y falta de espacio, pagadores/renombres, deuda futura, recurrentes, presupuestos, ajustes y superposiciones, empates, arranque con estado corrupto y cadenas de cierre inválidas.
 
-Las pruebas no verifican el SDK/PostgREST/PostgreSQL real ni el diseño visual en navegador. Para una futura verificación integrada, usar un proyecto Supabase de ensayo y un perfil/origen desechable, con la configuración real reemplazada **antes de cargar la página**. No usar los botones de sync del entorno de producción para verificar estas correcciones.
+### Verificación integrada de navegador completada
+
+Se agregaron 5 pruebas en `tests/browser.integration.cjs`, ejecutadas con Chrome 152, Playwright 1.62.1 y **SDK Supabase real 2.116.0**, además de las 22 anteriores. Todas aprobadas. Instrucciones reproducibles en [tests/README.md](../tests/README.md).
+
+Se ejecuta `init()` completo y render real. Cada dispositivo tiene su propio contexto desechable de navegador. El HTML se copia en memoria sin los scripts de producción; se usa un SDK local con versión y SHA-256 fijados. Todas las solicitudes se interceptan: archivos desde una lista permitida y API PostgREST simulada compartida entre dispositivos. No hay `route.continue()`, service worker ni lectura del perfil habitual del usuario.
+
+Cobertura: carga y edición desde formularios, persistencia del dueño al recargar, pagador durante resize/sync, conflictos de escritura con el SDK real, fallo 503 y recuperación, importación mediante input de archivo, conservación de cierre/ajuste, bloqueo de superposiciones, deuda futura, recurrentes y presupuesto mensual. La captura móvil del historial fue revisada: se ven ambos registros y sus transferencias correctas, sin desborde horizontal.
+
+**Pendiente:** la API simulada no verifica PostgreSQL/PostgREST real, políticas RLS ni permisos del proyecto. Falta un proyecto Supabase de ensayo separado con tabla preparada; se pidió al usuario la disponibilidad del entorno. No se ejecutaron migraciones. Tampoco se probaron OCR, dólar MEP ni actualización de PWA en este entorno aislado. No usar los botones de sync de producción para completar estas pruebas.
 
 ## Límites y continuidad
 

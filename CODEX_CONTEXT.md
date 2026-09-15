@@ -15,21 +15,26 @@
 - Cierres: cada ajuste tiene ID nuevo y referencia al anterior; transferencia solo por la diferencia. Historial conserva versiones y reaperturas. Bloqueo de superposiciones conocidas y aviso de conflictos simultáneos, sin descartar registros.
 - Pagadores preservados al renderizar; elección Tami → Eze corregida; renombrado remoto conserva el lugar del dueño.
 - Deuda incluye planes de cuotas futuros. Recurrentes semanales los lunes y mensuales el día 1, con ID por ocurrencia. Presupuesto semanal prorrateado por días del rango.
-- Pruebas: `node --test tests/protection.test.cjs` (22 casos); sintaxis de app/service worker y `git diff --check` correctos. Son pruebas en VM con almacenamiento y Supabase simulados, sin red; no son pruebas contra PostgreSQL ni visuales en navegador.
+- Pruebas: 22 casos en VM (`tests/protection.test.cjs`) y 5 pruebas integradas de navegador (`tests/browser.integration.cjs`), todas aprobadas. Chrome 152 + Playwright 1.62.1 + SDK Supabase real 2.116.0. Se ejecutan init, render y formularios reales con perfiles desechables; cada petición de la app se intercepta y la API vive en memoria. PostgreSQL/PostgREST real sigue pendiente.
+- Se revisó la captura móvil del historial: conserva cierre original de $50 y ajuste de $20. Evidencia local en `.test-artifacts/history-mobile.png`, ignorada por Git. Código de la app sin cambios en esta continuación; base de correcciones: commit `7b4d301`.
 
 ## Archivos
 
 - Código: `app.js`, `service-worker.js`.
-- Pruebas: `tests/protection.test.cjs`.
+- Pruebas: `tests/protection.test.cjs`, `tests/browser.integration.cjs`, `tests/download-test-sdk.cjs`, `tests/README.md`. `.gitignore` excluye dependencias, SDK descargado y capturas.
 - Documentación: `README.md`, `docs/proteccion-datos.md`, `docs/architecture.md`, `docs/session-summary.md`, este archivo.
 - El contexto anterior completo, incluida la entrada local preexistente de renders, se conserva en `docs/codex-context-history.md`.
 - La imagen local preexistente `WhatsApp Image 2021-12-28_enderezada.png` queda intacta, fuera del commit.
 
 ## Decisiones y pendientes
 
-- No desplegar sin nueva instrucción. Antes de un despliegue futuro, probar contra un Supabase de ensayo separado y coordinar actualización de todos los clientes: versiones viejas siguen usando upsert y pueden perder revisiones.
+- No desplegar sin nueva instrucción. Falta un proyecto Supabase de ensayo separado, con tabla preparada, para validar PostgreSQL/PostgREST real. Se consultó al usuario; aún no se recibió información del entorno. No ejecutar migraciones. Antes de publicar, coordinar actualización de todos los clientes: versiones viejas siguen usando upsert y pueden perder revisiones.
 - No hay cambios de arquitectura ni migraciones. Se usa la tabla `app_state` existente.
 - La combinación del mismo registro usa última edición, con desempate estable; no conserva dos variantes de una edición simultánea del mismo ID. Los ajustes nuevos de cierre sí son registros separados.
 - Cierres superpuestos creados offline se conservan y requieren conciliación explícita. Reabrir no revierte dinero transferido.
 - Fechas históricas de recurrentes no se corrigen automáticamente. El esquema viejo no permite reconstruir siempre qué ocurrencia pretendía representar un gasto.
 - Ver `docs/proteccion-datos.md` para límites, recuperación y procedimiento de pruebas. Ver `docs/session-summary.md` y `docs/codex-context-history.md` para sesiones anteriores.
+
+## Problemas resueltos en el entorno de pruebas
+
+- La descarga del SDK fallaba por la cadena de certificados de Node. Se resolvió con `node --use-system-ca`, sin desactivar TLS. El descargador fija versión y verifica SHA-256. Las pruebas luego funcionan sin acceso de la app a Internet.

@@ -10,7 +10,7 @@ Las correcciones de `codex/proteccion-datos` están documentadas en [Protección
 node --test tests/protection.test.cjs
 ```
 
-No abras el `index.html` de trabajo para hacer pruebas con datos ficticios: conserva la configuración real de Supabase. Las pruebas automatizadas no cargan ese HTML ni la configuración.
+No abras el `index.html` de trabajo para hacer pruebas con datos ficticios: conserva la configuración real de Supabase. La prueba de navegador usa una copia del HTML sin scripts externos ni configuración real, y bloquea toda petición no simulada. Ver [cómo ejecutar las pruebas integradas](tests/README.md).
 
 ## Cómo usarla
 
