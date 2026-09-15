@@ -1,5 +1,5 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-08-27-voz-forma-de-pago-v34";
+const APP_VERSION = "2026-09-15-proteccion-datos-v35";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -123,7 +123,6 @@ const defaultState = {
   personalBudgets: {},
   personalBudgetsUpdatedAt: 0,
 };
-const TOMBSTONE_RETENTION_MS = 90 * 24 * 60 * 60 * 1000;
 
 const elements = {
   expenseToast: document.querySelector("#expenseToast"),
@@ -301,6 +300,7 @@ const elements = {
   installmentsViewSections: document.querySelectorAll(".installments-view-section"),
 };
 
+let storageLoadError = null;
 let state = loadState();
 let chartType = "bar";
 let chartPeriod = "week"; // "week" | "month"
@@ -317,10 +317,11 @@ let isListeningForExpense = false;
 let selectedDocumentFile = null;
 let statementCandidates = [];
 let supabaseClient = null;
-let isApplyingRemoteState = false;
 let cloudSaveTimer = null;
 let cloudPullTimer = null;
-let lastCloudUpdatedAt = "";
+let cloudBusy = false;
+let cloudDirty = false;
+let cloudRetryAttempt = 0;
 window.APP_FINANZAS_VERSION = APP_VERSION;
 const filters = {
   search: "",
@@ -331,23 +332,12 @@ const filters = {
 
 function loadState() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    if (!saved) return structuredClone(defaultState);
-
-    return normalizeState({
-      people: Array.isArray(saved.people) && saved.people.length === 2 ? saved.people : defaultState.people,
-      peopleUpdatedAt: saved.peopleUpdatedAt,
-      deviceOwner: saved.deviceOwner || saved.people?.[0] || defaultState.deviceOwner,
-      expenses: Array.isArray(saved.expenses) ? saved.expenses : [],
-      personalExpenses: Array.isArray(saved.personalExpenses) ? saved.personalExpenses : [],
-      settlements: Array.isArray(saved.settlements) ? saved.settlements : [],
-      recurringExpenses: Array.isArray(saved.recurringExpenses) ? saved.recurringExpenses : [],
-      budgets: saved.budgets && typeof saved.budgets === "object" ? saved.budgets : {},
-      budgetsUpdatedAt: saved.budgetsUpdatedAt,
-      personalBudgets: saved.personalBudgets && typeof saved.personalBudgets === "object" ? saved.personalBudgets : {},
-      personalBudgetsUpdatedAt: saved.personalBudgetsUpdatedAt,
-    });
-  } catch {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw === null) return structuredClone(defaultState);
+    return normalizeState(validateStateData(JSON.parse(raw)));
+  } catch (error) {
+    // No escribir ni sincronizar una copia vacía sobre un archivo local ilegible.
+    storageLoadError = error;
     return structuredClone(defaultState);
   }
 }
@@ -464,6 +454,17 @@ function sanitizeBudgets(budgets) {
   );
 }
 
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJson(value[key])}`).join(",")}}`;
+  return JSON.stringify(value);
+}
+
+function pickLatest(local, remote, timestamp, field) {
+  if ((local[timestamp] || 0) !== (remote[timestamp] || 0)) return (local[timestamp] || 0) > (remote[timestamp] || 0) ? local : remote;
+  return stableJson(field ? local[field] : local) >= stableJson(field ? remote[field] : remote) ? local : remote;
+}
+
 function mergeRecordLists(localList, remoteList) {
   const merged = new Map();
   for (const record of remoteList) merged.set(record.id, record);
@@ -473,30 +474,15 @@ function mergeRecordLists(localList, remoteList) {
       merged.set(record.id, record);
       continue;
     }
-    const winner = (record.updatedAt || 0) >= (existing.updatedAt || 0) ? record : existing;
-    const deletedAt = record.deletedAt || existing.deletedAt || null;
+    const winner = pickLatest(record, existing, "updatedAt");
+    const deletedAt = Math.max(record.deletedAt || 0, existing.deletedAt || 0) || null;
     merged.set(record.id, deletedAt === winner.deletedAt ? winner : { ...winner, deletedAt });
   }
   return [...merged.values()];
 }
 
-function pruneTombstones(list) {
-  const cutoff = Date.now() - TOMBSTONE_RETENTION_MS;
-  return list.filter((record) => !record.deletedAt || record.deletedAt > cutoff);
-}
-
-function dedupeSettlementsByWeek(settlements) {
-  const byWeek = new Map();
-  for (const settlement of settlements) {
-    const existing = byWeek.get(settlement.weekKey);
-    if (!existing || (settlement.updatedAt || 0) > (existing.updatedAt || 0)) {
-      byWeek.set(settlement.weekKey, settlement);
-    }
-  }
-  return [...byWeek.values()];
-}
-
 function saveState() {
+  if (storageLoadError) throw storageLoadError;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   queueCloudSave();
 }
@@ -521,19 +507,19 @@ function getCloudStatePayload() {
 
 function mergeCloudState(remoteData) {
   const remote = normalizeState(remoteData || {});
-  const peopleWinner = remote.peopleUpdatedAt > state.peopleUpdatedAt ? remote : state;
-  const budgetsWinner = remote.budgetsUpdatedAt > state.budgetsUpdatedAt ? remote : state;
+  const peopleWinner = pickLatest(state, remote, "peopleUpdatedAt", "people");
+  const budgetsWinner = pickLatest(state, remote, "budgetsUpdatedAt", "budgets");
   const personalBudgetsWinner =
-    remote.personalBudgetsUpdatedAt > state.personalBudgetsUpdatedAt ? remote : state;
+    pickLatest(state, remote, "personalBudgetsUpdatedAt", "personalBudgets");
 
   return normalizeState({
     people: peopleWinner.people,
     peopleUpdatedAt: peopleWinner.peopleUpdatedAt,
-    deviceOwner: state.deviceOwner,
-    expenses: pruneTombstones(mergeRecordLists(state.expenses, remote.expenses)),
-    personalExpenses: pruneTombstones(mergeRecordLists(state.personalExpenses, remote.personalExpenses)),
-    recurringExpenses: pruneTombstones(mergeRecordLists(state.recurringExpenses, remote.recurringExpenses)),
-    settlements: dedupeSettlementsByWeek(mergeRecordLists(state.settlements, remote.settlements)),
+    deviceOwner: peopleWinner.people[Math.max(0, state.people.indexOf(state.deviceOwner))],
+    expenses: mergeRecordLists(state.expenses, remote.expenses),
+    personalExpenses: mergeRecordLists(state.personalExpenses, remote.personalExpenses),
+    recurringExpenses: mergeRecordLists(state.recurringExpenses, remote.recurringExpenses),
+    settlements: mergeRecordLists(state.settlements, remote.settlements),
     budgets: budgetsWinner.budgets,
     budgetsUpdatedAt: budgetsWinner.budgetsUpdatedAt,
     personalBudgets: personalBudgetsWinner.personalBudgets,
@@ -558,7 +544,8 @@ function setSyncButtonsEnabled(isEnabled) {
 }
 
 function queueCloudSave() {
-  if (!supabaseClient || isApplyingRemoteState) return;
+  cloudDirty = true;
+  if (!supabaseClient) return;
 
   clearTimeout(cloudSaveTimer);
   cloudSaveTimer = setTimeout(() => {
@@ -598,88 +585,66 @@ async function initSupabaseSync() {
 }
 
 async function pullStateFromSupabase({ createIfMissing = false, silent = false } = {}) {
-  const config = getSupabaseConfig();
-  if (!supabaseClient || !config.isConfigured) {
-    if (!silent) setSyncStatus("Configurá Supabase antes de sincronizar.", "error");
-    return;
-  }
+  // Todas las entradas usan la misma cola; también reenvía cambios locales tras reiniciar.
+  return pushStateToSupabase({ silent });
+}
 
+async function cloudRequest(request) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 20000);
   try {
-    if (!silent) setSyncStatus("Trayendo datos de Supabase...", "");
-    const { data, error } = await supabaseClient
-      .from("app_state")
-      .select("data, updated_at")
-      .eq("id", config.stateId)
-      .maybeSingle();
-
-    if (error) throw error;
-
-    if (!data?.data) {
-      if (createIfMissing) {
-        await pushStateToSupabase({ silent: true });
-        setSyncStatus("Supabase conectado. Subí los datos locales como primera copia.", "success");
-        return;
-      }
-
-      if (!silent) setSyncStatus("No hay datos guardados en Supabase todavía.", "");
-      return;
-    }
-
-    if (silent && data.updated_at && data.updated_at === lastCloudUpdatedAt) return;
-
-    isApplyingRemoteState = true;
-    applyCloudState(data.data);
-    lastCloudUpdatedAt = data.updated_at || lastCloudUpdatedAt;
-    setSyncStatus(`Datos actualizados desde Supabase${data.updated_at ? ` (${new Date(data.updated_at).toLocaleString("es-AR")})` : ""}.`, "success");
-  } catch (error) {
-    console.error(error);
-    if (!silent) setSyncStatus("No pude traer datos de Supabase. Revisá la tabla y las credenciales.", "error");
+    return await request(controller.signal);
   } finally {
-    isApplyingRemoteState = false;
+    clearTimeout(timeout);
   }
 }
 
 async function pushStateToSupabase({ silent = false } = {}) {
   const config = getSupabaseConfig();
-  if (!supabaseClient || !config.isConfigured) {
-    if (!silent) setSyncStatus("Configurá Supabase antes de subir datos.", "error");
-    return;
-  }
-
+  if (storageLoadError || !supabaseClient || !config.isConfigured) return;
+  if (cloudBusy) { cloudDirty = true; return; }
+  cloudBusy = true;
+  clearTimeout(cloudSaveTimer);
+  let failed = false;
   try {
-    if (!silent) setSyncStatus("Subiendo datos a Supabase...", "");
-
-    const { data: existing, error: fetchError } = await supabaseClient
-      .from("app_state")
-      .select("data, updated_at")
-      .eq("id", config.stateId)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
-
-    if (existing?.data) {
-      isApplyingRemoteState = true;
-      state = mergeCloudState(existing.data);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-      isApplyingRemoteState = false;
-      lastCloudUpdatedAt = existing.updated_at || lastCloudUpdatedAt;
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      cloudDirty = false;
+      const { data: existing, error: readError } = await cloudRequest((signal) => supabaseClient.from("app_state")
+        .select("data, updated_at").eq("id", config.stateId).abortSignal(signal).maybeSingle());
+      if (readError) throw readError;
+      if (existing) {
+        validateStateData(existing.data);
+        applyCloudState(existing.data);
+      }
+      const payload = getCloudStatePayload();
+      if (existing && stableJson(payload) === stableJson(existing.data)) break;
+      // Compare-and-swap: solo reemplaza la versión que acabamos de leer.
+      const updatedAt = new Date(Math.max(Date.now(), (existing ? Date.parse(existing.updated_at) + 1 : 0))).toISOString();
+      const row = { id: config.stateId, data: payload, updated_at: updatedAt };
+      const query = existing
+        ? supabaseClient.from("app_state").update(row).eq("id", config.stateId).eq("updated_at", existing.updated_at)
+        : supabaseClient.from("app_state").insert(row);
+      const { data, error } = await cloudRequest((signal) => query.abortSignal(signal).select("updated_at"));
+      if (error && error.code !== "23505") throw error;
+      if (error || !data?.length) {
+        cloudDirty = true;
+        continue; // Otro dispositivo ganó: releer y combinar antes de intentar otra vez.
+      }
+      if (!cloudDirty) break; // Un alta durante el await exige otra vuelta.
     }
-
-    const { error } = await supabaseClient.from("app_state").upsert({
-      id: config.stateId,
-      data: getCloudStatePayload(),
-      updated_at: new Date().toISOString(),
-    });
-
-    if (error) throw error;
-    render();
-    const nowLabel = new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
-    if (!silent) setSyncStatus("Datos subidos a Supabase.", "success");
-    if (silent) setSyncStatus(`Sincronizado con Supabase ${nowLabel}.`, "success");
+    cloudRetryAttempt = 0;
+    setSyncStatus(cloudDirty ? "Cambios pendientes de sincronizar." : "Sincronizado con Supabase.", cloudDirty ? "" : "success");
   } catch (error) {
     console.error(error);
-    isApplyingRemoteState = false;
-    if (!silent) setSyncStatus("No pude subir datos a Supabase. Revisá permisos de la tabla.", "error");
+    failed = true;
+    cloudDirty = true;
+    setSyncStatus("Datos conservados en este dispositivo. Reintentando sincronización...", "error");
+  } finally {
+    cloudBusy = false;
+    if (cloudDirty) {
+      const delay = failed ? Math.min(60000, 1000 * 2 ** Math.min(cloudRetryAttempt++, 6)) : 900;
+      cloudSaveTimer = setTimeout(() => pushStateToSupabase({ silent: true }), delay);
+    }
   }
 }
 
@@ -1006,6 +971,8 @@ function parseAmountInput(value) {
 function renderPeople() {
   const [personA, personB] = state.people;
   const deviceOwner = getDeviceOwner();
+  const payer = elements.expensePayer.value;
+  const recurringPayer = elements.recurringPayer.value;
   elements.commonPayerLabel.textContent = deviceOwner;
   elements.personalOwnerLabel.textContent = deviceOwner;
   elements.personANameSummary.textContent = `${personA} pagó`;
@@ -1017,7 +984,8 @@ function renderPeople() {
   elements.expensePayer.innerHTML = peopleOptions;
 
   elements.recurringPayer.innerHTML = elements.expensePayer.innerHTML;
-  elements.expensePayer.value = deviceOwner;
+  elements.expensePayer.value = state.people.includes(payer) ? payer : deviceOwner;
+  elements.recurringPayer.value = state.people.includes(recurringPayer) ? recurringPayer : deviceOwner;
   if (!elements.personalExpenseOwner.value) {
     elements.personalExpenseOwner.value = deviceOwner;
   }
@@ -1041,9 +1009,39 @@ function populateSettingsForm() {
   elements.deviceOwnerSelect.value = deviceOwner;
 }
 
-// Cierre guardado (no borrado) de una semana, o null si esa semana sigue abierta.
+function getSettlementRange(record) {
+  if (typeof record.weekKey !== "string") return null;
+  const parts = record.weekKey.split("_");
+  if (parts.length > 2 || !parts.every(isValidDateKey)) return null;
+  const start = parseISODate(parts[0]);
+  const end = parts.length === 2 ? parseISODate(parts[1]) : getWeekEnd(start);
+  return start <= end ? { start, end } : null;
+}
+
+function getActiveSettlements() {
+  const superseded = new Set(state.settlements.map((record) => record.supersedes).filter(Boolean));
+  return state.settlements.filter((record) => !record.deletedAt && !superseded.has(record.id));
+}
+
+function getOverlappingSettlements(range, exceptId = "") {
+  if (!range) return [];
+  return getActiveSettlements().filter((record) => {
+    const other = getSettlementRange(record);
+    return record.id !== exceptId && other && other.start <= range.end && range.start <= other.end;
+  });
+}
+
 function getWeekSettlement(weekKey = getSelectedPeriodKey()) {
-  return state.settlements.find((settlement) => settlement.weekKey === weekKey && !settlement.deletedAt) || null;
+  return getActiveSettlements().find((settlement) => settlement.weekKey === weekKey) || null;
+}
+
+function signedSettlement(record) {
+  return record.debtor === record.people[0] ? record.amount : -record.amount;
+}
+
+function getSettlementAdjustment(current, previous) {
+  const signed = signedSettlement({ ...current, people: state.people }) - (previous ? signedSettlement(previous) : 0);
+  return { amount: Math.abs(signed), debtor: state.people[signed >= 0 ? 0 : 1], creditor: state.people[signed >= 0 ? 1 : 0] };
 }
 
 // Estado de cierre de la semana seleccionada. `isStale` marca el caso de haber saldado
@@ -1094,6 +1092,14 @@ function renderSettlementBlock(expenses, settlement) {
   elements.unsettleWeekButton.classList.toggle("is-hidden", !isSettled);
   elements.settlementMeta.classList.toggle("is-hidden", !isSettled);
 
+  if (getOverlappingSettlements(getSelectedPeriodRange(), record?.id).length) {
+    elements.settlementCard.classList.remove("is-settled");
+    elements.settlementBlockLabel.textContent = "Revisar cierres";
+    elements.settlementText.textContent = "Hay cierres superpuestos. Revisá el historial y conciliá lo ya transferido antes de saldar este período.";
+    elements.settleWeekButton.textContent = "Revisar superposición";
+    return;
+  }
+
   if (!isSettled) {
     elements.settlementBlockLabel.textContent = "Para emparejar";
     elements.settlementText.textContent = describeSettlementMovement(settlement);
@@ -1108,8 +1114,8 @@ function renderSettlementBlock(expenses, settlement) {
 
   if (isStale) {
     elements.settlementBlockLabel.textContent = "Cierre desactualizado";
-    elements.settlementText.textContent = describeSettlementMovement(settlement);
-    elements.settlementMeta.textContent = `Cerraste este período el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
+    elements.settlementText.textContent = describeSettlementMovement(getSettlementAdjustment(settlement, record));
+    elements.settlementMeta.textContent = `El ajuste descuenta la transferencia guardada. Cerraste este período el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
     elements.settleWeekButton.textContent = "Actualizar cierre";
     return;
   }
@@ -1129,7 +1135,7 @@ function renderSettlementDetail(expenses, isPersonal) {
   const half = settlement.total / 2;
   const personATotal = settlement.totals[personA] || 0;
   const personBTotal = settlement.totals[personB] || 0;
-  const { isSettled, isStale } = getSettlementStatus(expenses);
+  const { record, isSettled, isStale } = getSettlementStatus(expenses);
 
   // El desglose se sigue viendo después de saldar (pedido del usuario), pero con un sello
   // que aclara que ya no es una cuenta pendiente.
@@ -1143,8 +1149,9 @@ function renderSettlementDetail(expenses, isPersonal) {
       ? "Esta semana ya está saldada. El desglose queda como referencia."
       : "Así queda la cuenta si dividen el total en partes iguales.";
 
-  const movement = settlement.amount
-    ? `${escapeHtml(settlement.debtor)} le pasa ${formatMoney(settlement.amount)} a ${escapeHtml(settlement.creditor)}`
+  const pending = isStale ? getSettlementAdjustment(settlement, record) : settlement;
+  const movement = pending.amount
+    ? `${escapeHtml(pending.debtor)} le pasa ${formatMoney(pending.amount)} a ${escapeHtml(pending.creditor)}${isStale ? " (solo la diferencia del cierre anterior)" : ""}`
     : settlement.total
       ? "No hace falta transferencia"
       : "Sin movimiento";
@@ -1167,7 +1174,7 @@ function renderSettlementDetail(expenses, isPersonal) {
       <strong>${formatMoney(personBTotal)}</strong>
     </div>
     <div class="breakdown-item wide">
-      <span>Resultado</span>
+      <span>${isStale ? "Ajuste pendiente" : "Resultado"}</span>
       <strong>${movement}</strong>
     </div>
   `;
@@ -1251,14 +1258,20 @@ function getActiveBudgets(isPersonal = currentEntryMode === "personal") {
   return isPersonal ? state.personalBudgets : state.budgets;
 }
 
+function getPeriodDayCount() {
+  const { start, end } = getSelectedPeriodRange();
+  const utc = (date) => Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+  return Math.round((utc(end) - utc(start)) / 86400000) + 1;
+}
+
 function renderBudgets(expenses, isPersonal) {
   const weeklyTotals = getCategoryTotals(expenses, { groupFood: false });
   const activeBudgets = getActiveBudgets(isPersonal);
   const budgetEntries = categories.filter((category) => activeBudgets[category]);
 
   elements.budgetPanelNote.textContent = isPersonal
-    ? "Límites semanales por categoría para tus gastos personales."
-    : "Límites semanales por categoría para los gastos comunes.";
+    ? "Límites semanales personales, prorrateados por los días del período."
+    : "Límites semanales comunes, prorrateados por los días del período.";
 
   if (!budgetEntries.length) {
     elements.budgetList.innerHTML = `<p class="empty-state">${
@@ -1269,7 +1282,7 @@ function renderBudgets(expenses, isPersonal) {
 
   elements.budgetList.innerHTML = budgetEntries
     .map((category) => {
-      const budget = activeBudgets[category];
+      const budget = activeBudgets[category] * getPeriodDayCount() / 7;
       const spent = weeklyTotals[category] || 0;
       const percent = Math.min(100, Math.round((spent / budget) * 100));
       const isOver = spent > budget;
@@ -1902,7 +1915,8 @@ function getInstallmentsSnapshot(referenceDate = new Date()) {
   }
 
   const monthTotal = active.reduce((sum, plan) => sum + plan.monthlyAmount, 0);
-  const debtTotal = active.reduce((sum, plan) => sum + plan.remainingAmount, 0);
+  const future = plans.filter((plan) => plan.firstMonth > thisMonth);
+  const debtTotal = active.reduce((sum, plan) => sum + plan.remainingAmount, 0) + future.reduce((sum, plan) => sum + plan.total, 0);
 
   const byCard = new Map();
   for (const plan of active) {
@@ -1930,7 +1944,7 @@ function getInstallmentsSnapshot(referenceDate = new Date()) {
     debtTotal,
     byCard: [...byCard.values()].sort((a, b) => b.amount - a.amount),
     projection,
-    lastMonthWithDebt: active.reduce((last, plan) => Math.max(last, plan.lastMonth), 0),
+    lastMonthWithDebt: [...active, ...future].reduce((last, plan) => Math.max(last, plan.lastMonth), 0),
   };
 }
 
@@ -2072,8 +2086,8 @@ function renderPeriodLabel() {
 }
 
 function renderSettlementHistory() {
-  const settlements = state.settlements
-    .filter((settlement) => !settlement.deletedAt)
+  const activeIds = new Set(getActiveSettlements().map((record) => record.id));
+  const settlements = [...state.settlements]
     .sort((a, b) => b.settledAt.localeCompare(a.settledAt));
 
   if (!settlements.length) {
@@ -2083,8 +2097,11 @@ function renderSettlementHistory() {
 
   elements.settlementHistory.innerHTML = settlements
     .map((settlement) => {
-      const movement = settlement.amount
-        ? `${settlement.debtor} le pasó ${formatMoney(settlement.amount)} a ${settlement.creditor}`
+      const conflict = activeIds.has(settlement.id) && getOverlappingSettlements(getSettlementRange(settlement), settlement.id).length > 0;
+      const label = settlement.deletedAt ? "Reabierta" : !activeIds.has(settlement.id) ? "Cierre anterior" : settlement.supersedes ? "Ajuste" : "Cierre";
+      const transfer = settlement.adjustment || settlement;
+      const movement = transfer.amount
+        ? `${transfer.debtor} le pasó ${formatMoney(transfer.amount)} a ${transfer.creditor}`
         : "No hizo falta compensación";
 
       return `
@@ -2092,7 +2109,7 @@ function renderSettlementHistory() {
           <div>
             <span class="history-kicker">${escapeHtml(settlement.weekLabel)}</span>
             <strong>${escapeHtml(movement)}</strong>
-            <span>Saldada el ${dateFormatter.format(parseISODate(settlement.settledAt))}</span>
+            <span>${label} · ${conflict ? "Revisar superposición · " : ""}Saldada el ${dateFormatter.format(parseISODate(settlement.settledAt))}</span>
           </div>
           <div class="history-total">${formatMoney(settlement.total)}</div>
         </article>
@@ -3357,11 +3374,10 @@ function handlePeopleSubmit(event) {
   }
 
   const previousPeople = state.people;
-  const previousDeviceOwnerIndex = previousPeople.indexOf(state.deviceOwner);
   const namesChanged = personA !== previousPeople[0] || personB !== previousPeople[1];
   state.people = [personA, personB];
   state.deviceOwner =
-    selectedDeviceOwner === previousPeople[1] || previousDeviceOwnerIndex === 1 ? personB : personA;
+    selectedDeviceOwner === previousPeople[1] ? personB : personA;
 
   if (namesChanged) {
     const renamedAt = Date.now();
@@ -3850,31 +3866,28 @@ function handleApplyRecurring() {
   }
 
   const range = getSelectedPeriodRange();
-  const startKey = toISODate(range.start);
   let added = 0;
 
   for (const recurring of activeRecurring) {
-    const shouldApply = recurring.frequency === "weekly" || periodContainsFirstOfMonth(range);
-    // Con rangos libres ya no alcanza comparar semanas: se mira si el recurrente
-    // tiene un gasto dentro del período que se está viendo.
-    const alreadyApplied = state.expenses.some(
-      (expense) => !expense.deletedAt && expense.recurringId === recurring.id && isExpenseInSelectedPeriod(expense),
-    );
+    for (const date of getRecurringDates(recurring, range)) {
+      const occurrenceKey = recurring.frequency === "monthly" ? date.slice(0, 7) : toISODate(getWeekStart(parseISODate(date)));
+      const alreadyApplied = state.expenses.some((expense) => expense.recurringId === recurring.id &&
+        (recurring.frequency === "monthly" ? expense.date.slice(0, 7) : toISODate(getWeekStart(parseISODate(expense.date)))) === occurrenceKey);
+      if (alreadyApplied) continue;
 
-    if (!shouldApply || alreadyApplied) continue;
-
-    state.expenses.push({
-      id: createId(),
-      date: startKey,
-      payer: recurring.payer,
-      category: recurring.category,
-      paymentMethod: recurring.paymentMethod || "",
-      amount: recurring.amount,
-      note: recurring.note,
-      recurringId: recurring.id,
-      createdAt: Date.now() + added,
-    });
-    added += 1;
+      state.expenses.push({
+        id: `recurring:${recurring.id}:${occurrenceKey}`,
+        date,
+        payer: recurring.payer,
+        category: recurring.category,
+        paymentMethod: recurring.paymentMethod || "",
+        amount: recurring.amount,
+        note: recurring.note,
+        recurringId: recurring.id,
+        createdAt: Date.now() + added,
+      });
+      added += 1;
+    }
   }
 
   if (!added) {
@@ -3888,11 +3901,12 @@ function handleApplyRecurring() {
 
 // Los recurrentes mensuales se aplican en el período que contiene un día 1. Para una semana
 // lunes-domingo es exactamente lo mismo que preguntaba el viejo isFirstWeekOfMonth().
-function periodContainsFirstOfMonth({ start, end }) {
+function getRecurringDates(recurring, { start, end }) {
+  const dates = [];
   for (const date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-    if (date.getDate() === 1) return true;
+    if (recurring.frequency === "monthly" ? date.getDate() === 1 : date.getDay() === 1) dates.push(toISODate(date));
   }
-  return false;
+  return dates;
 }
 
 function handleExportBackup() {
@@ -3912,24 +3926,101 @@ function handleExportBackup() {
   setBackupStatus("Backup exportado.", "success");
 }
 
+function isValidDateKey(value) {
+  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number(value.slice(0, 4)) >= 1000 && toISODate(parseISODate(value)) === value;
+}
+
+// Validar ANTES de normalizar: normalizar no debe convertir errores en listas vacías.
+function validateStateData(data) {
+  const object = (value) => value && typeof value === "object" && !Array.isArray(value);
+  const text = (value) => typeof value === "string" && value.trim().length > 0;
+  const number = (value) => typeof value === "number" && Number.isFinite(value);
+  const fail = (field) => { throw new Error(`Backup inválido: ${field}.`); };
+  if (!object(data)) fail("estado");
+  if (!Array.isArray(data.people) || data.people.length !== 2 || !data.people.every(text) || data.people[0] === data.people[1]) fail("personas");
+  if (!Array.isArray(data.expenses)) fail("gastos");
+  for (const key of ["peopleUpdatedAt", "budgetsUpdatedAt", "personalBudgetsUpdatedAt"]) {
+    if (data[key] != null && (!number(data[key]) || data[key] < 0)) fail(key);
+  }
+  for (const key of ["budgets", "personalBudgets"]) {
+    if (data[key] !== undefined && (!object(data[key]) || Object.values(data[key]).some((v) => !number(v) || v <= 0))) fail(key);
+  }
+  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements"]) {
+    if (data[key] === undefined) continue; // Formatos antiguos sin personales/recurrentes.
+    if (!Array.isArray(data[key])) fail(key);
+    const ids = new Set();
+    for (const record of data[key]) {
+      if (!object(record) || !text(record.id) || !/^[a-zA-Z0-9_:.-]+$/.test(record.id) || ids.has(record.id)) fail(`${key}: id ausente, inválido o duplicado`);
+      ids.add(record.id);
+      for (const field of ["createdAt", "updatedAt", "deletedAt"]) {
+        if (record[field] != null && (!number(record[field]) || record[field] < 0)) fail(`${key}: ${field}`);
+      }
+      if (!number(record.amount) || record.amount < 0 || (key !== "settlements" && record.amount === 0)) fail(`${key}: monto`);
+      if (key === "settlements") {
+        const range = getSettlementRange(record);
+        if (!range || !isValidDateKey(record.settledAt) || !number(record.total) || record.total < 0 ||
+            !Array.isArray(record.people) || record.people.length !== 2 || !record.people.every(text) || !text(record.weekLabel)) fail("cierre");
+        for (const field of ["debtor", "creditor"]) if (record[field] != null && typeof record[field] !== "string") fail(field);
+        if (record.supersedes != null && (!text(record.supersedes) || record.supersedes === record.id)) fail("referencia de cierre");
+        if (record.adjustment != null && (!object(record.adjustment) || !number(record.adjustment.amount) || record.adjustment.amount < 0 || !text(record.adjustment.debtor) || !text(record.adjustment.creditor))) fail("ajuste de cierre");
+        continue;
+      }
+      for (const field of ["note", "paymentMethod", "card", "recurringId"]) {
+        if (record[field] != null && typeof record[field] !== "string") fail(`${key}: ${field}`);
+      }
+      if (!text(record.category) || !text(record[key === "personalExpenses" ? "owner" : "payer"])) fail(`${key}: persona/categoría`);
+      if (key === "recurringExpenses") {
+        if (!text(record.note) || !["weekly", "monthly"].includes(record.frequency)) fail("recurrente");
+      } else if (!isValidDateKey(record.date)) fail(`${key}: fecha`);
+      if (record.installments != null && (!Number.isInteger(record.installments) || record.installments < 1 || record.installments > 1200)) fail("cuotas");
+      if (record.firstInstallmentMonth != null && !isValidDateKey(`${record.firstInstallmentMonth}-01`)) fail("primer vencimiento");
+      for (const field of ["usdAmount", "usdRate"]) if (record[field] != null && (!number(record[field]) || record[field] <= 0)) fail(field);
+    }
+  }
+  const settlementsById = new Map((data.settlements || []).map((record) => [record.id, record]));
+  for (const record of settlementsById.values()) {
+    const visited = new Set([record.id]);
+    let cursor = record;
+    while (cursor.supersedes) {
+      const parent = settlementsById.get(cursor.supersedes);
+      if (!parent || parent.weekKey !== record.weekKey || visited.has(parent.id)) fail("cadena de ajustes");
+      visited.add(parent.id);
+      cursor = parent;
+    }
+  }
+  return data;
+}
+
+function parseBackup(parsed) {
+  if (parsed && Object.hasOwn(parsed, "data")) {
+    if (parsed.app !== "gastos-del-hogar" || parsed.version !== 1) throw new Error("Formato o versión de backup no compatible.");
+    return normalizeState(validateStateData(parsed.data));
+  }
+  return normalizeState(validateStateData(parsed));
+}
+
 async function handleImportBackup(event) {
   const [file] = event.target.files;
   if (!file) return;
-
   try {
-    const text = await file.text();
-    const parsed = JSON.parse(text);
-    const importedState = normalizeState(parsed.data || parsed);
-    const confirmed = confirm("Esto reemplazará los datos guardados en este navegador. ¿Querés importar el backup?");
-    if (!confirmed) return;
-
-    state = importedState;
-    saveState();
+    if (file.size > 20 * 1024 * 1024) throw new Error("El backup supera 20 MB.");
+    const importedState = parseBackup(JSON.parse(await file.text()));
+    if (JSON.stringify(importedState.people) !== JSON.stringify(state.people)) {
+      throw new Error("Los nombres del backup no coinciden con este hogar. Revisalos antes de importar.");
+    }
+    if (!confirm("Se combinará el backup con los datos actuales por ID y fecha de edición, incluidos borrados. Se conservarán los registros que solo existen aquí y el dueño del dispositivo. Se guardará una copia local previa. ¿Continuar?")) return;
+    // Si no hay espacio para la copia, se aborta antes de tocar el estado activo.
+    localStorage.setItem(`${STORAGE_KEY}-before-import-${Date.now()}`, JSON.stringify(state));
+    const merged = mergeCloudState(importedState);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+    state = merged;
+    queueCloudSave();
     render();
-    setBackupStatus("Backup importado correctamente.", "success");
+    setBackupStatus("Backup combinado. Copia previa conservada en este navegador.", "success");
   } catch (error) {
     console.error(error);
-    setBackupStatus("No pude importar ese archivo. Revisá que sea un backup JSON válido.", "error");
+    setBackupStatus(`No se importó el backup. ${error.message}`, "error");
   } finally {
     elements.importBackupInput.value = "";
   }
@@ -3958,7 +4049,7 @@ function handleClearFilters() {
 
 function handleSettleWeek() {
   const expenses = getPeriodExpenses();
-  if (!expenses.length) {
+  if (!expenses.length && !getWeekSettlement()) {
     alert("Primero cargá algún gasto en el período seleccionado.");
     return;
   }
@@ -3974,20 +4065,27 @@ function handleSettleWeek() {
   const periodKey = getSelectedPeriodKey();
   const { start, end } = getSelectedPeriodRange();
   const weekLabel = getSelectedPeriodLabel();
+  if (getOverlappingSettlements({ start, end }, status.record?.id).length) {
+    alert("Este período se superpone con otro cierre activo. Revisá el historial y reabrí el cierre correspondiente antes de saldar; no se borró ningún registro.");
+    return;
+  }
   const settlement = status.current;
-  const movement = settlement.amount
-    ? `${settlement.debtor} le pasa ${formatMoney(settlement.amount)} a ${settlement.creditor}.`
+  const adjustment = getSettlementAdjustment(settlement, status.record);
+  const movement = adjustment.amount
+    ? `${adjustment.debtor} le pasa ${formatMoney(adjustment.amount)} a ${adjustment.creditor}.`
     : "No hace falta que se pasen plata.";
 
   const confirmed = confirm(
     status.isStale
-      ? `Actualizar el cierre del período ${weekLabel}.\n\nGuardado: ${formatMoney(status.record.total)}\nAhora: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`
+      ? `Registrar un ajuste del período ${weekLabel} sin borrar el cierre anterior. La transferencia indicada es solo la diferencia.\n\nGuardado: ${formatMoney(status.record.total)}\nAhora: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`
       : `Cerrar el período ${weekLabel}.\n\nTotal: ${formatMoney(settlement.total)}\n${movement}\n\n¿Confirmás?`,
   );
   if (!confirmed) return;
 
   const record = {
-    id: status.record?.id || createId(),
+    id: createId(),
+    supersedes: status.record?.id || null,
+    adjustment,
     weekKey: periodKey,
     weekLabel,
     settledAt: toISODate(new Date()),
@@ -3999,12 +4097,7 @@ function handleSettleWeek() {
     updatedAt: Date.now(),
   };
 
-  // Se conservan los cierres tombstoneados del mismo período para que un "Deshacer" previo
-  // siga propagándose a los otros dispositivos; `dedupeSettlementsByWeek` se queda con el más nuevo.
-  state.settlements = [
-    record,
-    ...state.settlements.filter((item) => item.weekKey !== periodKey || item.deletedAt),
-  ];
+  state.settlements.unshift(record);
   saveState();
   showExpenseToast(status.isStale ? "Cierre actualizado" : "Período saldado");
   render();
@@ -4015,7 +4108,7 @@ function handleUnsettleWeek() {
   const record = getWeekSettlement();
   if (!record) return;
 
-  if (!confirm(`Reabrir el período ${record.weekLabel}.\n\nSe borra el cierre guardado. ¿Confirmás?`)) return;
+  if (!confirm(`Reabrir el período ${record.weekLabel}.\n\nEl cierre queda en el historial como reabierto. Esto no revierte transferencias reales: concilien lo ya pagado antes de cerrar de nuevo. ¿Confirmás?`)) return;
 
   // Tombstone, no borrado: así el "deshacer" viaja a los otros dispositivos igual que el de un gasto.
   // Un cierre nuevo para la misma semana se guarda con un `id` nuevo, porque el merge nunca "des-borra".
@@ -4217,6 +4310,12 @@ function handleExportMonth() {
 }
 
 async function init() {
+  if (storageLoadError) {
+    setSyncButtonsEnabled(false);
+    setSyncStatus("No se pudieron leer los datos locales. Se conservaron intactos; la app está detenida para recuperarlos sin sobrescribirlos.", "error");
+    alert("No se pudieron leer los datos guardados. No borres los datos del navegador. La app detuvo el guardado y la sincronización para permitir su recuperación.");
+    return;
+  }
   setSelectedPeriod(getWeekStart(), getWeekEnd(getWeekStart()));
   elements.expenseDate.value = toISODate(new Date());
   elements.personalExpenseDate.value = getSelectedPeriodStartKey();
@@ -4360,6 +4459,7 @@ async function init() {
       pullStateFromSupabase({ silent: true });
     }
   });
+  window.addEventListener("online", () => pushStateToSupabase({ silent: true }));
   window.addEventListener("focus", () => pullStateFromSupabase({ silent: true }));
 
   closeSettings();

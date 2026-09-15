@@ -2,6 +2,16 @@
 
 App local para registrar gastos compartidos entre dos personas y cerrar la semana con un reparto 50/50.
 
+## Rama de protección de datos (sin publicar)
+
+Las correcciones de `codex/proteccion-datos` están documentadas en [Protección de datos](docs/proteccion-datos.md). Para probar sin red ni datos reales:
+
+```sh
+node --test tests/protection.test.cjs
+```
+
+No abras el `index.html` de trabajo para hacer pruebas con datos ficticios: conserva la configuración real de Supabase. Las pruebas automatizadas no cargan ese HTML ni la configuración.
+
 ## Cómo usarla
 
 1. Abrí `index.html` en tu navegador.

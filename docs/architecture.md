@@ -143,24 +143,17 @@ Cuatro caminos, todos terminan llenando el mismo formulario (`#expenseForm`/`#pe
 
 ## Sincronización con Supabase
 
-**Estado al 2026-07-20: el modelo de merge descrito acá está implementado, commiteado (`135956e`) y pusheado a GitHub Pages.**
+Actualización 2026-09-15, **solo en `codex/proteccion-datos`, sin desplegar**. Ver [proteccion-datos.md](proteccion-datos.md).
 
-Diseño (antes del merge, y el problema que resolvió):
+- La fila `app_state` mantiene el esquema existente (`id`, `data`, `updated_at`). Sin migraciones.
+- Pull y push entran a una única cola local. Se valida la lectura remota, combina por ID y escribe con filtro por la revisión leída (`updated_at`); si no devuelve filas, relee y reintenta. La primera creación usa INSERT; un conflicto de clave obliga a releer. No hay upsert.
+- Cada petición tiene timeout de 20 segundos. Fallos conservan el estado local y programan reintentos de 1 a 60 segundos. El arranque, foco, visibilidad, evento online y timer de 15 segundos vuelven a intentar enviar el estado local combinado.
+- `mergeRecordLists` une IDs y conserva borrados; timestamps iguales se desempatan de forma estable. No se podan tombstones sin confirmación de todos los dispositivos.
+- Personas y cada conjunto de presupuestos siguen resolviéndose como campos completos con sus propios timestamps. El dueño del dispositivo es local; se conserva su posición al renombrar personas.
+- Los cierres ya no se deduplican por período. Cada ajuste crea un registro con `supersedes` y `adjustment`; el historial mantiene todas las versiones y reaperturas. Conflictos offline se conservan para conciliación.
+- El almacenamiento local y los backups se validan antes de normalizar. Los backups se combinan, conservan el dueño y dejan una copia previa local. Un estado ilegible detiene el arranque para evitar sobrescrituras vacías.
 
-- Antes: `pushStateToSupabase` subía el estado local completo con `UPSERT`, reemplazando lo que hubiera en la nube. Si dos dispositivos agregaban gastos distintos casi al mismo tiempo, el que subía último **pisaba** el gasto del otro. Riesgo real de pérdida de datos, encontrado en revisión de código, no reportado por el usuario.
-
-- Ahora: sincronización basada en **merge por id + tombstones**, no reemplazo:
-  - Cada gasto/personal/recurrente tiene `id`, `updatedAt`, `deletedAt`.
-  - Borrar un gasto ya NO lo saca del array: le pone `deletedAt = Date.now()` (`tombstoneRecords()`). Todos los lectores de gastos (`getPeriodExpenses`, `getCurrentMonthExpenses`, etc.) filtran `!expense.deletedAt`.
-  - `mergeRecordLists(local, remote)` hace unión por `id`: un id nuevo en cualquiera de los dos lados sobrevive; un id en ambos lados se resuelve por `updatedAt` más reciente, y si cualquiera de los dos lo tiene tombstoneado, el resultado queda tombstoneado (el borrado gana).
-  - `pruneTombstones()` descarta tombstones de más de 90 días (`TOMBSTONE_RETENTION_MS`) para no crecer indefinidamente. Nunca poda registros vivos.
-  - `settlements` se mezclan igual por id y además se deduplican por `weekKey` (`dedupeSettlementsByWeek`) por si dos dispositivos saldan la misma semana antes de sincronizar.
-  - `people`, `budgets` y `personalBudgets` (que no son arrays con id, son un array de 2 nombres y objetos planos) se resuelven por last-write-wins de todo el campo, comparando `peopleUpdatedAt`/`budgetsUpdatedAt`/`personalBudgetsUpdatedAt` — **no** hacen merge granular. Es una simplificación consciente (ver `decisions.md`), no un merge tan fino como el de los gastos. Los dos sets de presupuestos tienen su propio timestamp, así que editar los comunes no pisa los personales ni al revés.
-  - `pushStateToSupabase` ahora primero trae el estado remoto actual, lo mezcla con el local (`mergeCloudState`), guarda el resultado localmente, y recién ahí sube. `pullStateFromSupabase`/`applyCloudState` hacen lo mismo pero sin subir.
-
-- Disparadores de sincronización: `saveState()` dispara `queueCloudSave()` (debounce de 900ms → push silencioso). Pull automático cada 15s mientras la pestaña está visible (`startCloudAutoPull`), más pull al recuperar foco/visibilidad. Los botones de Configuración ("Subir"/"Traer") son solo para forzarlo, no son necesarios en el uso normal.
-
-- `deviceOwner` (a qué persona pertenece el dispositivo) es la única parte del estado que **nunca** se sincroniza — es local a cada navegador a propósito.
+**Compatibilidad:** esta protección no puede impedir las escrituras incondicionales de clientes antiguos. Actualizar todos los dispositivos y comprobar el protocolo en un entorno de ensayo antes de autorizar un despliegue.
 
 ## PWA / Service Worker
 

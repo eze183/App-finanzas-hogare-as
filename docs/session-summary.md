@@ -4,6 +4,12 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 **Relación con `CODEX_CONTEXT.md`**: ese archivo es la memoria detallada que usa específicamente Codex (con instrucciones de `AGENTS.md` para leerlo/actualizarlo). Este archivo (`docs/session-summary.md`) es el equivalente pensado para cualquier agente, incluido Claude Code, y es el que se mantiene al día de acá en adelante por instrucción del usuario. No se duplica contenido innecesariamente: las entradas de antes del 2026-07-20 están condensadas acá (el detalle completo, línea por línea, sigue en `CODEX_CONTEXT.md`); de acá en adelante este archivo tiene el registro completo.
 
+## 2026-09-15 — Protección de datos, solo en rama de trabajo
+
+Se revisaron cambios locales antes de `git fetch` y se cambió a la rama existente `codex/proteccion-datos` (misma base `a5bef47`). Se conservaron documentación e imagen locales. Se corrigieron sync concurrente/reintentos, validación e importación de backups, versiones y superposiciones de cierres, pagadores, cambio de dueño, deuda futura y rangos de recurrentes/presupuestos. Código v35.
+
+22 pruebas aisladas con VM, DOM mínimo, almacenamiento en memoria y servidor Supabase simulado; red bloqueada. Sintaxis y revisión de diff correctas. Sin tocar producción, sin SQL, sin push ni merge. Detalle y limitaciones en [proteccion-datos.md](proteccion-datos.md). El contexto viejo se archivó íntegro en [codex-context-history.md](codex-context-history.md); `CODEX_CONTEXT.md` ahora contiene un resumen práctico para continuar.
+
 ---
 
 ## 2026-08-27 — El dictado por voz reconoce la forma de pago (y deja de mandar todo a la descripción)
