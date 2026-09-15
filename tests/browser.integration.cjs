@@ -200,3 +200,20 @@ test('real full render handles future installments and monthly recurring budgets
   assert.match(await page.locator('#budgetList').textContent(), /3\.000/);
   await sync(page);
 });
+
+test('browser upgrades a valid pre-id local state and synchronizes it without data loss', { timeout: 30000 }, async t => {
+  const fixture = apiFixture();
+  const legacy = { ...empty(), expenses: [
+    { date: '2026-09-14', payer: 'Eze', category: 'Otros', amount: 90, note: 'Registro anterior' },
+    { date: '2026-09-15', payer: 'Tami', category: 'Servicios', amount: 110, note: 'Otro registro anterior' },
+  ] };
+  const page = await device(t, fixture, legacy);
+  const active = await page.evaluate(() => structuredClone(state));
+  assert.equal(active.expenses.length, 2);
+  assert.ok(active.expenses.every(item => item.id.startsWith('legacy:expenses:')));
+  assert.deepEqual(fixture.data.expenses.map(item => item.amount).sort((a, b) => a - b), [90, 110]);
+  await page.reload();
+  await page.waitForFunction(() => document.querySelector('#syncStatus').textContent.includes('Sincronizado'));
+  const reloaded = await page.evaluate(() => structuredClone(state));
+  assert.deepEqual(reloaded.expenses.map(item => item.id), active.expenses.map(item => item.id));
+});

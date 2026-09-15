@@ -4,6 +4,12 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 **Relación con `CODEX_CONTEXT.md`**: ese archivo es la memoria detallada que usa específicamente Codex (con instrucciones de `AGENTS.md` para leerlo/actualizarlo). Este archivo (`docs/session-summary.md`) es el equivalente pensado para cualquier agente, incluido Claude Code, y es el que se mantiene al día de acá en adelante por instrucción del usuario. No se duplica contenido innecesariamente: las entradas de antes del 2026-07-20 están condensadas acá (el detalle completo, línea por línea, sigue en `CODEX_CONTEXT.md`); de acá en adelante este archivo tiene el registro completo.
 
+## 2026-09-15 — Compatibilidad con datos antiguos y validación en Edge
+
+La auditoría posterior detectó que la validación estricta podía bloquear estados válidos de las primeras versiones que todavía no tenían IDs. Se agregó una actualización segura y determinista para gastos, personales, recurrentes y cierres sin ID; dos dispositivos generan el mismo ID y no duplican el registro al sincronizar. Los datos con estructura inválida siguen bloqueados sin sobrescritura. También se marcó como histórica la decisión antigua de deduplicar cierres en `docs/decisions.md`.
+
+Resultado actualizado: 24 pruebas de lógica y 6 de navegador, aprobadas en Chrome 152 y Edge 153 con SDK Supabase 2.116.0. Sin producción, migraciones, push ni merge.
+
 ## 2026-09-15 — Validación integrada en Chrome y SDK real
 
 Sobre `7b4d301`, se agregaron 5 pruebas de navegador con Playwright 1.62.1, Chrome 152 y SDK Supabase 2.116.0 fijado por versión/SHA-256. Ejecutan HTML saneado, init y formularios reales en contextos desechables. Todas las peticiones están interceptadas; API compartida en memoria para las carreras entre dos dispositivos. Pasaron los 5 casos (más los 22 unitarios previos). Captura móvil de cierre y ajuste revisada, sin overflow. No se cambió el código de la app en esta continuación.

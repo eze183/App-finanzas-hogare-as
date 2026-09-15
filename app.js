@@ -334,7 +334,7 @@ function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw === null) return structuredClone(defaultState);
-    return normalizeState(validateStateData(JSON.parse(raw)));
+    return normalizeState(prepareLegacyStateData(JSON.parse(raw)));
   } catch (error) {
     // No escribir ni sincronizar una copia vacía sobre un archivo local ilegible.
     storageLoadError = error;
@@ -589,6 +589,41 @@ async function pullStateFromSupabase({ createIfMissing = false, silent = false }
   return pushStateToSupabase({ silent });
 }
 
+function stableHash(value, seed = 2166136261) {
+  let hash = seed >>> 0;
+  for (const character of value) {
+    hash ^= character.codePointAt(0);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function prepareLegacyStateData(data) {
+  validateStateData(data, { allowLegacyIds: true });
+  const prepared = structuredClone(data);
+  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements"]) {
+    const occurrences = new Map();
+    prepared[key] = (prepared[key] || []).map((record) => {
+      if (record.id) return record;
+      const fingerprint = stableJson(record);
+      const occurrence = occurrences.get(fingerprint) || 0;
+      occurrences.set(fingerprint, occurrence + 1);
+      const fallbackTime = isValidDateKey(record.date)
+        ? parseISODate(record.date).getTime()
+        : isValidDateKey(record.settledAt)
+          ? parseISODate(record.settledAt).getTime()
+          : occurrence + 1;
+      return {
+        ...record,
+        id: `legacy:${key}:${stableHash(fingerprint)}${stableHash(fingerprint, 3339675911)}:${occurrence}`,
+        ...(key === "settlements" ? {} : { createdAt: Number(record.createdAt) || fallbackTime }),
+        updatedAt: Number(record.updatedAt) || Number(record.createdAt) || fallbackTime,
+      };
+    });
+  }
+  return validateStateData(prepared);
+}
+
 async function cloudRequest(request) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20000);
@@ -613,8 +648,7 @@ async function pushStateToSupabase({ silent = false } = {}) {
         .select("data, updated_at").eq("id", config.stateId).abortSignal(signal).maybeSingle());
       if (readError) throw readError;
       if (existing) {
-        validateStateData(existing.data);
-        applyCloudState(existing.data);
+        applyCloudState(prepareLegacyStateData(existing.data));
       }
       const payload = getCloudStatePayload();
       if (existing && stableJson(payload) === stableJson(existing.data)) break;
@@ -3932,7 +3966,7 @@ function isValidDateKey(value) {
 }
 
 // Validar ANTES de normalizar: normalizar no debe convertir errores en listas vacías.
-function validateStateData(data) {
+function validateStateData(data, { allowLegacyIds = false } = {}) {
   const object = (value) => value && typeof value === "object" && !Array.isArray(value);
   const text = (value) => typeof value === "string" && value.trim().length > 0;
   const number = (value) => typeof value === "number" && Number.isFinite(value);
@@ -3951,8 +3985,13 @@ function validateStateData(data) {
     if (!Array.isArray(data[key])) fail(key);
     const ids = new Set();
     for (const record of data[key]) {
-      if (!object(record) || !text(record.id) || !/^[a-zA-Z0-9_:.-]+$/.test(record.id) || ids.has(record.id)) fail(`${key}: id ausente, inválido o duplicado`);
-      ids.add(record.id);
+      if (!object(record)) fail(`${key}: registro`);
+      if (!record.id && allowLegacyIds) {
+        // Las primeras versiones no guardaban IDs. Se asignan de forma determinista después de validar el contenido.
+      } else {
+        if (!text(record.id) || !/^[a-zA-Z0-9_:.-]+$/.test(record.id) || ids.has(record.id)) fail(`${key}: id ausente, inválido o duplicado`);
+        ids.add(record.id);
+      }
       for (const field of ["createdAt", "updatedAt", "deletedAt"]) {
         if (record[field] != null && (!number(record[field]) || record[field] < 0)) fail(`${key}: ${field}`);
       }
@@ -3978,7 +4017,7 @@ function validateStateData(data) {
       for (const field of ["usdAmount", "usdRate"]) if (record[field] != null && (!number(record[field]) || record[field] <= 0)) fail(field);
     }
   }
-  const settlementsById = new Map((data.settlements || []).map((record) => [record.id, record]));
+  const settlementsById = new Map((data.settlements || []).filter((record) => record.id).map((record) => [record.id, record]));
   for (const record of settlementsById.values()) {
     const visited = new Set([record.id]);
     let cursor = record;
@@ -3995,9 +4034,9 @@ function validateStateData(data) {
 function parseBackup(parsed) {
   if (parsed && Object.hasOwn(parsed, "data")) {
     if (parsed.app !== "gastos-del-hogar" || parsed.version !== 1) throw new Error("Formato o versión de backup no compatible.");
-    return normalizeState(validateStateData(parsed.data));
+    return normalizeState(prepareLegacyStateData(parsed.data));
   }
-  return normalizeState(validateStateData(parsed));
+  return normalizeState(prepareLegacyStateData(parsed));
 }
 
 async function handleImportBackup(event) {

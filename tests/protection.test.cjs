@@ -240,6 +240,25 @@ test('invalid local state blocks initialization, saving, and sync without changi
   assert.equal(server.reads, 0); assert.equal(a.storage.get('home-expenses-v1'), before);
 });
 
+test('valid legacy state without ids is upgraded deterministically instead of being blocked', () => {
+  const legacy = { ...empty(), expenses: [
+    { date: '2026-09-14', payer: 'Eze', category: 'Otros', amount: 100, note: 'viejo' },
+    { date: '2026-09-14', payer: 'Eze', category: 'Otros', amount: 100, note: 'viejo' },
+  ] };
+  const first = app(legacy); const second = app(legacy);
+  assert.equal(first.run('storageLoadError'), null);
+  assert.equal(first.state().expenses.length, 2);
+  assert.notEqual(first.state().expenses[0].id, first.state().expenses[1].id);
+  assert.deepEqual(first.state().expenses.map(item => item.id), second.state().expenses.map(item => item.id));
+});
+
+test('legacy cloud records receive the same id on different devices', () => {
+  const a = app(); const b = app();
+  const remote = { ...empty(), expenses: [{ date: '2026-09-14', payer: 'Tami', category: 'Otros', amount: 250 }] };
+  a.context.remote = remote; b.context.remote = remote;
+  assert.equal(a.run('prepareLegacyStateData(remote).expenses[0].id'), b.run('prepareLegacyStateData(remote).expenses[0].id'));
+});
+
 test('a stalled request times out and queues a retry', async () => {
   const a = app(); let signal;
   const query = { select() { return this; }, eq() { return this; }, abortSignal(value) { signal = value; return this; },

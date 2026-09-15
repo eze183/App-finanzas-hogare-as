@@ -15,8 +15,8 @@
 - Cierres: cada ajuste tiene ID nuevo y referencia al anterior; transferencia solo por la diferencia. Historial conserva versiones y reaperturas. Bloqueo de superposiciones conocidas y aviso de conflictos simultáneos, sin descartar registros.
 - Pagadores preservados al renderizar; elección Tami → Eze corregida; renombrado remoto conserva el lugar del dueño.
 - Deuda incluye planes de cuotas futuros. Recurrentes semanales los lunes y mensuales el día 1, con ID por ocurrencia. Presupuesto semanal prorrateado por días del rango.
-- Pruebas: 22 casos en VM (`tests/protection.test.cjs`) y 5 pruebas integradas de navegador (`tests/browser.integration.cjs`), todas aprobadas. Chrome 152 + Playwright 1.62.1 + SDK Supabase real 2.116.0. Se ejecutan init, render y formularios reales con perfiles desechables; cada petición de la app se intercepta y la API vive en memoria. PostgreSQL/PostgREST real sigue pendiente.
-- Se revisó la captura móvil del historial: conserva cierre original de $50 y ajuste de $20. Evidencia local en `.test-artifacts/history-mobile.png`, ignorada por Git. Código de la app sin cambios en esta continuación; base de correcciones: commit `7b4d301`.
+- Pruebas: 24 casos en VM (`tests/protection.test.cjs`) y 6 pruebas integradas de navegador (`tests/browser.integration.cjs`), todas aprobadas. Chrome 152 y Edge 153 + Playwright 1.62.1 + SDK Supabase real 2.116.0. Se ejecutan init, render y formularios reales con perfiles desechables; cada petición de la app se intercepta y la API vive en memoria. PostgreSQL/PostgREST real sigue pendiente.
+- Se revisó la captura móvil del historial: conserva cierre original de $50 y ajuste de $20. Evidencia local en `.test-artifacts/history-mobile.png`, ignorada por Git. La validación integrada quedó en `97269a8`; la compatibilidad con datos antiguos sin IDs quedó en el commit local siguiente.
 
 ## Archivos
 
@@ -33,6 +33,7 @@
 - La combinación del mismo registro usa última edición, con desempate estable; no conserva dos variantes de una edición simultánea del mismo ID. Los ajustes nuevos de cierre sí son registros separados.
 - Cierres superpuestos creados offline se conservan y requieren conciliación explícita. Reabrir no revierte dinero transferido.
 - Fechas históricas de recurrentes no se corrigen automáticamente. El esquema viejo no permite reconstruir siempre qué ocurrencia pretendía representar un gasto.
+- Estados válidos de versiones antiguas sin IDs se actualizan con IDs y marcas de tiempo deterministas antes de sincronizar; registros inválidos continúan bloqueando el arranque para proteger el contenido original.
 - Ver `docs/proteccion-datos.md` para límites, recuperación y procedimiento de pruebas. Ver `docs/session-summary.md` y `docs/codex-context-history.md` para sesiones anteriores.
 
 ## Problemas resueltos en el entorno de pruebas
