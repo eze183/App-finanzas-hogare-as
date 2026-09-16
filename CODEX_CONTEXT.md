@@ -75,10 +75,10 @@
 - Se agregó una tercera prueba para navegación, privacidad, formulario de cuotas y ausencia de desborde en 390 px. Total: 3 pruebas del prototipo aprobadas.
 - `Movimientos` ahora tiene filtros combinables de categoría/persona y orden real por fecha reciente/antigua o importe mayor/menor, con total y cantidad visibles recalculados. El filtro de persona se oculta en Personal. Se agregó una prueba específica; total actual: 4 pruebas aprobadas.
 
-## Integración en la app principal — v37 local, no publicada
+## Integración en la app principal — v38 local, no publicada
 
 - Antes de modificar la app se creó la rama local de recuperación `codex/backup-app-antes-analisis-2026-09-16`, apuntando al commit `f0111b00398c9ba523f3b0e70a19f78b68d2b907` (v35 publicada).
-- Se integró en `index.html`, `app.js` y `styles.css` sin reemplazar los formularios ni las funciones existentes. La interfaz principal ahora usa el encabezado “Finanzas con contexto”, las secciones `Cargar / Análisis / Movimientos / Cierres|Cuotas` y una explicación visible de la separación Comunes/Personales. `service-worker.js` pasó a caché v37 y `APP_VERSION` a `2026-09-16-nueva-interfaz-v37`.
+- Se integró en `index.html`, `app.js` y `styles.css` sin reemplazar los formularios ni las funciones existentes. La interfaz principal ahora usa el encabezado “Finanzas con contexto”, las secciones `Cargar / Análisis / Movimientos / Cierres|Cuotas` y una explicación visible de la separación Comunes/Personales. `service-worker.js` pasó a caché v38 y `APP_VERSION` a `2026-09-16-nueva-interfaz-v38`.
 - En Comunes, Vista mensual muestra categoría, total, porcentaje y parte 50/50. No muestra ingresos.
 - En Personales, Resumen muestra ingreso neto, parte de comunes, flujo personal del mes (incluye cuotas de compras anteriores), resto e impacto de cada categoría común.
 - Los ingresos usan `home-expenses-private-finance-v1`: quedan sólo en ese navegador, no se sincronizan ni forman parte del backup compartido.
@@ -86,4 +86,5 @@
 - Verificación: 24 pruebas de protección y 7 integradas de navegador aprobadas. La nueva integrada confirma que el ingreso privado no llega al estado remoto y que ambos órdenes por fecha funcionan. Prueba visual local en Comunes/Personales, Resumen y Movimientos correcta.
 - El esquema compartido no cambió: `expenses`, `personalExpenses` y `settlements` se leen sin migración, por lo que el historial existente se conserva. La prueba móvil de cierre/ajuste confirma que dos versiones del cierre sobreviven y siguen visibles.
 - Respaldo visible de la app anterior: `backups/app-v35-antes-nueva-interfaz-2026-09-16.zip`, SHA-256 `EA4E790B661FC57EE64A25C2C6C8BC6EB95947CD89EF34237C3E91F444AB3613`. El ZIP está ignorado por Git pero queda en OneDrive; `backups/README.md` registra la recuperación.
+- Se reforzó la actualización de la PWA: el registro del service worker evita la caché HTTP, busca actualizaciones al cargar y recarga una sola vez cuando toma control la versión nueva. Para destrabar clientes que ya conservaban v35 se usa inicialmente `/?version=38`.
 - Todavía no se publicó ni se hizo push. La app pública sigue siendo v35.

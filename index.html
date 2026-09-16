@@ -822,8 +822,16 @@
     <script src="./app.js"></script>
     <script>
       if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (sessionStorage.getItem("service-worker-reloaded") === "1") return;
+          sessionStorage.setItem("service-worker-reloaded", "1");
+          window.location.reload();
+        });
         window.addEventListener("load", () => {
-          navigator.serviceWorker.register("./service-worker.js").catch(() => {});
+          navigator.serviceWorker
+            .register("./service-worker.js", { updateViaCache: "none" })
+            .then((registration) => registration.update())
+            .catch(() => {});
         });
       }
     </script>
