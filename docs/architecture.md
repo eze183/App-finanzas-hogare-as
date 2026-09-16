@@ -90,7 +90,7 @@ No hay generación automática de gastos ni notificaciones push (sin backend no 
 
 ### Ingreso y resto privados
 
-Desde v36 el ingreso neto se guarda por dueño y mes (`YYYY-MM`) en `home-expenses-private-finance-v1`. No entra en `state`, `getCloudStatePayload()` ni el backup JSON. `renderPrivateIncomeAnalysis()` calcula para el mes seleccionado: parte 50/50 de los comunes, gastos personales de una sola vez, cuotas activas aunque la compra sea anterior, resto estimado e impacto de cada categoría común sobre el ingreso del dueño.
+Desde v36 (con la interfaz v37) el ingreso neto se guarda por dueño y mes (`YYYY-MM`) en `home-expenses-private-finance-v1`. No entra en `state`, `getCloudStatePayload()` ni el backup JSON. `renderPrivateIncomeAnalysis()` calcula para el mes seleccionado: parte 50/50 de los comunes, gastos personales de una sola vez, cuotas activas aunque la compra sea anterior, resto estimado e impacto de cada categoría común sobre el ingreso del dueño. El estado compartido conserva el mismo esquema, incluidas las colecciones históricas `expenses`, `personalExpenses` y `settlements`; el cambio visual no migra ni recrea esos registros.
 
 Todo el estado pasa siempre por `normalizeState()`/`normalizeExpense()`/etc. al cargar (`loadState`), al mezclar con la nube (`mergeCloudState`), y al armar el payload de subida (`getCloudStatePayload`) — así que un registro con forma inválida o campos faltantes nunca llega a `render()`.
 

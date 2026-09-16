@@ -12,11 +12,11 @@ Las correcciones de `codex/proteccion-datos` están documentadas en [Protección
 node --test tests/protection.test.cjs
 ```
 
-## Análisis de ingresos (en revisión, todavía no publicado)
+## Nueva interfaz financiera (en revisión, todavía no publicada)
 
-La versión local v36 agrega ingreso y resto estimado dentro de `Personales`, impacto de los gastos comunes por categoría, flujo mensual con cuotas iniciadas anteriormente, categorías personales/profesionales y orden de movimientos por fecha o monto. El ingreso queda sólo en el navegador del dueño: no se sincroniza ni forma parte del backup compartido.
+La versión local v37 lleva la nueva interfaz a la app real sin reemplazar su almacenamiento. Agrega ingreso y resto estimado dentro de `Personales`, impacto de los gastos comunes por categoría, flujo mensual con cuotas iniciadas anteriormente, categorías personales/profesionales y orden de movimientos por fecha o monto. El ingreso queda sólo en el navegador del dueño: no se sincroniza ni forma parte del backup compartido.
 
-El punto de regreso anterior al cambio está en la rama local `codex/backup-app-antes-analisis-2026-09-16` (`f0111b0`).
+El punto de regreso anterior al cambio está en la rama local `codex/backup-app-antes-analisis-2026-09-16` (`f0111b0`) y en `backups/app-v35-antes-nueva-interfaz-2026-09-16.zip`.
 
 No abras el `index.html` de trabajo para hacer pruebas con datos ficticios: conserva la configuración real de Supabase. La prueba de navegador usa una copia del HTML sin scripts externos ni configuración real, y bloquea toda petición no simulada. Ver [cómo ejecutar las pruebas integradas](tests/README.md).
 

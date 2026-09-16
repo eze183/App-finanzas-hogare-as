@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-16-analisis-ingresos-v36";
+const APP_VERSION = "2026-09-16-nueva-interfaz-v37";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -183,6 +183,7 @@ const elements = {
   expenseNote: document.querySelector("#expenseNote"),
   commonTabButton: document.querySelector("#commonTabButton"),
   personalTabButton: document.querySelector("#personalTabButton"),
+  modePrivacyNote: document.querySelector("#modePrivacyNote"),
   commonSubmitButton: document.querySelector("#commonSubmitButton"),
   personalSubmitButton: document.querySelector("#personalSubmitButton"),
   expensePanelTitle: document.querySelector("#expensePanelTitle"),
@@ -3851,6 +3852,9 @@ function setEntryMode(mode, { carryOverDraft = false } = {}) {
   // Historial es solo de gastos comunes y Cuotas solo de personales: se turnan en la misma ranura.
   elements.historyViewButton.classList.toggle("is-hidden", isPersonal);
   elements.installmentsViewButton.classList.toggle("is-hidden", !isPersonal);
+  elements.modePrivacyNote.textContent = isPersonal
+    ? `Vista privada de ${getDeviceOwner()}: ingresos, cuotas y resto quedan sólo en este dispositivo.`
+    : "Gastos del hogar: se reparten entre ambos y forman parte de los cierres.";
   if (isPersonal && currentAppView === "history") {
     setAppView("load");
   }
@@ -3871,6 +3875,9 @@ function setEntryMode(mode, { carryOverDraft = false } = {}) {
 function setRecordsMode(mode) {
   const isPersonal = mode === "personal";
   currentEntryMode = isPersonal ? "personal" : "common";
+  elements.modePrivacyNote.textContent = isPersonal
+    ? `Vista privada de ${getDeviceOwner()}: ingresos, cuotas y resto quedan sólo en este dispositivo.`
+    : "Gastos del hogar: se reparten entre ambos y forman parte de los cierres.";
   document.documentElement.classList.toggle("personal-mode", isPersonal);
   document.body.classList.toggle("personal-mode", isPersonal);
   elements.appShell.classList.toggle("personal-mode", isPersonal);

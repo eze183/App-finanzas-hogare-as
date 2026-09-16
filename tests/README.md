@@ -34,7 +34,7 @@ Para Edge, establecer `$env:TEST_BROWSER_CHANNEL = 'msedge'`. No se descarga un 
 
 ## Qué se prueba
 
-Seis escenarios con `app.js`, formularios, eventos, canvas e `init()` completos:
+Siete escenarios con `app.js`, formularios, eventos, canvas e `init()` completos:
 
 1. Pagador elegido durante sync/resize, alta desde formulario y dueño Tami → Eze persistente tras recarga.
 2. Dos contextos de navegador con fallos de red y escrituras concurrentes usando el SDK real; filtro por revisión y conservación de ambas altas.
@@ -42,6 +42,7 @@ Seis escenarios con `app.js`, formularios, eventos, canvas e `init()` completos:
 4. Cierre, edición de gasto, ajuste de transferencia, conservación del historial y bloqueo de períodos superpuestos.
 5. Cuotas que empiezan en el futuro, recurrentes semanales y presupuesto prorrateado en un mes completo.
 6. Actualización de un estado válido de una versión antigua sin IDs, conservando y sincronizando todos sus gastos.
+7. Privacidad del ingreso individual y orden de movimientos por fecha reciente/antigua.
 
 ## Aislamiento
 
@@ -55,6 +56,6 @@ Seis escenarios con `app.js`, formularios, eventos, canvas e `init()` completos:
 
 ## Resultado y límites
 
-Verificado: 24 pruebas de lógica y 6 de navegador aprobadas con Chrome 152.0.7977.84 y Edge 153.0.4234.32, Playwright 1.62.1 y SDK 2.116.0. Se revisó visualmente el historial móvil con transferencia original y ajuste.
+Verificado: 24 pruebas de lógica y 7 de navegador aprobadas con Chrome 152.0.7977.84, Playwright 1.62.1 y SDK 2.116.0. Las seis pruebas anteriores también fueron aprobadas con Edge 153.0.4234.32. Se revisó visualmente el historial móvil con transferencia original y ajuste.
 
 No valida permisos/RLS ni concurrencia del PostgreSQL real. Para ese paso falta un proyecto Supabase de ensayo separado, ya preparado; no se deben usar credenciales de producción ni ejecutar migraciones como parte de estos comandos. OCR, cotización externa y ciclo de actualización de la PWA quedan fuera de estos escenarios.
