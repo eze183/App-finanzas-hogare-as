@@ -28,7 +28,7 @@
 
 ## Decisiones y pendientes
 
-- La documentación de este despliegue está actualizada localmente, pendiente de subir. Auto-review rechazó dos veces el push documental a `main` por aplicar la prohibición inicial de publicar; la app v35 ya estaba publicada y verificada antes del bloqueo. Se necesita autorización explícita para subir estos cinco documentos. No reintentar ese push hasta recibirla.
+- El usuario autorizó explícitamente subir la documentación a `main` con «subila», resolviendo el bloqueo previo de auto-review. Se publica también en `codex/proteccion-datos` para mantener la continuidad en ambos equipos. Esta actualización solo modifica documentación.
 - El despliegue solicitado está completado. Falta que Eze y Tami abran con Internet, esperen unos segundos, cierren completamente y vuelvan a abrir la PWA en ambos celulares antes de seguir cargando. No borrar datos ni reinstalar para actualizar. La versión cargada en cada teléfono no se puede verificar desde esta sesión.
 - La integración con PostgreSQL/PostgREST real no se probó; las pruebas usan el SDK real con API simulada. El usuario autorizó la publicación tras realizar el backup. Mantener este límite registrado, no presentar los tests como verificación de datos o RLS reales.
 - No hay cambios de arquitectura ni migraciones. Se usa la tabla `app_state` existente.

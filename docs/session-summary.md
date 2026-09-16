@@ -10,7 +10,7 @@ El usuario confirmó que exportó un backup desde la app y autorizó implementar
 
 La verificación pública solo descargó archivos estáticos: no se ejecutó la app contra Supabase ni se consultaron/modificaron gastos reales. No hubo migraciones. Se dejó indicado actualizar ambos celulares con Internet cerrando y reabriendo la PWA, sin borrar almacenamiento ni importar el backup. El estado de actualización de los teléfonos requiere confirmación del usuario. Documentación de continuidad actualizada para reflejar que la versión ya está publicada.
 
-El intento posterior de subir los cinco documentos de cierre fue rechazado por auto-review, que siguió aplicando la restricción inicial sobre publicar en `main`. Se conservaron localmente; queda pendiente autorización explícita para publicarlos. La app v35 ya estaba online y comprobada antes de ese rechazo.
+El intento posterior de subir los cinco documentos de cierre fue rechazado por auto-review, que siguió aplicando la restricción inicial sobre publicar en `main`. Se conservaron localmente en `fb5c3d1`. Luego el usuario autorizó explícitamente su publicación con «subila»; se actualizó esta constancia para subir la documentación a `main` y `codex/proteccion-datos`. La app v35 ya estaba online y comprobada antes de ese rechazo. Esta continuación solo modifica documentación.
 
 ## 2026-09-15 — Compatibilidad con datos antiguos y validación en Edge
 
