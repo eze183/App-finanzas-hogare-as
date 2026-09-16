@@ -149,6 +149,7 @@
             </div>
           </div>
           <div id="monthlySummary" class="monthly-summary"></div>
+          <div id="commonCategoryImpact" class="common-category-impact"></div>
         </article>
 
         <article id="settlementDetailCard" class="panel settlement-detail">
@@ -161,6 +162,26 @@
           </div>
           <div id="settlementBreakdown" class="breakdown-grid"></div>
         </article>
+      </section>
+
+      <section id="privateIncomeCard" class="panel private-income-card summary-view-section app-view-hidden is-hidden" aria-label="Ingreso y resto personal">
+        <div class="panel-heading">
+          <div>
+            <span class="private-kicker">🔒 VISTA PRIVADA</span>
+            <h2>Ingreso y resto de <span id="privateIncomeOwner"></span></h2>
+            <p>Este dato queda solamente en este dispositivo: no se sincroniza ni aparece en gastos comunes.</p>
+          </div>
+          <label class="private-income-field">
+            Ingreso neto del mes
+            <span><b>$</b><input id="privateIncomeInput" type="number" min="0" step="1000" placeholder="0" /></span>
+          </label>
+        </div>
+        <div id="privateIncomeMetrics" class="private-income-metrics"></div>
+        <div class="private-impact-heading">
+          <h3>Impacto de los gastos comunes por categoría</h3>
+          <p>Tu parte de cada categoría comparada con tu ingreso.</p>
+        </div>
+        <div id="privateCategoryImpact" class="private-category-impact"></div>
       </section>
 
         <section class="workspace load-view-section">
@@ -209,8 +230,8 @@
                     <option value="Fiambreria">Fiambreria</option>
                     <option value="Servicios">Servicios</option>
                     <option value="Tarjeta de credito">Tarjeta de credito</option>
-                    <option value="Combustible">Combustible</option>
-                    <option value="Otros" selected>Otros</option>
+                     <option value="Combustible">Combustible</option>
+                     <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
                 <div class="field-row">
@@ -282,6 +303,12 @@
                     <option value="Servicios">Servicios</option>
                     <option value="Tarjeta de credito">Tarjeta de credito</option>
                     <option value="Combustible">Combustible</option>
+                    <option value="Gastos profesionales">Gastos profesionales</option>
+                    <option value="Impuestos y aportes">Impuestos y aportes</option>
+                    <option value="Suscripciones">Suscripciones</option>
+                    <option value="Formacion">Formación</option>
+                    <option value="Regalos">Regalos</option>
+                    <option value="Ocio personal">Ocio personal</option>
                     <option value="Otros" selected>Otros</option>
                   </select>
                 </label>
@@ -470,8 +497,10 @@
                 <option value="week">Por semana</option>
                 <option value="month">Por mes</option>
                 <option value="person">Por persona</option>
-                <option value="amount-desc">Monto: mayor a menor</option>
-                <option value="amount-asc">Monto: menor a mayor</option>
+                 <option value="amount-desc">Monto: mayor a menor</option>
+                 <option value="amount-asc">Monto: menor a mayor</option>
+                 <option value="date-desc">Fecha: más reciente</option>
+                 <option value="date-asc">Fecha: más antigua</option>
               </select>
             </label>
             <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
@@ -502,14 +531,22 @@
 
           <div class="movement-toolbar">
             <label class="movement-sort-field">
+              Categoría
+              <select id="personalFilterCategory">
+                <option value="">Todas</option>
+              </select>
+            </label>
+            <label class="movement-sort-field">
               Ordenar
               <select id="personalFilterGroupBy">
                 <option value="day">Por día</option>
                 <option value="week">Por semana</option>
                 <option value="month">Por mes</option>
                 <option value="person">Por persona</option>
-                <option value="amount-desc">Monto: mayor a menor</option>
-                <option value="amount-asc">Monto: menor a mayor</option>
+                 <option value="amount-desc">Monto: mayor a menor</option>
+                 <option value="amount-asc">Monto: menor a mayor</option>
+                 <option value="date-desc">Fecha: más reciente</option>
+                 <option value="date-asc">Fecha: más antigua</option>
               </select>
             </label>
             <div id="personalMovementSummary" class="movement-summary is-hidden"></div>

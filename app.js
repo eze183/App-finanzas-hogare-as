@@ -1,5 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
-const APP_VERSION = "2026-09-15-proteccion-datos-v35";
+const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
+const APP_VERSION = "2026-09-16-analisis-ingresos-v36";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -167,6 +168,12 @@ const elements = {
   settlementBreakdown: document.querySelector("#settlementBreakdown"),
   monthRangeLabel: document.querySelector("#monthRangeLabel"),
   monthlySummary: document.querySelector("#monthlySummary"),
+  commonCategoryImpact: document.querySelector("#commonCategoryImpact"),
+  privateIncomeCard: document.querySelector("#privateIncomeCard"),
+  privateIncomeOwner: document.querySelector("#privateIncomeOwner"),
+  privateIncomeInput: document.querySelector("#privateIncomeInput"),
+  privateIncomeMetrics: document.querySelector("#privateIncomeMetrics"),
+  privateCategoryImpact: document.querySelector("#privateCategoryImpact"),
   expenseForm: document.querySelector("#expenseForm"),
   expenseDate: document.querySelector("#expenseDate"),
   expensePayer: document.querySelector("#expensePayer"),
@@ -291,6 +298,7 @@ const elements = {
   filterGroupBy: document.querySelector("#filterGroupBy"),
   commonMovementSummary: document.querySelector("#commonMovementSummary"),
   personalFilterGroupBy: document.querySelector("#personalFilterGroupBy"),
+  personalFilterCategory: document.querySelector("#personalFilterCategory"),
   personalMovementSummary: document.querySelector("#personalMovementSummary"),
   appShell: document.querySelector("#appShell"),
   loadViewSections: document.querySelectorAll(".load-view-section"),
@@ -302,11 +310,13 @@ const elements = {
 
 let storageLoadError = null;
 let state = loadState();
+let privateFinance = loadPrivateFinance();
 let chartType = "bar";
 let chartPeriod = "week"; // "week" | "month"
 let movementGroupBy = "day"; // "day" | "person" | "amount-desc" | "amount-asc"
 let currentAppView = "load";
 let currentEntryMode = "common";
+let personalMovementCategory = "";
 let editingExpense = null;
 let firstInstallmentTouched = false;
 let openedMovement = null;
@@ -587,6 +597,19 @@ async function initSupabaseSync() {
 async function pullStateFromSupabase({ createIfMissing = false, silent = false } = {}) {
   // Todas las entradas usan la misma cola; también reenvía cambios locales tras reiniciar.
   return pushStateToSupabase({ silent });
+}
+
+function loadPrivateFinance() {
+  try {
+    const value = JSON.parse(localStorage.getItem(PRIVATE_FINANCE_KEY) || "{}");
+    return value && typeof value === "object" ? value : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function savePrivateFinance() {
+  localStorage.setItem(PRIVATE_FINANCE_KEY, JSON.stringify(privateFinance));
 }
 
 function stableHash(value, seed = 2166136261) {
@@ -1242,6 +1265,62 @@ function renderMonthlySummary(isPersonal) {
       <strong>${topCategory ? `${escapeHtml(topCategory[0])} · ${formatMoney(topCategory[1])}` : "Sin datos"}</strong>
     </div>
   `;
+
+  elements.commonCategoryImpact.classList.toggle("is-hidden", isPersonal);
+  elements.commonCategoryImpact.innerHTML = !isPersonal && categoryTotals.length
+    ? `<div class="common-impact-heading"><strong>Desglose común por categoría</strong><span>Total · porcentaje · parte por persona</span></div>
+       ${categoryTotals.map(([category, amount]) => `<div class="common-impact-row"><strong>${escapeHtml(category)}</strong><span>${formatMoney(amount)}</span><span>${monthlyTotal ? ((amount / monthlyTotal) * 100).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : 0}%</span><span>${formatMoney(amount / state.people.length)} c/u</span></div>`).join("")}`
+    : "";
+}
+
+function getSelectedMonthInfo() {
+  const selected = getSelectedPeriodRange().start;
+  const index = monthIndex(selected.getFullYear(), selected.getMonth());
+  return { index, key: monthKeyFromIndex(index) };
+}
+
+function getPersonalCashFlowForMonth(owner, monthIdx) {
+  return state.personalExpenses
+    .filter((expense) => !expense.deletedAt && normalizeText(expense.owner) === normalizeText(owner))
+    .reduce((total, expense) => {
+      if (expense.installments > 1) {
+        const firstMonth = monthIndexFromKey(expense.firstInstallmentMonth) ?? monthIndexFromKey(expense.date.slice(0, 7));
+        return total + (monthIdx >= firstMonth && monthIdx < firstMonth + expense.installments ? expense.amount / expense.installments : 0);
+      }
+      return total + (monthIndexFromKey(expense.date.slice(0, 7)) === monthIdx ? expense.amount : 0);
+    }, 0);
+}
+
+function renderPrivateIncomeAnalysis(isPersonal) {
+  elements.privateIncomeCard.classList.toggle("is-hidden", !isPersonal);
+  if (!isPersonal) return;
+
+  const owner = getDeviceOwner();
+  const { index: monthIdx, key: monthKey } = getSelectedMonthInfo();
+  const income = Number(privateFinance[owner]?.[monthKey]) || 0;
+  const commonExpenses = getMonthExpensesFrom(state.expenses);
+  const commonTotal = commonExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const commonShare = commonTotal / state.people.length;
+  const personalCash = getPersonalCashFlowForMonth(owner, monthIdx);
+  const committed = commonShare + personalCash;
+  const remaining = income - committed;
+  const ratio = (amount) => income ? `${((amount / income) * 100).toLocaleString("es-AR", { maximumFractionDigits: 1 })}%` : "Sin ingreso";
+
+  elements.privateIncomeOwner.textContent = owner;
+  elements.privateIncomeInput.value = income || "";
+  elements.privateIncomeMetrics.innerHTML = `
+    <div><span>Parte de gastos comunes</span><strong>${formatMoney(commonShare)}</strong><small>${income ? `${ratio(commonShare)} del ingreso` : "Cargá tu ingreso neto"}</small></div>
+    <div><span>Gastos personales del mes</span><strong>${formatMoney(personalCash)}</strong><small>Incluye cuotas activas · ${ratio(personalCash)}</small></div>
+    <div class="${income && remaining < 0 ? "is-negative" : ""}"><span>Resto estimado</span><strong>${income ? formatMoney(remaining) : "Sin calcular"}</strong><small>${income ? `${ratio(remaining)} del ingreso` : "Cargá tu ingreso neto"}</small></div>
+  `;
+
+  const categoryTotals = Object.entries(getCategoryTotals(commonExpenses)).sort((a, b) => b[1] - a[1]);
+  elements.privateCategoryImpact.innerHTML = categoryTotals.length
+    ? categoryTotals.map(([category, total]) => {
+        const share = total / state.people.length;
+        return `<div class="private-impact-row"><strong>${escapeHtml(category)}</strong><span>${formatMoney(share)}</span><span>${ratio(share)}</span></div>`;
+      }).join("")
+    : `<p class="empty-state">No hay gastos comunes para analizar en este mes.</p>`;
 }
 
 function calculateSettlement(expenses) {
@@ -1561,6 +1640,12 @@ function formatDayHeading(isoDate) {
 
 function renderMovementGroups(expenses, getTag, idAttribute, editAttribute) {
   if (!expenses.length) return "";
+
+  if (movementGroupBy === "date-desc" || movementGroupBy === "date-asc") {
+    const direction = movementGroupBy === "date-desc" ? -1 : 1;
+    const sorted = [...expenses].sort((a, b) => a.date.localeCompare(b.date) * direction || (a.amount - b.amount) * direction);
+    return `<div class="person-expense-list">${sorted.map((expense) => renderMovementRow(expense, getTag(expense), idAttribute, editAttribute, { showTag: true, showDate: true })).join("")}</div>`;
+  }
 
   if (movementGroupBy === "person") {
     // Agrupado por persona: la fecha ya no se ve en el encabezado del grupo, así que
@@ -2156,6 +2241,7 @@ function render() {
   const isPersonal = currentEntryMode === "personal";
   const expenses = getPeriodExpenses();
   const personalExpenses = getPeriodPersonalExpenses();
+  const personalMovementExpenses = personalExpenses.filter((expense) => !personalMovementCategory || expense.category === personalMovementCategory);
   const filteredExpenses = getFilteredExpenses(expenses);
   const summaryExpenses = isPersonal ? personalExpenses : expenses;
   renderPeople();
@@ -2164,6 +2250,7 @@ function render() {
   renderSummary(summaryExpenses, isPersonal);
   renderSettlementDetail(expenses, isPersonal);
   renderMonthlySummary(isPersonal);
+  renderPrivateIncomeAnalysis(isPersonal);
   renderCategories(summaryExpenses, isPersonal);
   renderBudgets(summaryExpenses, isPersonal);
   renderRecurringExpenses();
@@ -2174,8 +2261,12 @@ function render() {
   renderMovementGroupToggles();
   renderMovementSummary(elements.commonMovementSummary, filteredExpenses, (expense) => expense.payer, "Persona");
   renderTable(filteredExpenses);
-  renderMovementSummary(elements.personalMovementSummary, personalExpenses, (expense) => expense.owner, "Persona");
-  renderPersonalExpenses(personalExpenses);
+  const personalCategories = [...new Set(personalExpenses.map((expense) => expense.category))].sort((a, b) => a.localeCompare(b, "es"));
+  if (personalMovementCategory && !personalCategories.includes(personalMovementCategory)) personalMovementCategory = "";
+  elements.personalFilterCategory.innerHTML = `<option value="">Todas</option>${personalCategories.map((category) => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join("")}`;
+  elements.personalFilterCategory.value = personalMovementCategory;
+  renderMovementSummary(elements.personalMovementSummary, personalMovementExpenses, (expense) => expense.owner, "Persona");
+  renderPersonalExpenses(personalMovementExpenses);
   renderInstallments();
   renderSettlementHistory();
 }
@@ -4492,6 +4583,20 @@ async function init() {
   });
   elements.filterGroupBy.addEventListener("change", () => setMovementGroupBy(elements.filterGroupBy.value));
   elements.personalFilterGroupBy.addEventListener("change", () => setMovementGroupBy(elements.personalFilterGroupBy.value));
+  elements.personalFilterCategory.addEventListener("change", () => {
+    personalMovementCategory = elements.personalFilterCategory.value;
+    render();
+  });
+  elements.privateIncomeInput.addEventListener("change", () => {
+    const owner = getDeviceOwner();
+    const { key: monthKey } = getSelectedMonthInfo();
+    privateFinance[owner] = privateFinance[owner] || {};
+    const amount = Number(elements.privateIncomeInput.value);
+    if (Number.isFinite(amount) && amount > 0) privateFinance[owner][monthKey] = amount;
+    else delete privateFinance[owner][monthKey];
+    savePrivateFinance();
+    renderPrivateIncomeAnalysis(true);
+  });
   window.addEventListener("resize", handleWindowResize);
   document.addEventListener("visibilitychange", () => {
     if (document.visibilityState === "visible") {

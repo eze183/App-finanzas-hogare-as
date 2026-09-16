@@ -217,3 +217,23 @@ test('browser upgrades a valid pre-id local state and synchronizes it without da
   const reloaded = await page.evaluate(() => structuredClone(state));
   assert.deepEqual(reloaded.expenses.map(item => item.id), active.expenses.map(item => item.id));
 });
+
+test('private income stays on its device and movement date ordering works', { timeout: 30000 }, async t => {
+  const fixture = apiFixture();
+  const older = expense('older', 300, 'Eze'); older.date = '2026-09-14'; older.category = 'Servicios';
+  const newer = expense('newer', 100, 'Tami'); newer.date = '2026-09-16'; newer.category = 'Otros';
+  const personal = { ...expense('installment', 1200), owner: 'Tami', date: '2026-09-01', installments: 3, firstInstallmentMonth: '2026-09', card: 'Visa' };
+  const page = await device(t, fixture, { ...empty(), deviceOwner: 'Tami', expenses: [older, newer], personalExpenses: [personal] });
+  await page.locator('#personalTabButton').click(); await page.locator('#summaryViewButton').click();
+  await page.locator('#privateIncomeInput').fill('2000'); await page.locator('#privateIncomeInput').press('Tab');
+  assert.match(await page.locator('#privateIncomeMetrics').textContent(), /1\.400/);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('home-expenses-private-finance-v1')).Tami['2026-09']), 2000);
+  await sync(page);
+  assert.ok(!Object.hasOwn(fixture.data, 'privateFinance'));
+  assert.ok(!JSON.stringify(fixture.data).includes('2000'));
+  await page.locator('#commonTabButton').click(); await page.locator('#movementsViewButton').click();
+  await page.locator('#filterGroupBy').selectOption('date-asc');
+  assert.match(await page.locator('#commonExpenseColumns .person-expense-row').first().textContent(), /300/);
+  await page.locator('#filterGroupBy').selectOption('date-desc');
+  assert.match(await page.locator('#commonExpenseColumns .person-expense-row').first().textContent(), /100/);
+});

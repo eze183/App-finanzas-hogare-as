@@ -12,6 +12,12 @@ Las correcciones de `codex/proteccion-datos` están documentadas en [Protección
 node --test tests/protection.test.cjs
 ```
 
+## Análisis de ingresos (en revisión, todavía no publicado)
+
+La versión local v36 agrega ingreso y resto estimado dentro de `Personales`, impacto de los gastos comunes por categoría, flujo mensual con cuotas iniciadas anteriormente, categorías personales/profesionales y orden de movimientos por fecha o monto. El ingreso queda sólo en el navegador del dueño: no se sincroniza ni forma parte del backup compartido.
+
+El punto de regreso anterior al cambio está en la rama local `codex/backup-app-antes-analisis-2026-09-16` (`f0111b0`).
+
 No abras el `index.html` de trabajo para hacer pruebas con datos ficticios: conserva la configuración real de Supabase. La prueba de navegador usa una copia del HTML sin scripts externos ni configuración real, y bloquea toda petición no simulada. Ver [cómo ejecutar las pruebas integradas](tests/README.md).
 
 ## Cómo usarla
@@ -48,6 +54,9 @@ Así la continuidad del proyecto queda guardada en OneDrive junto con el código
 
 - Resumen semanal de lunes a domingo.
 - Vista mensual con total, cantidad de gastos, semanas con gastos y categoría principal.
+- Desglose mensual común por categoría, porcentaje y parte por persona.
+- Vista privada del ingreso individual, gastos personales efectivos y resto estimado.
+- Compras en cuotas contabilizadas mes a mes para calcular el flujo personal.
 - Total pagado por cada persona.
 - Cálculo del ajuste necesario para dividir el total en partes iguales.
 - Detalle del cierre con total, mitad correspondiente, pagos de cada persona y transferencia sugerida.
@@ -57,7 +66,7 @@ Así la continuidad del proyecto queda guardada en OneDrive junto con el código
 - Pestaña para cargar gastos personales que no entran en el reparto 50/50.
 - Gastos recurrentes semanales o mensuales.
 - Presupuestos semanales por categoría.
-- Filtros por búsqueda, persona, categoría y forma de pago.
+- Filtros por búsqueda, persona, categoría y forma de pago; orden por monto o fecha.
 - Desglose por categoría.
 - Gráfico de barras o torta para ver gastos por categoría.
 - Historial de semanas saldadas con fecha de cierre.

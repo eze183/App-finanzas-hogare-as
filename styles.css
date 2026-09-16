@@ -486,6 +486,28 @@ label {
   line-height: 1.25;
 }
 
+.common-category-impact { margin-top: 16px; border-top: 1px solid var(--line); }
+.common-impact-heading, .common-impact-row { display: grid; grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(95px, .7fr)); gap: 10px; align-items: center; padding: 11px 4px; border-bottom: 1px solid var(--line); }
+.common-impact-heading { display: flex; justify-content: space-between; color: var(--muted); font-size: .8rem; }
+.common-impact-row span { color: var(--muted); font-size: .82rem; text-align: right; }
+.private-income-card { border-top: 5px solid var(--personal); margin-bottom: 18px; }
+.private-kicker { display: block; margin-bottom: 7px; color: var(--personal); font-size: .73rem; font-weight: 900; letter-spacing: .08em; }
+.private-income-field { display: grid; gap: 6px; min-width: 230px; color: var(--muted); font-size: .78rem; font-weight: 800; }
+.private-income-field span { position: relative; }
+.private-income-field b { position: absolute; left: 12px; top: 10px; color: var(--muted); }
+.private-income-field input { padding-left: 28px; font-weight: 800; text-align: right; }
+.private-income-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.private-income-metrics > div { padding: 14px; background: var(--personal-soft); border: 1px solid color-mix(in srgb, var(--personal) 25%, var(--line)); }
+.private-income-metrics span, .private-income-metrics strong, .private-income-metrics small { display: block; }
+.private-income-metrics span, .private-income-metrics small { color: var(--muted); }
+.private-income-metrics strong { margin: 7px 0; font-size: 1.35rem; }
+.private-income-metrics .is-negative strong { color: var(--danger); }
+.private-impact-heading { margin: 22px 0 10px; }
+.private-impact-heading h3, .private-impact-heading p { margin-bottom: 4px; }
+.private-impact-heading p { color: var(--muted); }
+.private-impact-row { display: grid; grid-template-columns: minmax(150px, 1fr) 140px 110px; gap: 12px; padding: 11px 4px; border-top: 1px solid var(--line); }
+.private-impact-row span { color: var(--muted); text-align: right; }
+
 .workspace {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -2741,4 +2763,15 @@ html.personal-mode #commonTabButton,
     width: 100%;
   }
 
+}
+
+@media (max-width: 700px) {
+  .private-income-card .panel-heading { align-items: stretch; flex-direction: column; }
+  .private-income-field { min-width: 0; }
+  .private-income-metrics { grid-template-columns: 1fr; }
+  .common-impact-heading { align-items: flex-start; flex-direction: column; }
+  .common-impact-row { grid-template-columns: minmax(120px, 1fr) auto; }
+  .common-impact-row span:nth-of-type(2), .common-impact-row span:nth-of-type(3) { grid-column: 2; }
+  .private-impact-row { grid-template-columns: minmax(120px, 1fr) auto; }
+  .private-impact-row span:last-child { grid-column: 2; }
 }

@@ -6,6 +6,7 @@ Extraído directamente del código el 2026-07-20. Si algo cambia, actualizar est
 
 - HTML/CSS/JS plano, sin build, sin framework, sin bundler, sin `package.json`.
 - Persistencia local: `localStorage` (clave `home-expenses-v1`).
+- Datos financieros privados por dispositivo: `localStorage` (clave `home-expenses-private-finance-v1`), fuera del estado sincronizado y de los backups compartidos.
 - Sincronización opcional: Supabase (tabla `app_state`, una sola fila por hogar).
 - OCR de tickets: [Tesseract.js](https://github.com/naptha/tesseract.js) v5 por CDN.
 - Lectura de PDF (resúmenes de tarjeta): [pdf.js](https://mozilla.github.io/pdf.js/) v4.10.38 por CDN, cargado como módulo ES.
@@ -86,6 +87,10 @@ Cada gasto (`expenses`/`personalExpenses`) y cada recurrente tiene esta forma no
 `firstInstallmentMonth` existe para que "cuota N/M" coincida con el resumen real de la tarjeta: la fecha de la compra no siempre cae en el mismo período que el primer débito. Se autocompleta desde `date` al cargar y queda editable; la variable `firstInstallmentTouched` evita que cambiar la fecha pise un valor elegido a mano.
 
 No hay generación automática de gastos ni notificaciones push (sin backend no hay push real con la app cerrada) — todo se recalcula a partir de la fecha real del dispositivo, así que no se puede "perder" un mes ni duplicar el conteo.
+
+### Ingreso y resto privados
+
+Desde v36 el ingreso neto se guarda por dueño y mes (`YYYY-MM`) en `home-expenses-private-finance-v1`. No entra en `state`, `getCloudStatePayload()` ni el backup JSON. `renderPrivateIncomeAnalysis()` calcula para el mes seleccionado: parte 50/50 de los comunes, gastos personales de una sola vez, cuotas activas aunque la compra sea anterior, resto estimado e impacto de cada categoría común sobre el ingreso del dueño.
 
 Todo el estado pasa siempre por `normalizeState()`/`normalizeExpense()`/etc. al cargar (`loadState`), al mezclar con la nube (`mergeCloudState`), y al armar el payload de subida (`getCloudStatePayload`) — así que un registro con forma inválida o campos faltantes nunca llega a `render()`.
 

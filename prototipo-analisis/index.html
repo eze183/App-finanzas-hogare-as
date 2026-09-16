@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Prueba · Finanzas del hogar</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PRUEBA INDEPENDIENTE</p>
+          <h1>Finanzas con contexto</h1>
+          <p class="lede">Cuánto pesa el hogar en cada ingreso, sin mezclarlo con los gastos personales.</p>
+        </div>
+        <div class="top-actions">
+          <label class="file-button">
+            Importar respaldo
+            <input id="backupInput" type="file" accept="application/json,.json" />
+          </label>
+          <select id="monthSelect" aria-label="Mes analizado"></select>
+        </div>
+      </header>
+
+      <aside class="notice">
+        <strong>Esta prueba no modifica la app actual.</strong>
+        <span id="dataStatus">Está mostrando una demostración basada en agosto de 2026.</span>
+      </aside>
+
+      <nav class="mode-tabs" aria-label="Tipo de información">
+        <button id="commonTab" class="is-active" type="button">Comunes</button>
+        <button id="personalTab" type="button">Personal <span id="personalTabOwner"></span></button>
+      </nav>
+
+      <nav class="app-tabs" aria-label="Secciones principales">
+        <button class="app-tab" data-section="load" type="button"><span>＋</span>Cargar</button>
+        <button class="app-tab is-active" data-section="summary" type="button"><span>↗</span>Análisis</button>
+        <button class="app-tab" data-section="movements" type="button"><span>☷</span>Movimientos</button>
+        <button id="installmentsTab" class="app-tab" data-section="installments" type="button"><span>▣</span>Cuotas</button>
+        <button id="historyTab" class="app-tab" data-section="history" type="button"><span>◷</span>Cierres</button>
+        <button class="app-tab" data-section="settings" type="button"><span>⚙</span>Ajustes</button>
+      </nav>
+
+      <section id="loadSection" class="app-section is-hidden">
+        <div class="workspace-grid">
+          <article class="panel entry-panel">
+            <div class="section-heading">
+              <div><p class="kicker">NUEVO MOVIMIENTO</p><h2 id="entryTitle">Cargar gasto común</h2></div>
+              <p id="entryDescription">Se divide entre las personas del hogar.</p>
+            </div>
+            <form id="expenseForm" class="expense-form">
+              <div class="amount-block">
+                <label for="expenseAmount">Importe</label>
+                <div class="amount-input"><span>$</span><input id="expenseAmount" type="number" min="0" step="0.01" placeholder="0,00" required /></div>
+                <div class="currency-switch" aria-label="Moneda"><button type="button" class="is-active">ARS</button><button type="button">USD</button></div>
+              </div>
+              <div class="form-grid">
+                <label>Categoría<select id="expenseCategory" required></select></label>
+                <label>Fecha<input id="expenseDate" type="date" required /></label>
+                <label id="personField">Pagó<select id="expensePerson"></select></label>
+                <label>Medio de pago<select id="expenseMethod"><option>Transferencia</option><option>Tarjeta de débito</option><option>Tarjeta de crédito</option><option>Efectivo</option><option>Sin especificar</option></select></label>
+                <label class="wide">Detalle<input id="expenseNote" type="text" maxlength="100" placeholder="Ej: compra semanal" /></label>
+              </div>
+              <section id="cardOptions" class="card-options is-hidden">
+                <div class="card-options-head"><div><strong>Compra personal en cuotas</strong><span>La cuota se imputa solamente al dueño.</span></div><label class="switch"><input id="installmentToggle" type="checkbox" /><span></span></label></div>
+                <div id="installmentFields" class="form-grid is-hidden">
+                  <label>Tarjeta<select id="expenseCard"><option>Visa Banco Galicia</option><option>Mastercard Banco Galicia</option><option>Otra tarjeta</option></select></label>
+                  <label>Cuotas<select id="expenseInstallments"><option>3</option><option>6</option><option>9</option><option>12</option><option>18</option></select></label>
+                  <label>Primera cuota<input id="expenseFirstMonth" type="month" /></label>
+                  <p id="installmentPreview" class="installment-preview">Ingresá el importe para ver el valor de cada cuota.</p>
+                </div>
+              </section>
+              <div class="capture-actions">
+                <button class="capture-button" type="button" data-demo-action="voice"><span>🎙</span><strong>Dictar</strong><small>Usar la voz</small></button>
+                <button class="capture-button" type="button" data-demo-action="ticket"><span>▧</span><strong>Leer ticket</strong><small>Foto o archivo</small></button>
+                <button id="statementButton" class="capture-button is-hidden" type="button" data-demo-action="statement"><span>▤</span><strong>Leer resumen</strong><small>Tarjeta personal</small></button>
+              </div>
+              <button class="primary-action" type="submit">Guardar gasto</button>
+            </form>
+          </article>
+
+          <aside class="panel helper-panel">
+            <p class="kicker">ASÍ SE CLASIFICA</p>
+            <h2 id="helperTitle">Gasto del hogar</h2>
+            <div id="helperIllustration" class="helper-illustration common-illustration"><strong>50%</strong><span>para cada persona</span></div>
+            <ul id="helperList">
+              <li>Forma parte de los cierres.</li>
+              <li>Aparece en el análisis por categoría.</li>
+              <li>No revela ingresos individuales.</li>
+            </ul>
+          </aside>
+        </div>
+      </section>
+
+      <section id="summarySection" class="app-section">
+      <div id="commonView">
+        <section id="headlineCards" class="headline-grid" aria-label="Resumen mensual"></section>
+
+        <section class="panel common-panel" aria-labelledby="commonTitle">
+          <div class="section-heading">
+            <div>
+              <p class="kicker common">GASTOS COMUNES</p>
+              <h2 id="commonTitle">Qué consume el hogar</h2>
+            </div>
+            <p id="commonSubtitle"></p>
+          </div>
+          <div class="category-layout">
+            <div id="categoryBars" class="category-bars"></div>
+            <div class="table-wrap">
+              <table>
+                <thead id="categoryHead"></thead>
+                <tbody id="categoryTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+      </section>
+
+      <section id="movementsSection" class="app-section is-hidden">
+        <article class="panel">
+          <div class="section-heading"><div><p class="kicker">DETALLE DEL MES</p><h2 id="movementsTitle">Movimientos comunes</h2></div><p>Filtrá y ordená sin modificar los movimientos.</p></div>
+          <div class="movement-controls">
+            <label>Categoría<select id="movementCategoryFilter"><option value="">Todas</option></select></label>
+            <label id="movementPersonFilterWrap">Persona<select id="movementPersonFilter"><option value="">Todas</option></select></label>
+            <label>Ordenar<select id="movementSort">
+              <option value="date-desc">Fecha más cercana</option>
+              <option value="date-asc">Fecha más lejana</option>
+              <option value="amount-desc">Importe mayor</option>
+              <option value="amount-asc">Importe menor</option>
+            </select></label>
+            <button id="clearMovementFilters" type="button">Limpiar</button>
+          </div>
+          <div id="movementSummary" class="movement-summary"></div>
+          <div id="movementList" class="movement-list"></div>
+        </article>
+      </section>
+
+      <section id="installmentsSection" class="app-section is-hidden">
+        <article class="panel installments-panel">
+          <div class="section-heading"><div><p class="kicker personal">TARJETAS PERSONALES</p><h2>Cuotas de <span id="installmentsOwner"></span></h2></div><p>Nunca forman parte de los gastos comunes ni del cierre.</p></div>
+          <div id="installmentMetrics" class="headline-grid"></div>
+          <h3>Compras activas</h3>
+          <div id="installmentList" class="movement-list"></div>
+        </article>
+      </section>
+
+      <section id="historySection" class="app-section is-hidden">
+        <article class="panel">
+          <div class="section-heading"><div><p class="kicker">HISTORIAL COMÚN</p><h2>Cierres y ajustes</h2></div><p>Los cierres originales se conservan; los gastos agregados después generan un ajuste.</p></div>
+          <div id="settlementList" class="settlement-list"></div>
+        </article>
+      </section>
+
+      <section id="settingsSection" class="app-section is-hidden">
+        <article class="panel settings-panel">
+          <div class="section-heading"><div><p class="kicker">CONFIGURACIÓN</p><h2>Ajustes de la prueba</h2></div><p>Estas opciones ilustran cómo se conservaría la configuración actual.</p></div>
+          <div class="settings-grid">
+            <div class="setting-card"><strong>Personas y privacidad</strong><p id="settingsPeople"></p><button type="button">Administrar</button></div>
+            <div class="setting-card"><strong>Presupuestos</strong><p>Topes mensuales por categoría y alertas de ritmo.</p><button type="button">Configurar</button></div>
+            <div class="setting-card"><strong>Sincronización</strong><p>Estado sincronizado, con protección ante conflictos.</p><button type="button">Ver estado</button></div>
+            <div class="setting-card"><strong>Datos y respaldo</strong><p>Importar, exportar y restaurar una copia segura.</p><button type="button">Gestionar</button></div>
+            <div class="setting-card"><strong>Gastos recurrentes</strong><p>Servicios semanales o mensuales generados automáticamente.</p><button type="button">Editar</button></div>
+            <div class="setting-card"><strong>Dólar MEP</strong><p>Cotización automática, siempre editable.</p><button type="button">Actualizar</button></div>
+          </div>
+        </article>
+      </section>
+
+      <div id="demoToast" class="demo-toast" role="status" aria-live="polite"></div>
+
+      <div id="personalView" class="app-section is-hidden">
+      <section class="private-banner">
+        <span aria-hidden="true">🔒</span>
+        <div><strong>Vista privada de <span id="privateOwner"></span></strong><p>Los ingresos y el resto disponible sólo se muestran en la pestaña personal del dueño de este dispositivo.</p></div>
+      </section>
+
+      <section class="income-panel" aria-labelledby="incomeTitle">
+        <div class="section-heading">
+          <div>
+            <p class="kicker">PUNTO DE PARTIDA</p>
+            <h2 id="incomeTitle">Ingresos netos del mes</h2>
+          </div>
+          <p>Se guardan solamente en esta prueba y en este navegador.</p>
+        </div>
+        <div id="incomeFields" class="income-fields"></div>
+      </section>
+
+      <section id="personalHeadline" class="headline-grid personal-headline" aria-label="Resumen personal"></section>
+
+      <section class="panel personal-panel" aria-labelledby="personalTitle">
+        <div class="section-heading">
+          <div>
+            <p class="kicker personal">GASTOS PERSONALES</p>
+            <h2 id="personalTitle">Lo propio de cada persona</h2>
+          </div>
+          <p>Las compras financiadas impactan por la cuota del mes, no por el valor completo.</p>
+        </div>
+        <div id="personalColumns" class="personal-columns"></div>
+      </section>
+
+      <section class="panel comparison-panel" aria-labelledby="comparisonTitle">
+        <div class="section-heading">
+          <div>
+            <p class="kicker">IMPACTO EN EL INGRESO</p>
+            <h2 id="comparisonTitle">Cuánto le queda a cada uno</h2>
+          </div>
+          <p>Gasto común asignado + gasto personal pagado durante el mes.</p>
+        </div>
+        <div id="comparisonRows" class="comparison-rows"></div>
+      </section>
+      </div>
+
+      <footer>
+        <span>Prototipo aislado · no usa la base sincronizada de la app</span>
+        <button id="resetButton" type="button">Volver a datos de demostración</button>
+      </footer>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
