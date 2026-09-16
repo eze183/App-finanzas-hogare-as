@@ -3,10 +3,10 @@
 ## Estado actual — 2026-09-15
 
 - Repositorio: `eze183/App-finanzas-hogare-as`.
-- Rama de trabajo: `codex/proteccion-datos`, basada en `a5bef47`. Se consultó GitHub después de revisar los cambios locales. La rama remota estaba en el mismo commit; no hizo falta fusionar.
+- Rama de trabajo: `codex/proteccion-datos`. El usuario confirmó que hizo un backup y autorizó publicar. Se avanzó `main` desde `a5bef47` hasta los commits verificados sin conflictos ni force push.
 - App en uso, local/PWA, con `localStorage` y sincronización Supabase ya configurada. OneDrive comparte archivos, no los datos del navegador.
-- Correcciones guardadas en esta rama, **sin push, publicación ni merge con main**. No se accedió a Supabase, perfiles de navegador ni gastos reales. No se ejecutó ni modificó SQL.
-- Versión de código preparada: `2026-09-15-proteccion-datos-v35`; service worker v35.
+- **Publicado y comprobado en GitHub Pages**: https://eze183.github.io/App-finanzas-hogare-as/. El build 61 (`35027944441`) finalizó correctamente. Los archivos públicos `app.js`, `service-worker.js`, `index.html` y `styles.css` coinciden con los archivos probados (comparación completa normalizando CRLF).
+- Versión publicada: `2026-09-15-proteccion-datos-v35`; service worker `gastos-hogar-v35`. No se accedió a datos de Supabase ni perfiles de navegador reales, y no se ejecutó ni modificó SQL.
 
 ## Qué se hizo
 
@@ -28,7 +28,9 @@
 
 ## Decisiones y pendientes
 
-- No desplegar sin nueva instrucción. Falta un proyecto Supabase de ensayo separado, con tabla preparada, para validar PostgreSQL/PostgREST real. Se consultó al usuario; aún no se recibió información del entorno. No ejecutar migraciones. Antes de publicar, coordinar actualización de todos los clientes: versiones viejas siguen usando upsert y pueden perder revisiones.
+- La documentación de este despliegue está actualizada localmente, pendiente de subir. Auto-review rechazó dos veces el push documental a `main` por aplicar la prohibición inicial de publicar; la app v35 ya estaba publicada y verificada antes del bloqueo. Se necesita autorización explícita para subir estos cinco documentos. No reintentar ese push hasta recibirla.
+- El despliegue solicitado está completado. Falta que Eze y Tami abran con Internet, esperen unos segundos, cierren completamente y vuelvan a abrir la PWA en ambos celulares antes de seguir cargando. No borrar datos ni reinstalar para actualizar. La versión cargada en cada teléfono no se puede verificar desde esta sesión.
+- La integración con PostgreSQL/PostgREST real no se probó; las pruebas usan el SDK real con API simulada. El usuario autorizó la publicación tras realizar el backup. Mantener este límite registrado, no presentar los tests como verificación de datos o RLS reales.
 - No hay cambios de arquitectura ni migraciones. Se usa la tabla `app_state` existente.
 - La combinación del mismo registro usa última edición, con desempate estable; no conserva dos variantes de una edición simultánea del mismo ID. Los ajustes nuevos de cierre sí son registros separados.
 - Cierres superpuestos creados offline se conservan y requieren conciliación explícita. Reabrir no revierte dinero transferido.
@@ -39,3 +41,4 @@
 ## Problemas resueltos en el entorno de pruebas
 
 - La descarga del SDK fallaba por la cadena de certificados de Node. Se resolvió con `node --use-system-ca`, sin desactivar TLS. El descargador fija versión y verifica SHA-256. Las pruebas luego funcionan sin acceso de la app a Internet.
+- Pages siguió sirviendo v34 durante la publicación. Se crearon dos commits vacíos de disparo (`4955149`, `516b800`); después se confirmó build 61 y v35 pública. No se determinó la causa de la demora: no atribuirla al push atómico como hecho comprobado.

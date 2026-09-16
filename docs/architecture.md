@@ -143,7 +143,7 @@ Cuatro caminos, todos terminan llenando el mismo formulario (`#expenseForm`/`#pe
 
 ## Sincronización con Supabase
 
-Actualización 2026-09-15, **solo en `codex/proteccion-datos`, sin desplegar**. Ver [proteccion-datos.md](proteccion-datos.md).
+Actualización 2026-09-15, **publicada en `main` y GitHub Pages como v35**, con autorización del usuario después de confirmar su backup. Ver [proteccion-datos.md](proteccion-datos.md).
 
 - La fila `app_state` mantiene el esquema existente (`id`, `data`, `updated_at`). Sin migraciones.
 - Pull y push entran a una única cola local. Se valida la lectura remota, combina por ID y escribe con filtro por la revisión leída (`updated_at`); si no devuelve filas, relee y reintenta. La primera creación usa INSERT; un conflicto de clave obliga a releer. No hay upsert.
@@ -153,7 +153,7 @@ Actualización 2026-09-15, **solo en `codex/proteccion-datos`, sin desplegar**. 
 - Los cierres ya no se deduplican por período. Cada ajuste crea un registro con `supersedes` y `adjustment`; el historial mantiene todas las versiones y reaperturas. Conflictos offline se conservan para conciliación.
 - El almacenamiento local y los backups se validan antes de normalizar. Los backups se combinan, conservan el dueño y dejan una copia previa local. Un estado ilegible detiene el arranque para evitar sobrescrituras vacías.
 
-**Compatibilidad:** esta protección no puede impedir las escrituras incondicionales de clientes antiguos. Actualizar todos los dispositivos y comprobar el protocolo en un entorno de ensayo antes de autorizar un despliegue.
+**Compatibilidad:** esta protección no puede impedir las escrituras incondicionales de clientes antiguos. Todos los dispositivos deben cargar v35. La publicación se verificó descargando archivos estáticos; PostgreSQL/PostgREST real no se probó, ya que el entorno integrado usa una API simulada con el SDK real.
 
 ## PWA / Service Worker
 

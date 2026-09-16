@@ -2,7 +2,9 @@
 
 App local para registrar gastos compartidos entre dos personas y cerrar la semana con un reparto 50/50.
 
-## Rama de protección de datos (sin publicar)
+## Actualización de protección de datos (publicada)
+
+La versión v35 está publicada en [la app](https://eze183.github.io/App-finanzas-hogare-as/), tras la confirmación del backup y la autorización del usuario. En ambos celulares, abrir con Internet, esperar unos segundos, cerrar completamente y volver a abrir la app para que cargue la actualización. No es necesario borrar datos ni importar el backup para actualizar.
 
 Las correcciones de `codex/proteccion-datos` están documentadas en [Protección de datos](docs/proteccion-datos.md). Para probar sin red ni datos reales:
 

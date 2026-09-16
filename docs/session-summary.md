@@ -4,6 +4,14 @@ Bitácora cronológica de trabajo en el proyecto. Se actualiza automáticamente 
 
 **Relación con `CODEX_CONTEXT.md`**: ese archivo es la memoria detallada que usa específicamente Codex (con instrucciones de `AGENTS.md` para leerlo/actualizarlo). Este archivo (`docs/session-summary.md`) es el equivalente pensado para cualquier agente, incluido Claude Code, y es el que se mantiene al día de acá en adelante por instrucción del usuario. No se duplica contenido innecesariamente: las entradas de antes del 2026-07-20 están condensadas acá (el detalle completo, línea por línea, sigue en `CODEX_CONTEXT.md`); de acá en adelante este archivo tiene el registro completo.
 
+## 2026-09-15 — Publicación autorizada de v35
+
+El usuario confirmó que exportó un backup desde la app y autorizó implementar/publicar los cambios. Se verificó que GitHub seguía en la base `a5bef47`; se publicaron `7b4d301`, `97269a8` y `db344b4` en `main` y `codex/proteccion-datos`, sin conflictos ni force push. Ante la demora de Pages se añadieron los commits vacíos `4955149` y `516b800`. El build 61 (`35027944441`) terminó correctamente y los archivos públicos `app.js`, `service-worker.js`, `index.html` y `styles.css` se compararon con los locales, coincidiendo íntegramente tras normalizar CRLF. Versión confirmada: v35. La causa de la demora no fue determinada; no está demostrado que se deba al push atómico.
+
+La verificación pública solo descargó archivos estáticos: no se ejecutó la app contra Supabase ni se consultaron/modificaron gastos reales. No hubo migraciones. Se dejó indicado actualizar ambos celulares con Internet cerrando y reabriendo la PWA, sin borrar almacenamiento ni importar el backup. El estado de actualización de los teléfonos requiere confirmación del usuario. Documentación de continuidad actualizada para reflejar que la versión ya está publicada.
+
+El intento posterior de subir los cinco documentos de cierre fue rechazado por auto-review, que siguió aplicando la restricción inicial sobre publicar en `main`. Se conservaron localmente; queda pendiente autorización explícita para publicarlos. La app v35 ya estaba online y comprobada antes de ese rechazo.
+
 ## 2026-09-15 — Compatibilidad con datos antiguos y validación en Edge
 
 La auditoría posterior detectó que la validación estricta podía bloquear estados válidos de las primeras versiones que todavía no tenían IDs. Se agregó una actualización segura y determinista para gastos, personales, recurrentes y cierres sin ID; dos dispositivos generan el mismo ID y no duplican el registro al sincronizar. Los datos con estructura inválida siguen bloqueados sin sobrescritura. También se marcó como histórica la decisión antigua de deduplicar cierres en `docs/decisions.md`.

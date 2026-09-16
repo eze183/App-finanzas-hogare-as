@@ -1,6 +1,6 @@
-# Protección de datos — rama de trabajo
+# Protección de datos — versión publicada
 
-Estado: 2026-09-15. Implementado en `codex/proteccion-datos`, sin publicar.
+Estado: 2026-09-15. Implementado en `codex/proteccion-datos` y publicado en `main`/GitHub Pages después de que el usuario confirmó su backup y autorizó el despliegue. Build 61 (`35027944441`) exitoso; archivos públicos de la app comparados íntegramente con los probados. Versión `2026-09-15-proteccion-datos-v35` y caché `gastos-hogar-v35`.
 
 ## Cambios y criterios
 
@@ -54,10 +54,10 @@ Cobertura: carga y edición desde formularios, persistencia del dueño al recarg
 ## Límites y continuidad
 
 - No se modificaron `supabase-config.js` ni `supabase-setup.sql`. No se ejecutó ninguna migración ni operación contra datos reales.
-- Clientes v34 o anteriores siguen usando upsert y deduplicación de cierres. Un despliegue futuro debe coordinar todos los dispositivos; no hay una barrera de servidor contra clientes viejos en esta tarea.
+- Clientes v34 o anteriores siguen usando upsert y deduplicación de cierres. Después de esta publicación hay que actualizar ambos celulares; no hay una barrera de servidor contra clientes viejos en esta tarea.
 - Campos editados simultáneamente sobre el mismo ID siguen usando última edición (desempate estable). La cola evita perder altas de IDs distintos, pero no convierte el almacenamiento en un historial de todas las ediciones de gastos.
 - Los tombstones crecen sin poda automática. Vigilar el tamaño antes de diseñar un protocolo de confirmación por dispositivo.
 - Las fechas de recurrentes históricos no se cambian. Antes se fechaban al principio del rango y no guardaban identidad de ocurrencia; no siempre se puede deducir el mes originalmente pretendido. Revisar esos casos manualmente, sin migraciones automáticas.
 - Una importación con nombres diferentes o datos incompatibles se rechaza para revisión. No renombrar ni reparar gastos reales automáticamente para hacerla pasar.
 - La copia previa de importación vive en el mismo navegador, no sustituye un backup exportado. Para recuperar: preservar primero el valor original y las claves `home-expenses-v1-before-import-*`; exportar la copia elegida a un archivo antes de cualquier reemplazo. No borrar almacenamiento ni reinstalar la app como primer intento de reparación.
-- `main`, GitHub Pages y la imagen preexistente quedaron sin cambios. El contexto histórico completo se conservó en `docs/codex-context-history.md`.
+- `main` y GitHub Pages se actualizaron con autorización posterior del usuario. La imagen preexistente sigue intacta y fuera de los commits. El contexto histórico completo se conservó en `docs/codex-context-history.md`.
