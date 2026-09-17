@@ -2790,3 +2790,54 @@ html.personal-mode #commonTabButton,
   .private-impact-row { grid-template-columns: minmax(120px, 1fr) auto; }
   .private-impact-row span:last-child { grid-column: 2; }
 }
+
+/* — Nueva interfaz v39: lleva la maqueta aprobada a la aplicación real — */
+.app-shell { width: min(1240px, calc(100% - 32px)); padding: 28px 0 44px; }
+.hero { grid-template-columns: minmax(0, 1fr) 390px; align-items: end; padding: 0 0 22px; }
+.hero h1 { font-size: clamp(2rem, 5vw, 3.7rem); line-height: .95; }
+.period-card, .panel, .summary-card, .app-tabs, .entry-tabs { border-radius: 0; box-shadow: none; }
+.period-card { padding: 12px; background: var(--surface); }
+.entry-tabs { margin-bottom: 0; border: 1px solid var(--line); background: var(--surface); padding: 0; gap: 0; }
+.entry-tabs button { min-height: 50px; border-radius: 0; }
+.entry-tabs button.is-active, .entry-tabs button:hover { background: var(--ink); color: white; }
+#personalTabButton.is-active, #personalTabButton:hover { background: var(--ink) !important; }
+.mode-privacy-note { margin: 0; padding: 12px 16px; border-left: 5px solid var(--accent); background: var(--accent-soft); color: #654b46; }
+body.personal-mode .mode-privacy-note { border-left-color: var(--personal); background: var(--personal-soft); color: var(--personal); }
+.app-tabs { position: static; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; width: 100%; margin: 18px 0; padding: 0; border: 1px solid var(--line); background: var(--line); }
+.app-tabs button, .app-tabs #settingsOpenButton { min-height: 52px; border-radius: 0; background: var(--surface); color: var(--muted); font-weight: 800; }
+.app-tabs button.is-active, .app-tabs button:hover, .app-tabs #settingsOpenButton:hover { background: var(--accent-soft); color: var(--accent); }
+.app-tabs .tab-icon { display: block; width: 18px; height: 18px; }
+.panel { padding: 22px; background: var(--surface); }
+.expense-panel, .chart-panel, .monthly-panel { border-top: 5px solid var(--accent); }
+body.personal-mode .expense-panel, body.personal-mode .chart-panel, body.personal-mode .monthly-panel { border-top-color: var(--personal); }
+.section-kicker, .private-kicker { display: block; margin-bottom: 7px; color: var(--accent); font-size: .74rem; font-weight: 900; letter-spacing: .1em; }
+body.personal-mode .section-kicker, body.personal-mode .private-kicker { color: var(--personal); }
+.panel-heading h2 { font-size: clamp(1.35rem, 2.5vw, 2rem); letter-spacing: -.025em; }
+.expense-form { gap: 14px; }
+.amount-hero { border: 0; border-radius: 0; background: var(--surface-soft); }
+.amount-hero-field { border-bottom: 2px solid var(--ink); border-radius: 0; background: transparent; }
+.amount-hero-field input { font-size: 2rem; }
+.currency-toggle, .currency-toggle button, .quick-action, .submit-expense-button, .installments-toggle, .card-fields, .filter-bar, .movement-summary, .private-income-card, .private-income-metric, .common-impact-row, .private-impact-row { border-radius: 0; }
+.quick-actions { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.quick-action { min-height: 66px; background: var(--surface); }
+.submit-expense-button { min-height: 50px; font-weight: 900; }
+.category-panel { border-top: 5px solid var(--ink); }
+.summary-hero { min-height: 154px; padding: 20px; border: 1px solid var(--ink); background: var(--ink); color: white; }
+.summary-hero-label { color: #ccc7c4; }
+.summary-card { min-height: 130px; padding: 20px; border: 1px solid var(--line); }
+.settlement-block { border-radius: 0; }
+.private-income-card { border: 1px solid var(--line); border-left: 5px solid var(--personal); background: var(--personal-soft); }
+.history-item, .person-expense-row, .movement-group, .installment-item { border-radius: 0; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; align-items: stretch; }
+  .app-tabs { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 580px) {
+  .app-shell { width: min(100% - 20px, 1240px); padding: 18px 0 36px; }
+  .app-tabs { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 14px 0 18px; padding: 0; border: 1px solid var(--line); box-shadow: none; }
+  .app-tabs button, .app-tabs #settingsOpenButton { flex-direction: row; gap: 7px; min-height: 48px; padding: 0 8px; font-size: .76rem; }
+  .quick-actions { grid-template-columns: 1fr; }
+  .panel { padding: 16px; }
+}

@@ -14,7 +14,7 @@ node --test tests/protection.test.cjs
 
 ## Nueva interfaz financiera (en revisión, todavía no publicada)
 
-La versión local v38 lleva la nueva interfaz a la app real sin reemplazar su almacenamiento. Agrega ingreso y resto estimado dentro de `Personales`, impacto de los gastos comunes por categoría, flujo mensual con cuotas iniciadas anteriormente, categorías personales/profesionales y orden de movimientos por fecha o monto. El ingreso queda sólo en el navegador del dueño: no se sincroniza ni forma parte del backup compartido. También fuerza la comprobación del service worker para evitar que el teléfono quede mostrando una interfaz anterior.
+La versión local v39 lleva la maqueta visual completa a la app real sin reemplazar su almacenamiento. Incluye la navegación visible de la prueba (`Cargar / Análisis / Movimientos / Cierres|Cuotas / Ajustes`), paneles rectos, jerarquías y colores diferenciados para comunes y personales. Agrega ingreso y resto estimado dentro de `Personales`, impacto de los gastos comunes por categoría, flujo mensual con cuotas iniciadas anteriormente, categorías personales/profesionales y orden de movimientos por fecha o monto. El ingreso queda sólo en el navegador del dueño: no se sincroniza ni forma parte del backup compartido. También fuerza la comprobación del service worker para evitar que el teléfono quede mostrando una interfaz anterior.
 
 El punto de regreso anterior al cambio está en la rama local `codex/backup-app-antes-analisis-2026-09-16` (`f0111b0`) y en `backups/app-v35-antes-nueva-interfaz-2026-09-16.zip`.
 

@@ -49,12 +49,6 @@
         </div>
       </section>
 
-      <div class="top-actions" aria-label="Acciones de la aplicación">
-        <button id="settingsOpenButton" class="icon-button" type="button" aria-label="Abrir configuración" title="Configuración">
-          ⚙
-        </button>
-      </div>
-
       <div class="entry-tabs" role="tablist" aria-label="Tipo de gasto">
         <button id="commonTabButton" class="is-active" type="button">Comunes</button>
         <button id="personalTabButton" type="button">Personales</button>
@@ -82,6 +76,10 @@
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="1"/><path d="M2 10h20"/></svg>
           <span>Cuotas</span>
           <span id="installmentsTabBadge" class="tab-badge is-hidden">0</span>
+        </button>
+        <button id="settingsOpenButton" type="button" aria-label="Abrir configuración" title="Configuración">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></svg>
+          <span>Ajustes</span>
         </button>
       </nav>
 
@@ -190,6 +188,7 @@
           <section class="panel expense-panel">
             <div class="panel-heading">
               <div>
+                <span class="section-kicker">NUEVO MOVIMIENTO</span>
                 <h2 id="expensePanelTitle">Agregar gasto</h2>
                 <p id="expensePanelSubtitle">Cargá gastos comunes para el reparto o personales para tu control.</p>
               </div>
