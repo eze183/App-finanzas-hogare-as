@@ -106,6 +106,18 @@
         </div>
       </section>
 
+      <article id="settlementDetailCard" class="panel settlement-detail settlement-detail-priority summary-view-section app-view-hidden">
+        <div class="panel-heading">
+          <div>
+            <span class="section-kicker">DETALLE DEL CIERRE</span>
+            <h2>Cómo queda el reparto</h2>
+            <p id="settlementDetailIntro"></p>
+          </div>
+          <span id="settlementDetailBadge" class="settlement-stamp is-hidden">Saldada</span>
+        </div>
+        <div id="settlementBreakdown" class="breakdown-grid"></div>
+      </article>
+
       <section class="summary-grid summary-view-section app-view-hidden" aria-label="Reparto por persona">
         <article id="personATotalCard" class="summary-card">
           <span id="personANameSummary">Persona 1 pagó</span>
@@ -140,27 +152,17 @@
         </div>
       </section>
 
-      <section class="detail-grid summary-view-section app-view-hidden" aria-label="Detalle de cierre">
+      <section class="detail-grid monthly-detail-grid summary-view-section app-view-hidden" aria-label="Análisis mensual">
         <article class="panel monthly-panel">
           <div class="panel-heading">
             <div>
-              <h2>Vista mensual</h2>
+              <span class="section-kicker">GASTOS DEL MES</span>
+              <h2 id="monthlyTitle">Qué consume el hogar</h2>
               <p id="monthRangeLabel"></p>
             </div>
           </div>
           <div id="monthlySummary" class="monthly-summary"></div>
           <div id="commonCategoryImpact" class="common-category-impact"></div>
-        </article>
-
-        <article id="settlementDetailCard" class="panel settlement-detail">
-          <div class="panel-heading">
-            <div>
-              <h2>Detalle del cierre</h2>
-              <p id="settlementDetailIntro"></p>
-            </div>
-            <span id="settlementDetailBadge" class="settlement-stamp is-hidden">Saldada</span>
-          </div>
-          <div id="settlementBreakdown" class="breakdown-grid"></div>
         </article>
       </section>
 

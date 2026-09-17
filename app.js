@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-16-maqueta-completa-v39";
+const APP_VERSION = "2026-09-16-analisis-compacto-v40";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -167,6 +167,7 @@ const elements = {
   settlementDetailIntro: document.querySelector("#settlementDetailIntro"),
   settlementBreakdown: document.querySelector("#settlementBreakdown"),
   monthRangeLabel: document.querySelector("#monthRangeLabel"),
+  monthlyTitle: document.querySelector("#monthlyTitle"),
   monthlySummary: document.querySelector("#monthlySummary"),
   commonCategoryImpact: document.querySelector("#commonCategoryImpact"),
   privateIncomeCard: document.querySelector("#privateIncomeCard"),
@@ -1245,21 +1246,13 @@ function renderMonthlySummary(isPersonal) {
   const monthlyTotal = monthExpenses.reduce((sum, expense) => sum + expense.amount, 0);
   const categoryTotals = Object.entries(getCategoryTotals(monthExpenses)).sort((a, b) => b[1] - a[1]);
   const topCategory = categoryTotals[0];
-  const weeksWithExpenses = new Set(monthExpenses.map((expense) => toISODate(getWeekStart(parseISODate(expense.date)))));
 
   elements.monthRangeLabel.textContent = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+  elements.monthlyTitle.textContent = isPersonal ? "En qué se va tu dinero" : "Qué consume el hogar";
   elements.monthlySummary.innerHTML = `
     <div class="metric-row">
       <span>Total mensual</span>
       <strong>${formatMoney(monthlyTotal)}</strong>
-    </div>
-    <div class="metric-row">
-      <span>Gastos cargados</span>
-      <strong>${monthExpenses.length}</strong>
-    </div>
-    <div class="metric-row">
-      <span>Semanas con gastos</span>
-      <strong>${weeksWithExpenses.size}</strong>
     </div>
     <div class="metric-row">
       <span>Categoría principal</span>
@@ -1269,8 +1262,21 @@ function renderMonthlySummary(isPersonal) {
 
   elements.commonCategoryImpact.classList.toggle("is-hidden", isPersonal);
   elements.commonCategoryImpact.innerHTML = !isPersonal && categoryTotals.length
-    ? `<div class="common-impact-heading"><strong>Desglose común por categoría</strong><span>Total · porcentaje · parte por persona</span></div>
-       ${categoryTotals.map(([category, amount]) => `<div class="common-impact-row"><strong>${escapeHtml(category)}</strong><span>${formatMoney(amount)}</span><span>${monthlyTotal ? ((amount / monthlyTotal) * 100).toLocaleString("es-AR", { maximumFractionDigits: 1 }) : 0}%</span><span>${formatMoney(amount / state.people.length)} c/u</span></div>`).join("")}`
+    ? `<div class="compact-category-layout">
+         <div class="compact-category-bars">
+           ${categoryTotals.map(([category, amount]) => {
+             const percentage = monthlyTotal ? (amount / monthlyTotal) * 100 : 0;
+             return `<div class="compact-bar-line"><div><strong>${escapeHtml(category)}</strong><span>${percentage.toLocaleString("es-AR", { maximumFractionDigits: 1 })}%</span></div><i><b style="width:${Math.max(percentage, 1)}%"></b></i></div>`;
+           }).join("")}
+         </div>
+         <div class="compact-category-table" role="table" aria-label="Desglose común por categoría">
+           <div class="compact-category-row compact-category-head" role="row"><strong>Categoría</strong><span>Total</span><span>% del hogar</span><span>Parte por persona</span></div>
+           ${categoryTotals.map(([category, amount]) => {
+             const percentage = monthlyTotal ? (amount / monthlyTotal) * 100 : 0;
+             return `<div class="compact-category-row" role="row"><strong>${escapeHtml(category)}</strong><span>${formatMoney(amount)}</span><span>${percentage.toLocaleString("es-AR", { maximumFractionDigits: 1 })}%</span><span>${formatMoney(amount / state.people.length)}</span></div>`;
+           }).join("")}
+         </div>
+       </div>`
     : "";
 }
 

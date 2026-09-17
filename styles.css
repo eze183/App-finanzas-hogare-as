@@ -2841,3 +2841,127 @@ body.personal-mode .section-kicker, body.personal-mode .private-kicker { color: 
   .quick-actions { grid-template-columns: 1fr; }
   .panel { padding: 16px; }
 }
+
+/* — Análisis compacto v40 — */
+.chart-panel {
+  display: none !important;
+}
+
+.settlement-detail-priority {
+  margin-bottom: 18px;
+  border-top: 5px solid var(--ink);
+}
+
+.summary-hero {
+  min-height: 108px;
+}
+
+.monthly-detail-grid {
+  display: block;
+}
+
+.monthly-detail-grid .monthly-panel {
+  width: 100%;
+}
+
+.monthly-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 20px;
+}
+
+.monthly-summary .metric-row {
+  border-radius: 0;
+  background: var(--surface-soft);
+}
+
+.common-category-impact {
+  margin-top: 0;
+  border-top: 0;
+}
+
+.compact-category-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, .75fr) minmax(560px, 1.5fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.compact-category-bars {
+  display: grid;
+  gap: 13px;
+}
+
+.compact-bar-line {
+  display: grid;
+  gap: 6px;
+}
+
+.compact-bar-line > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: .86rem;
+  font-weight: 800;
+}
+
+.compact-bar-line > div span {
+  color: var(--muted);
+}
+
+.compact-bar-line > i {
+  display: block;
+  height: 10px;
+  overflow: hidden;
+  background: var(--surface-soft);
+}
+
+.compact-bar-line > i b {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.compact-category-table {
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.compact-category-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.2fr) repeat(3, minmax(110px, .75fr));
+  gap: 12px;
+  min-width: 610px;
+  align-items: center;
+  padding: 13px 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.compact-category-row span {
+  text-align: right;
+}
+
+.compact-category-head {
+  color: var(--muted);
+  font-size: .72rem;
+  letter-spacing: .04em;
+}
+
+@media (max-width: 900px) {
+  .compact-category-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 580px) {
+  .monthly-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-detail-priority .breakdown-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settlement-detail-priority .breakdown-item.wide {
+    grid-column: auto;
+  }
+}
