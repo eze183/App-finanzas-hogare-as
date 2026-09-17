@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-16-transferencia-prioritaria-v41";
+const APP_VERSION = "2026-09-17-cierres-desplegables-v42";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -2214,6 +2214,33 @@ function renderPeriodLabel() {
   }
 }
 
+function getSettlementHistoryBreakdown(settlement) {
+  if (settlement.breakdown?.payerTotals && settlement.breakdown?.categoryTotals) {
+    return {
+      payerTotals: settlement.breakdown.payerTotals,
+      categoryTotals: settlement.breakdown.categoryTotals,
+      isSnapshot: true,
+      currentTotal: settlement.total,
+    };
+  }
+
+  const range = getSettlementRange(settlement);
+  const expenses = range
+    ? state.expenses.filter((expense) => {
+        if (expense.deletedAt) return false;
+        const date = parseISODate(expense.date);
+        return date >= range.start && date <= range.end;
+      })
+    : [];
+  const current = calculateSettlement(expenses);
+  return {
+    payerTotals: current.totals,
+    categoryTotals: getCategoryTotals(expenses),
+    isSnapshot: false,
+    currentTotal: current.total,
+  };
+}
+
 function renderSettlementHistory() {
   const activeIds = new Set(getActiveSettlements().map((record) => record.id));
   const settlements = [...state.settlements]
@@ -2232,16 +2259,34 @@ function renderSettlementHistory() {
       const movement = transfer.amount
         ? `${transfer.debtor} le pasó ${formatMoney(transfer.amount)} a ${transfer.creditor}`
         : "No hizo falta compensación";
+      const breakdown = getSettlementHistoryBreakdown(settlement);
+      const payerRows = settlement.people
+        .map((person) => `<div><span>${escapeHtml(person)} pagó</span><strong>${formatMoney(Number(breakdown.payerTotals[person]) || 0)}</strong></div>`)
+        .join("");
+      const categoryRows = Object.entries(breakdown.categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .map(([category, amount]) => `<div><span>${escapeHtml(category)}</span><strong>${formatMoney(amount)}</strong></div>`)
+        .join("");
+      const changedSinceClose = !breakdown.isSnapshot && Math.abs(breakdown.currentTotal - settlement.total) >= 0.01;
 
       return `
-        <article class="history-item">
-          <div>
+        <details class="history-item">
+          <summary class="history-summary">
+            <div>
             <span class="history-kicker">${escapeHtml(settlement.weekLabel)}</span>
             <strong>${escapeHtml(movement)}</strong>
             <span>${label} · ${conflict ? "Revisar superposición · " : ""}Saldada el ${dateFormatter.format(parseISODate(settlement.settledAt))}</span>
+            </div>
+            <div class="history-summary-side"><span class="history-total">${formatMoney(settlement.total)}</span><span class="history-chevron" aria-hidden="true">⌄</span></div>
+          </summary>
+          <div class="history-detail">
+            <div class="history-detail-heading"><strong>${breakdown.isSnapshot ? "Composición guardada al cerrar" : "Composición reconstruida"}</strong><span>${breakdown.isSnapshot ? "Estos importes no cambian aunque después se editen movimientos." : "Este cierre es anterior al desglose guardado; se muestran los movimientos que hoy existen en ese período."}</span></div>
+            ${changedSinceClose ? `<p class="history-detail-warning">Los movimientos actuales suman ${formatMoney(breakdown.currentTotal)}, distinto del total cerrado de ${formatMoney(settlement.total)}.</p>` : ""}
+            <div class="history-detail-metrics"><div><span>Total cerrado</span><strong>${formatMoney(settlement.total)}</strong></div>${payerRows}</div>
+            <div class="history-detail-transfer"><span>Transferencia registrada</span><strong>${escapeHtml(movement)}</strong></div>
+            <div class="history-detail-categories"><h3>Por categoría</h3>${categoryRows || `<p class="empty-state">No hay movimientos disponibles para desglosar.</p>`}</div>
           </div>
-          <div class="history-total">${formatMoney(settlement.total)}</div>
-        </article>
+        </details>
       `;
     })
     .join("");
@@ -4240,6 +4285,10 @@ function handleSettleWeek() {
     debtor: settlement.debtor,
     creditor: settlement.creditor,
     people: [...state.people],
+    breakdown: {
+      payerTotals: { ...settlement.totals },
+      categoryTotals: getCategoryTotals(expenses),
+    },
     updatedAt: Date.now(),
   };
 

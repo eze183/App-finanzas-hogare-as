@@ -181,6 +181,10 @@ test('browser closes, edits and adjusts without losing history or doubling trans
   assert.equal((await stored(page)).settlements.length, 2);
   fs.mkdirSync(path.join(ROOT, '.test-artifacts'), { recursive: true });
   await page.locator('#historyViewButton').click();
+  await page.locator('.history-summary').first().click();
+  assert.match(await page.locator('.history-detail').first().textContent(), /Composición guardada al cerrar/);
+  assert.match(await page.locator('.history-detail').first().textContent(), /Total cerrado/);
+  assert.match(await page.locator('.history-detail').first().textContent(), /Otros/);
   await page.screenshot({ path: path.join(ROOT, '.test-artifacts/history-mobile.png'), fullPage: true });
   await sync(page);
 });
