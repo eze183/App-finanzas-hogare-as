@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-16-analisis-compacto-v40";
+const APP_VERSION = "2026-09-16-transferencia-prioritaria-v41";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -1153,14 +1153,17 @@ function renderSettlementBlock(expenses, settlement) {
 
   if (getOverlappingSettlements(getSelectedPeriodRange(), record?.id).length) {
     elements.settlementCard.classList.remove("is-settled");
-    elements.settlementBlockLabel.textContent = "Revisar cierres";
-    elements.settlementText.textContent = "Hay cierres superpuestos. Revisá el historial y conciliá lo ya transferido antes de saldar este período.";
+    elements.settlementCard.classList.add("is-stale");
+    elements.settlementBlockLabel.textContent = "Detalle del cierre · revisar cierres";
+    elements.settlementText.textContent = describeSettlementMovement(settlement);
+    elements.settlementMeta.classList.remove("is-hidden");
+    elements.settlementMeta.textContent = "Hay cierres superpuestos. El importe de arriba es el reparto actual; revisá lo ya transferido antes de saldar.";
     elements.settleWeekButton.textContent = "Revisar superposición";
     return;
   }
 
   if (!isSettled) {
-    elements.settlementBlockLabel.textContent = "Para emparejar";
+    elements.settlementBlockLabel.textContent = "Detalle del cierre · para emparejar";
     elements.settlementText.textContent = describeSettlementMovement(settlement);
     elements.settleWeekButton.textContent = "Marcar período saldado";
     return;
@@ -1172,14 +1175,14 @@ function renderSettlementBlock(expenses, settlement) {
     : "No hizo falta compensación";
 
   if (isStale) {
-    elements.settlementBlockLabel.textContent = "Cierre desactualizado";
+    elements.settlementBlockLabel.textContent = "Detalle del cierre · ajuste pendiente";
     elements.settlementText.textContent = describeSettlementMovement(getSettlementAdjustment(settlement, record));
     elements.settlementMeta.textContent = `El ajuste descuenta la transferencia guardada. Cerraste este período el ${settledOn} por ${formatMoney(record.total)}, pero desde entonces cambió a ${formatMoney(settlement.total)}.`;
     elements.settleWeekButton.textContent = "Actualizar cierre";
     return;
   }
 
-  elements.settlementBlockLabel.textContent = "Período saldado ✓";
+  elements.settlementBlockLabel.textContent = "Detalle del cierre · período saldado ✓";
   elements.settlementText.textContent = closedMovement;
   elements.settlementMeta.textContent = `Cerrada el ${settledOn} · total ${formatMoney(record.total)}`;
   elements.settleWeekButton.textContent = "Ver en Historial";

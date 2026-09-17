@@ -175,7 +175,8 @@ test('browser closes, edits and adjusts without losing history or doubling trans
   assert.equal((await stored(page)).settlements.length, 2);
   assert.equal((await stored(page)).settlements[0].adjustment.amount, 20);
   await page.locator('#periodStart').fill('2026-09-01'); await page.locator('#periodEnd').fill('2026-09-30'); await page.locator('#summaryViewButton').click();
-  assert.match(await page.locator('#settlementText').textContent(), /superpuestos/);
+  assert.match(await page.locator('#settlementText').textContent(), /le pasa|No hace falta/);
+  assert.match(await page.locator('#settlementMeta').textContent(), /superpuestos/);
   await page.locator('#settleWeekButton').click();
   assert.equal((await stored(page)).settlements.length, 2);
   fs.mkdirSync(path.join(ROOT, '.test-artifacts'), { recursive: true });
