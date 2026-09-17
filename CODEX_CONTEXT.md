@@ -75,7 +75,7 @@
 - Se agregó una tercera prueba para navegación, privacidad, formulario de cuotas y ausencia de desborde en 390 px. Total: 3 pruebas del prototipo aprobadas.
 - `Movimientos` ahora tiene filtros combinables de categoría/persona y orden real por fecha reciente/antigua o importe mayor/menor, con total y cantidad visibles recalculados. El filtro de persona se oculta en Personal. Se agregó una prueba específica; total actual: 4 pruebas aprobadas.
 
-## Integración en la app principal — v40 local, no publicada
+## Integración en la app principal — v41 publicada
 
 - Antes de modificar la app se creó la rama local de recuperación `codex/backup-app-antes-analisis-2026-09-16`, apuntando al commit `f0111b00398c9ba523f3b0e70a19f78b68d2b907` (v35 publicada).
 - Se integró en `index.html`, `app.js` y `styles.css` sin reemplazar los formularios ni las funciones existentes. La interfaz principal ahora reproduce la composición visual de la maqueta aprobada: encabezado “Finanzas con contexto”, navegación visible `Cargar / Análisis / Movimientos / Cierres|Cuotas / Ajustes`, paneles rectos, jerarquías fuertes y colores diferenciados para comunes/personales. `service-worker.js` pasó a caché v39 y `APP_VERSION` a `2026-09-16-maqueta-completa-v39`.
@@ -90,4 +90,4 @@
 - Se detectó que el servidor local del puerto 8765 se había detenido: Android y Windows estaban mostrando la copia offline anterior. Se reinició desde la carpeta correcta, enlazado a `0.0.0.0`, y se verificó `http://192.168.1.105:8765/?version=39` con el HTML v39 (Ajustes dentro de la navegación y kicker “NUEVO MOVIMIENTO”).
 - Ajuste v40 pedido tras revisar la app real: el gráfico grande de canvas queda fuera de la interfaz y se reemplaza por barras compactas + tabla de categoría, total, porcentaje y parte por persona. `Detalle del cierre` se movió inmediatamente debajo del bloque de cierre y antes de las tarjetas por persona. La vista mensual ya no muestra “Gastos cargados” ni “Semanas con gastos”; conserva sólo total mensual, categoría principal y desglose útil. También se redujo la altura del total principal.
 - Ajuste v41: el resultado `persona le pasa $X a persona` pasa a ser el primer bloque de Análisis, antes incluso del total. La etiqueta siempre dice `Detalle del cierre`. Si hay cierres superpuestos, la transferencia actual sigue visible y la advertencia queda debajo; antes el aviso reemplazaba el monto y ocultaba justo la información principal.
-- Todavía no se publicó ni se hizo push. La app pública sigue siendo v35.
+- Publicación autorizada por el usuario: `main` y `codex/proteccion-datos` avanzaron a `3421e92`. GitHub Pages build `35169744083` terminó en `success` y se verificó la URL pública: entrega `2026-09-16-transferencia-prioritaria-v41`, Ajustes dentro de la navegación y el bloque de transferencia antes del total.
