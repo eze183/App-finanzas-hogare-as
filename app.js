@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-17-cierres-desplegables-v42";
+const APP_VERSION = "2026-09-28-buscador-v43";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -281,6 +281,8 @@ const elements = {
   clearWeekButton: document.querySelector("#clearWeekButton"),
   filterForm: document.querySelector("#filterForm"),
   searchInput: document.querySelector("#searchInput"),
+  searchScope: document.querySelector("#searchScope"),
+  searchResultsStatus: document.querySelector("#searchResultsStatus"),
   filterPayer: document.querySelector("#filterPayer"),
   filterCategory: document.querySelector("#filterCategory"),
   filterPaymentMethod: document.querySelector("#filterPaymentMethod"),
@@ -852,15 +854,27 @@ function getPeriodPersonalExpenses() {
     .sort((a, b) => b.date.localeCompare(a.date) || b.createdAt - a.createdAt);
 }
 
+function matchesExpenseSearch(expense, query) {
+  const tokens = (value) => normalizeText(value).match(/[a-z0-9]+/g) || [];
+  const ignored = new Set(["de", "del", "la", "el", "los", "las", "y", "en", "servicio"]);
+  const gasNames = new Set(["gas", "metrogas", "naturgy", "camuzzi", "gasnor", "gasnea", "ecogas", "litoral"]);
+  const words = tokens(`${expense.note || ""} ${expense.category} ${expense.payer} ${expense.paymentMethod || ""}`);
+  const requested = tokens(query).filter(word => !ignored.has(word));
+  const gasQuery = requested.some(word => gasNames.has(word));
+  return requested.every(word => {
+    if (gasQuery && word === "natural") return true;
+    if (gasNames.has(word)) return words.some(candidate => gasNames.has(candidate));
+    return words.some(candidate => candidate.startsWith(word));
+  });
+}
+
 function getFilteredExpenses(expenses) {
-  const normalizedSearch = normalizeText(filters.search);
 
   return expenses.filter((expense) => {
     const paymentMethod = expense.paymentMethod || "Sin especificar";
-    const searchableText = normalizeText(`${expense.note || ""} ${expense.category} ${expense.payer} ${paymentMethod}`);
 
     return (
-      (!normalizedSearch || searchableText.includes(normalizedSearch)) &&
+      (!filters.search || matchesExpenseSearch(expense, filters.search)) &&
       (!filters.payer || expense.payer === filters.payer) &&
       (!filters.category || expense.category === filters.category) &&
       (!filters.paymentMethod || paymentMethod === filters.paymentMethod)
@@ -2297,7 +2311,13 @@ function render() {
   const expenses = getPeriodExpenses();
   const personalExpenses = getPeriodPersonalExpenses();
   const personalMovementExpenses = personalExpenses.filter((expense) => !personalMovementCategory || expense.category === personalMovementCategory);
-  const filteredExpenses = getFilteredExpenses(expenses);
+  const searchAll = Boolean(filters.search.trim()) && elements.searchScope.value === "all";
+  const searchBase = searchAll ? state.expenses.filter(expense => !expense.deletedAt).sort((a, b) => b.date.localeCompare(a.date)) : expenses;
+  const filteredExpenses = getFilteredExpenses(searchBase);
+  const latestMatch = [...filteredExpenses].sort((a, b) => b.date.localeCompare(a.date))[0];
+  elements.searchResultsStatus.textContent = filters.search.trim()
+    ? `${searchAll ? "Buscando en todo el historial" : "Buscando en el período elegido"} · ${filteredExpenses.length} resultados · Total: ${formatMoney(filteredExpenses.reduce((sum, expense) => sum + expense.amount, 0))}${latestMatch ? ` · Último: ${formatMoney(latestMatch.amount)} (${dateFormatter.format(parseISODate(latestMatch.date))})` : " · Probá otra palabra o limpiá los filtros de persona, categoría y pago."}`
+    : "";
   const summaryExpenses = isPersonal ? personalExpenses : expenses;
   renderPeople();
   renderFilterValues();
@@ -4626,6 +4646,8 @@ async function init() {
     if (event.target === elements.movementDetailView) closeMovementDetail();
   });
   elements.searchInput.addEventListener("input", handleFiltersChange);
+  elements.searchScope.addEventListener("change", render);
+  document.querySelector("#filterForm").addEventListener("submit", event => event.preventDefault());
   elements.filterPayer.addEventListener("change", handleFiltersChange);
   elements.filterCategory.addEventListener("change", handleFiltersChange);
   elements.filterPaymentMethod.addEventListener("change", handleFiltersChange);

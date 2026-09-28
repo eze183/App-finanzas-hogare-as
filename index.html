@@ -458,7 +458,11 @@
           <form id="filterForm" class="filter-bar">
             <label>
               Buscar
-              <input id="searchInput" type="search" placeholder="Descripción o texto" />
+              <input id="searchInput" type="search" placeholder="Ej: gas natural, internet, supermercado" />
+            </label>
+            <label>
+              Buscar en
+              <select id="searchScope"><option value="all">Todo el historial al buscar</option><option value="period">Sólo el período elegido</option></select>
             </label>
             <label>
               Persona
@@ -509,6 +513,7 @@
             <button id="clearFiltersButton" class="secondary-button" type="button">Limpiar filtros</button>
           </form>
 
+          <p id="searchResultsStatus" role="status" aria-live="polite"></p>
           <div class="movement-toolbar">
             <div id="commonMovementSummary" class="movement-summary is-hidden"></div>
           </div>

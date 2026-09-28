@@ -1,5 +1,11 @@
 # Continuidad del proyecto
 
+## Actualización 2026-09-28 — v43
+
+- Usuario autorizó publicar todos los cambios sin nueva confirmación. Incluye v42 (cierres desplegables) y buscador v43.
+- Búsqueda común por palabras sin acentos ni orden fijo, con equivalencias de gas natural/Camuzzi/Metrogas/Naturgy/Ecogas. Busca en todo el historial al escribir y permite limitar al período. Conserva filtros y orden, excluye borrados; muestra total y último pago. Enter no recarga la página.
+- Prueba integrada específica: gas de un mes anterior, exclusión de borrados y de “Gastos varios”, alcance por período y filtro por pagador.
+
 ## Estado actual — 2026-09-15
 
 - Repositorio: `eze183/App-finanzas-hogare-as`.

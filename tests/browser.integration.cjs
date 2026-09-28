@@ -158,6 +158,25 @@ test('browser backup import rejects malformed file and retains local data when c
   await sync(page);
 });
 
+test('search finds gas across history and preserves period and payer filters', async t => {
+  const page = await device(t, apiFixture(), { ...empty(), expenses: [
+    { ...expense('gas', 800, 'Tami'), date: '2026-08-10', category: 'Servicios', note: 'Camuzzi factura' },
+    { ...expense('other'), note: 'Gastos varios' },
+    { ...expense('deleted'), note: 'Gas natural', deletedAt: 2 },
+  ] });
+  await period(page);
+  await page.locator('#movementsViewButton').click();
+  await page.locator('#searchInput').fill('servicio de gas natural');
+  assert.match(await page.locator('#commonExpenseColumns').textContent(), /Camuzzi/);
+  assert.doesNotMatch(await page.locator('#commonExpenseColumns').textContent(), /Gastos varios/);
+  assert.match(await page.locator('#searchResultsStatus').textContent(), /1 resultados/);
+  await page.locator('#searchScope').selectOption('period');
+  assert.match(await page.locator('#searchResultsStatus').textContent(), /0 resultados/);
+  await page.locator('#searchScope').selectOption('all');
+  await page.locator('#filterPayer').selectOption('Eze');
+  assert.match(await page.locator('#searchResultsStatus').textContent(), /0 resultados/);
+});
+
 test('browser closes, edits and adjusts without losing history or doubling transfer', { timeout: 30000 }, async t => {
   const fixture = apiFixture(); const page = await device(t, fixture, { ...empty(), expenses: [expense('original')] });
   await period(page); await page.locator('#summaryViewButton').click(); await page.locator('#settleWeekButton').click();
