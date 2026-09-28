@@ -1,5 +1,7 @@
 # Continuidad del proyecto
 
+- **v44 publicada y comprobada**: el build de GitHub Pages para `fd5bb86` terminó correctamente y la URL pública entrega `2026-09-28-analisis-desplegable-v44`.
+
 ## Interfaz v44
 
 - “Qué consume el hogar” ahora es un desplegable nativo cerrado por defecto, con mes visible y acción Ver/Ocultar desglose. Conserva totales y categorías; el bloque personal equivalente también se puede plegar. Abrir/cerrar no modifica datos.
