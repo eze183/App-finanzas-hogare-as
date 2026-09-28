@@ -153,17 +153,18 @@
       </section>
 
       <section class="detail-grid monthly-detail-grid summary-view-section app-view-hidden" aria-label="Análisis mensual">
-        <article class="panel monthly-panel">
-          <div class="panel-heading">
+        <details class="panel monthly-panel monthly-disclosure">
+          <summary class="panel-heading monthly-disclosure-heading">
             <div>
               <span class="section-kicker">GASTOS DEL MES</span>
               <h2 id="monthlyTitle">Qué consume el hogar</h2>
               <p id="monthRangeLabel"></p>
             </div>
-          </div>
+            <span class="monthly-disclosure-action"><span class="when-closed">Ver desglose</span><span class="when-open">Ocultar desglose</span><span aria-hidden="true">⌄</span></span>
+          </summary>
           <div id="monthlySummary" class="monthly-summary"></div>
           <div id="commonCategoryImpact" class="common-category-impact"></div>
-        </article>
+        </details>
       </section>
 
       <section id="privateIncomeCard" class="panel private-income-card summary-view-section app-view-hidden is-hidden" aria-label="Ingreso y resto personal">

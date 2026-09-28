@@ -1,5 +1,10 @@
 # Continuidad del proyecto
 
+## Interfaz v44
+
+- “Qué consume el hogar” ahora es un desplegable nativo cerrado por defecto, con mes visible y acción Ver/Ocultar desglose. Conserva totales y categorías; el bloque personal equivalente también se puede plegar. Abrir/cerrar no modifica datos.
+- Corregida especificidad de `.monthly-detail-grid` que anulaba `.app-view-hidden` y podía mostrar el análisis mensual en otras pestañas.
+
 ## Actualización 2026-09-28 — v43
 
 - Usuario autorizó publicar todos los cambios sin nueva confirmación. Incluye v42 (cierres desplegables) y buscador v43.

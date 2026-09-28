@@ -2927,6 +2927,18 @@ body.personal-mode .section-kicker, body.personal-mode .private-kicker { color: 
   display: block;
 }
 
+.monthly-detail-grid.app-view-hidden { display: none; }
+.monthly-disclosure-heading { cursor: pointer; list-style: none; margin-bottom: 0; }
+.monthly-disclosure-heading::-webkit-details-marker { display: none; }
+.monthly-disclosure-heading:focus-visible { outline: 2px solid var(--accent); outline-offset: 6px; }
+.monthly-disclosure-heading p { margin-bottom: 0; }
+.monthly-disclosure-action { display: flex; align-items: center; gap: 8px; color: var(--accent); font-size: .85rem; font-weight: 700; }
+.monthly-disclosure .when-open { display: none; }
+.monthly-disclosure[open] .when-open { display: inline; }
+.monthly-disclosure[open] .when-closed { display: none; }
+.monthly-disclosure[open] .monthly-disclosure-action > span:last-child { transform: rotate(180deg); }
+.monthly-disclosure[open] .monthly-disclosure-heading { margin-bottom: 20px; }
+
 .monthly-detail-grid .monthly-panel {
   width: 100%;
 }
