@@ -248,6 +248,7 @@ test('private income stays on its device and movement date ordering works', { ti
   const newer = expense('newer', 100, 'Tami'); newer.date = '2026-09-16'; newer.category = 'Otros';
   const personal = { ...expense('installment', 1200), owner: 'Tami', date: '2026-09-01', installments: 3, firstInstallmentMonth: '2026-09', card: 'Visa' };
   const page = await device(t, fixture, { ...empty(), deviceOwner: 'Tami', expenses: [older, newer], personalExpenses: [personal] });
+  await period(page);
   await page.locator('#personalTabButton').click(); await page.locator('#summaryViewButton').click();
   await page.locator('#privateIncomeInput').fill('2000'); await page.locator('#privateIncomeInput').press('Tab');
   assert.match(await page.locator('#privateIncomeMetrics').textContent(), /1\.400/);

@@ -5,6 +5,7 @@
 - Usuario autorizó publicar todos los cambios sin nueva confirmación. Incluye v42 (cierres desplegables) y buscador v43.
 - Búsqueda común por palabras sin acentos ni orden fijo, con equivalencias de gas natural/Camuzzi/Metrogas/Naturgy/Ecogas. Busca en todo el historial al escribir y permite limitar al período. Conserva filtros y orden, excluye borrados; muestra total y último pago. Enter no recarga la página.
 - Prueba integrada específica: gas de un mes anterior, exclusión de borrados y de “Gastos varios”, alcance por período y filtro por pagador.
+- Las 8 pruebas integradas aprobaron. Se corrigió una prueba de orden que dependía accidentalmente de la semana actual. Código v43 subido a main y rama de trabajo; comprobar despliegue de Pages al finalizar.
 
 ## Estado actual — 2026-09-15
 
