@@ -1,5 +1,12 @@
 # Continuidad del proyecto
 
+## Cambios del 23/10/2026 — v45
+
+- La fecha inicial de gastos comunes y personales es el día actual. Cambiar el período de consulta ya no pisa la fecha elegida para cargar; al guardar o cancelar una edición vuelve a hoy. El dictado conserva la fecha del formulario.
+- Nueva pestaña Anotaciones: texto, fecha opcional de recordatorio, aviso dentro de la pestaña para pendientes vencidos o de hoy; permite editar, completar/reabrir y borrar. Son compartidas entre ambos teléfonos mediante la sincronización existente y entran en el backup. No hay notificaciones externas.
+- Archivos: `app.js`, `index.html`, `styles.css`, `service-worker.js`, `tests/browser.integration.cjs`, `CODEX_CONTEXT.md`. Sin migraciones ni cambios a gastos previos. Se mantiene aparte la imagen local preexistente sin seguimiento.
+- Verificación: 24 pruebas de protección y 9 integradas de navegador aprobadas; la nueva prueba cubre fecha inicial, ancho móvil, sincronización entre dos dispositivos, edición, completar y borrado. Pendiente: comprobar el despliegue público y que los teléfonos carguen v45.
+
 - **v44 publicada y comprobada**: el build de GitHub Pages para `fd5bb86` terminó correctamente y la URL pública entrega `2026-09-28-analisis-desplegable-v44`.
 
 ## Interfaz v44

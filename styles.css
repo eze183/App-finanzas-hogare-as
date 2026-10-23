@@ -2870,7 +2870,7 @@ html.personal-mode #commonTabButton,
 #personalTabButton.is-active, #personalTabButton:hover { background: var(--ink) !important; }
 .mode-privacy-note { margin: 0; padding: 12px 16px; border-left: 5px solid var(--accent); background: var(--accent-soft); color: #654b46; }
 body.personal-mode .mode-privacy-note { border-left-color: var(--personal); background: var(--personal-soft); color: var(--personal); }
-.app-tabs { position: static; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; width: 100%; margin: 18px 0; padding: 0; border: 1px solid var(--line); background: var(--line); }
+.app-tabs { position: static; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 1px; width: 100%; margin: 18px 0; padding: 0; border: 1px solid var(--line); background: var(--line); }
 .app-tabs button, .app-tabs #settingsOpenButton { min-height: 52px; border-radius: 0; background: var(--surface); color: var(--muted); font-weight: 800; }
 .app-tabs button.is-active, .app-tabs button:hover, .app-tabs #settingsOpenButton:hover { background: var(--accent-soft); color: var(--accent); }
 .app-tabs .tab-icon { display: block; width: 18px; height: 18px; }
@@ -2895,6 +2895,28 @@ body.personal-mode .section-kicker, body.personal-mode .private-kicker { color: 
 .settlement-block { border-radius: 0; }
 .private-income-card { border: 1px solid var(--line); border-left: 5px solid var(--personal); background: var(--personal-soft); }
 .history-item, .person-expense-row, .movement-group, .installment-item { border-radius: 0; }
+.app-shell.notes-mode .hero { grid-template-columns: 1fr; }
+.app-shell.notes-mode .period-card, .app-shell.notes-mode .entry-tabs, .app-shell.notes-mode .mode-privacy-note { display: none; }
+.notes-panel { border-top: 5px solid var(--ink); }
+.note-form { display: grid; gap: 10px; margin: 20px 0 24px; }
+.note-form label { font-weight: 800; }
+.note-form textarea { width: 100%; min-height: 104px; resize: vertical; border: 1px solid var(--line); border-radius: 0; padding: 12px; background: var(--surface); color: var(--ink); font: inherit; }
+.note-form-bottom { display: flex; align-items: end; justify-content: space-between; flex-wrap: wrap; gap: 14px; }
+.note-form-bottom label { display: grid; gap: 6px; }
+.note-form-bottom input { min-height: 44px; border: 1px solid var(--line); padding: 8px; background: var(--surface); color: var(--ink); }
+.note-form-actions, .note-item-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.notes-list { display: grid; gap: 10px; }
+.note-item { display: flex; justify-content: space-between; align-items: start; gap: 16px; padding: 16px; border: 1px solid var(--line); background: var(--surface); }
+.note-item.is-due { border-left: 5px solid var(--accent); background: var(--accent-soft); }
+.note-item.is-done { opacity: .65; }
+.note-item-main { min-width: 0; }
+.note-item-main p { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; font-weight: 700; }
+.note-item.is-done .note-item-main p { text-decoration: line-through; }
+.note-item-main span { color: var(--muted); font-size: .85rem; }
+.note-item-actions { flex-shrink: 0; }
+.note-item-actions button { min-height: 36px; padding: 0 10px; font-size: .82rem; }
+.note-item-actions button:not(.danger) { background: var(--surface-soft); color: var(--ink); }
+.note-item-actions button:not(.danger):hover { background: var(--line); }
 
 @media (max-width: 900px) {
   .hero { grid-template-columns: 1fr; align-items: stretch; }
@@ -2907,6 +2929,10 @@ body.personal-mode .section-kicker, body.personal-mode .private-kicker { color: 
   .app-tabs button, .app-tabs #settingsOpenButton { flex-direction: row; gap: 7px; min-height: 48px; padding: 0 8px; font-size: .76rem; }
   .quick-actions { grid-template-columns: 1fr; }
   .panel { padding: 16px; }
+  .note-item { display: grid; }
+  .note-form-bottom { align-items: stretch; }
+  .note-form-actions { width: 100%; }
+  .note-form-actions button { flex: 1; }
 }
 
 /* — Análisis compacto v40 — */

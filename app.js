@@ -1,6 +1,6 @@
 const STORAGE_KEY = "home-expenses-v1";
 const PRIVATE_FINANCE_KEY = "home-expenses-private-finance-v1";
-const APP_VERSION = "2026-09-28-analisis-desplegable-v44";
+const APP_VERSION = "2026-10-23-anotaciones-v45";
 const DEFAULT_SUPABASE_STATE_ID = "hogar-eze-tami";
 const CLOUD_PULL_INTERVAL_MS = 15000;
 const moneyFormatter = new Intl.NumberFormat("es-AR", {
@@ -119,6 +119,7 @@ const defaultState = {
   personalExpenses: [],
   settlements: [],
   recurringExpenses: [],
+  notes: [],
   budgets: {},
   budgetsUpdatedAt: 0,
   personalBudgets: {},
@@ -140,6 +141,15 @@ const elements = {
   summaryViewButton: document.querySelector("#summaryViewButton"),
   movementsViewButton: document.querySelector("#movementsViewButton"),
   historyViewButton: document.querySelector("#historyViewButton"),
+  notesViewButton: document.querySelector("#notesViewButton"),
+  notesTabBadge: document.querySelector("#notesTabBadge"),
+  noteForm: document.querySelector("#noteForm"),
+  noteText: document.querySelector("#noteText"),
+  noteDueDate: document.querySelector("#noteDueDate"),
+  noteSubmitButton: document.querySelector("#noteSubmitButton"),
+  noteCancelEditButton: document.querySelector("#noteCancelEditButton"),
+  notesList: document.querySelector("#notesList"),
+  notesEmptyState: document.querySelector("#notesEmptyState"),
   dailyView: document.querySelector("#dailyView"),
   settingsView: document.querySelector("#settingsView"),
   exportBackupButton: document.querySelector("#exportBackupButton"),
@@ -310,6 +320,7 @@ const elements = {
   movementsViewSections: document.querySelectorAll(".movements-view-section"),
   historyViewSections: document.querySelectorAll(".history-view-section"),
   installmentsViewSections: document.querySelectorAll(".installments-view-section"),
+  notesViewSections: document.querySelectorAll(".notes-view-section"),
 };
 
 let storageLoadError = null;
@@ -322,6 +333,7 @@ let currentAppView = "load";
 let currentEntryMode = "common";
 let personalMovementCategory = "";
 let editingExpense = null;
+let editingNoteId = null;
 let firstInstallmentTouched = false;
 let openedMovement = null;
 let entryCurrency = "ARS"; // "ARS" | "USD" — moneda del formulario de carga (compartida entre pestañas)
@@ -370,6 +382,7 @@ function normalizeState(value) {
     recurringExpenses: Array.isArray(value.recurringExpenses)
       ? value.recurringExpenses.map(normalizeRecurringExpense).filter(Boolean)
       : [],
+    notes: Array.isArray(value.notes) ? value.notes.map(normalizeNote).filter(Boolean) : [],
     budgets: value.budgets && typeof value.budgets === "object" ? sanitizeBudgets(value.budgets) : {},
     budgetsUpdatedAt: Number(value.budgetsUpdatedAt) || 0,
     personalBudgets:
@@ -446,6 +459,20 @@ function normalizeRecurringExpense(expense) {
     createdAt,
     updatedAt: Number(expense.updatedAt) || createdAt,
     deletedAt: expense.deletedAt ? Number(expense.deletedAt) : null,
+  };
+}
+
+function normalizeNote(note) {
+  if (!note || typeof note.text !== "string" || !note.text.trim()) return null;
+  const createdAt = Number(note.createdAt) || Date.now();
+  return {
+    id: note.id || createId(),
+    text: note.text.trim(),
+    dueDate: note.dueDate || "",
+    done: note.done === true,
+    createdAt,
+    updatedAt: Number(note.updatedAt) || createdAt,
+    deletedAt: note.deletedAt ? Number(note.deletedAt) : null,
   };
 }
 
@@ -533,6 +560,7 @@ function mergeCloudState(remoteData) {
     expenses: mergeRecordLists(state.expenses, remote.expenses),
     personalExpenses: mergeRecordLists(state.personalExpenses, remote.personalExpenses),
     recurringExpenses: mergeRecordLists(state.recurringExpenses, remote.recurringExpenses),
+    notes: mergeRecordLists(state.notes, remote.notes),
     settlements: mergeRecordLists(state.settlements, remote.settlements),
     budgets: budgetsWinner.budgets,
     budgetsUpdatedAt: budgetsWinner.budgetsUpdatedAt,
@@ -628,7 +656,7 @@ function stableHash(value, seed = 2166136261) {
 function prepareLegacyStateData(data) {
   validateStateData(data, { allowLegacyIds: true });
   const prepared = structuredClone(data);
-  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements"]) {
+  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements", "notes"]) {
     const occurrences = new Map();
     prepared[key] = (prepared[key] || []).map((record) => {
       if (record.id) return record;
@@ -2223,9 +2251,6 @@ function renderPeriodLabel() {
   elements.weekRangeLabel.textContent = `${getSelectedPeriodLabel()} · ${days} ${days === 1 ? "día" : "días"}`;
   elements.periodWeekButton.classList.toggle("is-active", isWholeWeekPeriod(range));
   elements.periodMonthButton.classList.toggle("is-active", isWholeMonthPeriod(range));
-  if (!elements.personalExpenseDate.value || !isExpenseInSelectedPeriod({ date: elements.personalExpenseDate.value })) {
-    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
-  }
 }
 
 function getSettlementHistoryBreakdown(settlement) {
@@ -2344,6 +2369,83 @@ function render() {
   renderPersonalExpenses(personalMovementExpenses);
   renderInstallments();
   renderSettlementHistory();
+  renderNotes();
+}
+
+function renderNotes() {
+  const today = toISODate(new Date());
+  const notes = state.notes.filter((note) => !note.deletedAt).sort((a, b) =>
+    Number(a.done) - Number(b.done) ||
+    (a.dueDate || "9999-12-31").localeCompare(b.dueDate || "9999-12-31") ||
+    b.createdAt - a.createdAt,
+  );
+  const dueCount = notes.filter((note) => !note.done && note.dueDate && note.dueDate <= today).length;
+  elements.notesTabBadge.textContent = String(dueCount);
+  elements.notesTabBadge.classList.toggle("is-hidden", dueCount === 0);
+  elements.notesEmptyState.classList.toggle("is-hidden", notes.length > 0);
+  elements.notesList.innerHTML = notes.map((note) => {
+    const dueLabel = note.dueDate
+      ? `${note.dueDate < today && !note.done ? "Vencido · " : note.dueDate === today && !note.done ? "Hoy · " : ""}${dateFormatter.format(parseISODate(note.dueDate))}`
+      : "Sin fecha";
+    return `<article class="note-item${note.done ? " is-done" : ""}${note.dueDate && note.dueDate <= today && !note.done ? " is-due" : ""}">
+      <div class="note-item-main"><p>${escapeHtml(note.text)}</p><span>${escapeHtml(dueLabel)}</span></div>
+      <div class="note-item-actions">
+        <button type="button" data-note-action="toggle" data-note-id="${escapeHtml(note.id)}">${note.done ? "Reabrir" : "Completar"}</button>
+        <button type="button" data-note-action="edit" data-note-id="${escapeHtml(note.id)}">Editar</button>
+        <button type="button" data-note-action="delete" data-note-id="${escapeHtml(note.id)}" class="danger">Borrar</button>
+      </div>
+    </article>`;
+  }).join("");
+}
+
+function resetNoteForm() {
+  editingNoteId = null;
+  elements.noteForm.reset();
+  elements.noteSubmitButton.textContent = "Guardar anotación";
+  elements.noteCancelEditButton.classList.add("is-hidden");
+}
+
+function handleNoteSubmit(event) {
+  event.preventDefault();
+  const noteText = elements.noteText.value.trim();
+  const dueDate = elements.noteDueDate.value;
+  if (!noteText || (dueDate && !isValidDateKey(dueDate))) return;
+  const now = Date.now();
+  if (editingNoteId) {
+    state.notes = state.notes.map((note) => note.id === editingNoteId && !note.deletedAt
+      ? { ...note, text: noteText, dueDate, updatedAt: now }
+      : note);
+  } else {
+    state.notes.push({ id: createId(), text: noteText, dueDate, done: false, createdAt: now, updatedAt: now, deletedAt: null });
+  }
+  saveState();
+  resetNoteForm();
+  renderNotes();
+  showExpenseToast("Anotación guardada");
+}
+
+function handleNotesListClick(event) {
+  const button = event.target.closest("button[data-note-action]");
+  if (!button) return;
+  const note = state.notes.find((item) => item.id === button.dataset.noteId && !item.deletedAt);
+  if (!note) return;
+  if (button.dataset.noteAction === "edit") {
+    editingNoteId = note.id;
+    elements.noteText.value = note.text;
+    elements.noteDueDate.value = note.dueDate;
+    elements.noteSubmitButton.textContent = "Guardar cambios";
+    elements.noteCancelEditButton.classList.remove("is-hidden");
+    elements.noteText.focus();
+    return;
+  }
+  if (button.dataset.noteAction === "delete" && !confirm("¿Borrar esta anotación?")) return;
+  const now = Date.now();
+  state.notes = state.notes.map((item) => item.id !== note.id ? item : button.dataset.noteAction === "delete"
+    ? { ...item, deletedAt: now, updatedAt: now }
+    : { ...item, done: !item.done, updatedAt: now });
+  if (editingNoteId === note.id) resetNoteForm();
+  saveState();
+  renderNotes();
 }
 
 function escapeHtml(value) {
@@ -3102,7 +3204,7 @@ function fillExpenseFromVoice(transcript) {
 
   if (parsed.isPersonal) {
     setEntryMode("personal");
-    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
+    elements.personalExpenseDate.value ||= toISODate(new Date());
     elements.personalExpenseOwner.value = parsed.person || elements.personalExpenseOwner.value || getDeviceOwner();
     if (parsed.category) setSelectValueIfAvailable(elements.personalExpenseCategory, parsed.category);
     if (parsed.paymentMethod) setSelectValueIfAvailable(elements.personalExpensePaymentMethod, parsed.paymentMethod);
@@ -3118,7 +3220,7 @@ function fillExpenseFromVoice(transcript) {
   }
 
   setEntryMode("common");
-  elements.expenseDate.value = getSelectedPeriodStartKey();
+  elements.expenseDate.value ||= toISODate(new Date());
   if (parsed.person && state.people.includes(parsed.person)) elements.expensePayer.value = parsed.person;
   if (parsed.category) setSelectValueIfAvailable(elements.expenseCategory, parsed.category);
   if (parsed.paymentMethod) setSelectValueIfAvailable(elements.expensePaymentMethod, parsed.paymentMethod);
@@ -3687,7 +3789,7 @@ function handleExpenseSubmit(event) {
 function handlePersonalExpenseSubmit(event) {
   event.preventDefault();
   const amount = parseAmountInput(elements.personalExpenseAmount.value);
-  const expenseDate = elements.personalExpenseDate.value || getSelectedPeriodStartKey();
+  const expenseDate = elements.personalExpenseDate.value || toISODate(new Date());
   const owner = elements.personalExpenseOwner.value.trim() || getDeviceOwner();
 
   if (!owner) {
@@ -3759,7 +3861,7 @@ function handlePersonalExpenseSubmit(event) {
   saveState();
   elements.personalExpenseForm.reset();
   firstInstallmentTouched = false;
-  elements.personalExpenseDate.value = getSelectedPeriodStartKey();
+  elements.personalExpenseDate.value = toISODate(new Date());
   elements.personalExpenseOwner.value = getDeviceOwner();
   setEntryCurrency("ARS");
   ensurePeriodIncludes(expenseDate);
@@ -3901,7 +4003,7 @@ function cancelEditingExpense() {
   if (wasPersonal) {
     elements.personalExpenseForm.reset();
     firstInstallmentTouched = false;
-    elements.personalExpenseDate.value = getSelectedPeriodStartKey();
+    elements.personalExpenseDate.value = toISODate(new Date());
     elements.personalExpenseOwner.value = getDeviceOwner();
     updatePersonalCardFieldsVisibility();
   } else {
@@ -3960,23 +4062,28 @@ function setRecordsMode(mode) {
 }
 
 function setAppView(view) {
-  currentAppView = ["load", "summary", "movements", "history", "installments"].includes(view) ? view : "load";
+  currentAppView = ["load", "summary", "movements", "history", "installments", "notes"].includes(view) ? view : "load";
   const isLoad = currentAppView === "load";
   const isSummary = currentAppView === "summary";
   const isMovements = currentAppView === "movements";
   const isHistory = currentAppView === "history";
   const isInstallments = currentAppView === "installments";
+  const isNotes = currentAppView === "notes";
 
   elements.loadViewButton.classList.toggle("is-active", isLoad);
   elements.summaryViewButton.classList.toggle("is-active", isSummary);
   elements.movementsViewButton.classList.toggle("is-active", isMovements);
   elements.historyViewButton.classList.toggle("is-active", isHistory);
   elements.installmentsViewButton.classList.toggle("is-active", isInstallments);
+  elements.notesViewButton.classList.toggle("is-active", isNotes);
+  elements.appShell.classList.toggle("notes-mode", isNotes);
   elements.loadViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isLoad));
   elements.summaryViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isSummary));
   elements.movementsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isMovements));
   elements.historyViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isHistory));
   elements.installmentsViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isInstallments));
+  elements.notesViewSections.forEach((section) => section.classList.toggle("app-view-hidden", !isNotes));
+  if (isNotes) renderNotes();
 
   if (isSummary || isInstallments) {
     render();
@@ -4152,7 +4259,7 @@ function validateStateData(data, { allowLegacyIds = false } = {}) {
   for (const key of ["budgets", "personalBudgets"]) {
     if (data[key] !== undefined && (!object(data[key]) || Object.values(data[key]).some((v) => !number(v) || v <= 0))) fail(key);
   }
-  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements"]) {
+  for (const key of ["expenses", "personalExpenses", "recurringExpenses", "settlements", "notes"]) {
     if (data[key] === undefined) continue; // Formatos antiguos sin personales/recurrentes.
     if (!Array.isArray(data[key])) fail(key);
     const ids = new Set();
@@ -4166,6 +4273,12 @@ function validateStateData(data, { allowLegacyIds = false } = {}) {
       }
       for (const field of ["createdAt", "updatedAt", "deletedAt"]) {
         if (record[field] != null && (!number(record[field]) || record[field] < 0)) fail(`${key}: ${field}`);
+      }
+      if (key === "notes") {
+        if (!text(record.text) || record.text.length > 2000) fail("anotación: texto");
+        if (record.dueDate != null && record.dueDate !== "" && !isValidDateKey(record.dueDate)) fail("anotación: fecha");
+        if (record.done != null && typeof record.done !== "boolean") fail("anotación: estado");
+        continue;
       }
       if (!number(record.amount) || record.amount < 0 || (key !== "settlements" && record.amount === 0)) fail(`${key}: monto`);
       if (key === "settlements") {
@@ -4533,7 +4646,7 @@ async function init() {
   }
   setSelectedPeriod(getWeekStart(), getWeekEnd(getWeekStart()));
   elements.expenseDate.value = toISODate(new Date());
-  elements.personalExpenseDate.value = getSelectedPeriodStartKey();
+  elements.personalExpenseDate.value = toISODate(new Date());
   updatePersonalCardFieldsVisibility();
 
   elements.exportBackupButton.addEventListener("click", handleExportBackup);
@@ -4549,6 +4662,10 @@ async function init() {
   elements.movementsViewButton.addEventListener("click", () => setAppView("movements"));
   elements.historyViewButton.addEventListener("click", () => setAppView("history"));
   elements.installmentsViewButton.addEventListener("click", () => setAppView("installments"));
+  elements.notesViewButton.addEventListener("click", () => setAppView("notes"));
+  elements.noteForm.addEventListener("submit", handleNoteSubmit);
+  elements.noteCancelEditButton.addEventListener("click", resetNoteForm);
+  elements.notesList.addEventListener("click", handleNotesListClick);
   elements.installmentsReminder.addEventListener("click", () => {
     setEntryMode("personal");
     setAppView("installments");

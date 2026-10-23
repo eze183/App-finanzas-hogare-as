@@ -262,3 +262,43 @@ test('private income stays on its device and movement date ordering works', { ti
   await page.locator('#filterGroupBy').selectOption('date-desc');
   assert.match(await page.locator('#commonExpenseColumns .person-expense-row').first().textContent(), /100/);
 });
+
+test('new expenses default to today and shared reminders survive sync and edits', { timeout: 30000 }, async t => {
+  const fixture = apiFixture();
+  const a = await device(t, fixture);
+  const today = await a.evaluate(() => toISODate(new Date()));
+  assert.equal(await a.locator('#expenseDate').inputValue(), today);
+  assert.equal(await a.locator('#personalExpenseDate').inputValue(), today);
+  await period(a);
+  assert.equal(await a.locator('#expenseDate').inputValue(), today);
+  assert.equal(await a.locator('#personalExpenseDate').inputValue(), today);
+  await a.locator('#personalTabButton').click();
+  assert.equal(await a.locator('#personalExpenseDate').inputValue(), today);
+  await a.locator('#notesViewButton').click();
+  assert.ok(await a.evaluate(() => document.documentElement.scrollWidth <= innerWidth), 'notes fit on a phone viewport');
+  await a.locator('#noteText').fill('Pagar factura de gas');
+  await a.locator('#noteDueDate').fill(today);
+  await a.locator('#noteSubmitButton').click();
+  assert.match(await a.locator('#notesList').textContent(), /Pagar factura de gas/);
+  assert.equal(await a.locator('#notesTabBadge').textContent(), '1');
+  await sync(a);
+  assert.equal(fixture.data.notes.length, 1);
+
+  const b = await device(t, fixture, { ...empty(), deviceOwner: 'Eze' });
+  await b.locator('#notesViewButton').click();
+  assert.match(await b.locator('#notesList').textContent(), /Pagar factura de gas/);
+  await b.locator('[data-note-action="edit"]').click();
+  await b.locator('#noteText').fill('Pagar factura de gas natural');
+  await b.locator('#noteSubmitButton').click();
+  await b.locator('[data-note-action="toggle"]').click();
+  await sync(b);
+  await a.evaluate(() => pullStateFromSupabase());
+  assert.match(await a.locator('#notesList').textContent(), /Pagar factura de gas natural/);
+  assert.equal(await a.locator('#notesTabBadge').isVisible(), false);
+  await a.locator('[data-note-action="delete"]').click();
+  await sync(a);
+  await b.evaluate(() => pullStateFromSupabase());
+  assert.equal(await b.locator('#notesList .note-item').count(), 0);
+  assert.equal(fixture.data.notes.length, 1);
+  assert.ok(fixture.data.notes[0].deletedAt);
+});

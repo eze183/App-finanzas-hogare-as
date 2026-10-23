@@ -77,6 +77,11 @@
           <span>Cuotas</span>
           <span id="installmentsTabBadge" class="tab-badge is-hidden">0</span>
         </button>
+        <button id="notesViewButton" type="button">
+          <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v16H4zM8 9h8M8 13h8M8 17h5"/></svg>
+          <span>Anotaciones</span>
+          <span id="notesTabBadge" class="tab-badge is-hidden">0</span>
+        </button>
         <button id="settingsOpenButton" type="button" aria-label="Abrir configuración" title="Configuración">
           <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-2.8 2.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.2h-4V21a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1L4.2 17l.1-.1a1.7 1.7 0 0 0 .3-1.9A1.7 1.7 0 0 0 3 14H2.8v-4H3a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9L4.2 7 7 4.2l.1.1A1.7 1.7 0 0 0 9 4.6 1.7 1.7 0 0 0 10 3V2.8h4V3a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1L19.8 7l-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.2v4H21a1.7 1.7 0 0 0-1.6 1z"/></svg>
           <span>Ajustes</span>
@@ -638,6 +643,31 @@
               <div id="installmentsFinishedList" class="installments-list"></div>
             </section>
           </div>
+        </section>
+
+        <section class="panel notes-panel notes-view-section app-view-hidden" aria-label="Anotaciones y recordatorios">
+          <div class="panel-heading">
+            <div>
+              <span class="section-kicker">ANOTACIONES</span>
+              <h2>Para no olvidarse</h2>
+              <p>Las anotaciones se comparten entre ambos teléfonos. La fecha es opcional; los recordatorios vencidos quedan destacados acá.</p>
+            </div>
+          </div>
+          <form id="noteForm" class="note-form">
+            <label for="noteText">Anotación o recordatorio</label>
+            <textarea id="noteText" rows="3" maxlength="2000" placeholder="Ej.: revisar la factura de gas" required></textarea>
+            <div class="note-form-bottom">
+              <label for="noteDueDate">Recordarme el día (opcional)
+                <input id="noteDueDate" type="date" />
+              </label>
+              <div class="note-form-actions">
+                <button id="noteCancelEditButton" class="secondary-button is-hidden" type="button">Cancelar edición</button>
+                <button id="noteSubmitButton" type="submit">Guardar anotación</button>
+              </div>
+            </div>
+          </form>
+          <div id="notesList" class="notes-list"></div>
+          <p id="notesEmptyState" class="empty-state">Todavía no hay anotaciones.</p>
         </section>
       </section>
 
